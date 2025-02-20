@@ -140,27 +140,19 @@ def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=
     return training_loss
 
 def convert_to_pkl():
-    with open("my_video.pkl", "rb") as f:
+    with open("../../data/pkl/carro.pkl", "rb") as f:
         data = pickle.load(f)
 
     print(type(data))  # Check what kind of object is stored
     print(data)  # Print the content (if small)
 
-    image_paths = data['images']
+    images = np.array(data['images'])
 
-    images = []
-    for path in image_paths:
-        img = cv2.imread(path)  # Carica l'immagine
-        if img is not None:
-            images.append(img)
-
-    images_array = np.array(images)
-
-    return images_array
+    return images
 
 
 if __name__ == '__main__':
-    device = 'mps'
+    device = 'cpu'
 
     images = convert_to_pkl()
     
