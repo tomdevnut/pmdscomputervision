@@ -31,12 +31,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-## Project Dependencies
-
-- numpy: Numerical computing
-- pandas: Data manipulation and analysis
-- jupyter: Notebook interface
-- opencv-python: Computer vision library
-- Pillow: Image processing
-- matplotlib: Data visualization
-- scikit-learn: Machine learning utilities
+## How to create an SSL certificate for only testing purpouse (not production)
+```bash
+openssl req -x509 -newkey rsa:4096 -nodes -out ./certificate/cert.pem -keyout ./certificate/key.pem -days 365
+````
