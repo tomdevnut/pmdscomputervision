@@ -12,15 +12,12 @@ db = firestore.client()
 # Inizializzazione secret manager per la gestione dei segreti
 secret_client = secretmanager.SecretManagerServiceClient()
 
-# TODO: Definire la collezione Firestore per le scansioni e gli utenti (associazione utente-scansione)
-scans_collection_ref = db.collection('user_scans')
+# Riferimenti alle collezioni Firestore con associazione scansioni e utenti
+scans_collection_ref = db.collection('scans')
 
 # Percorso del segreto in Secret Manager
-# TODO: Sostituire YOUR_PROJECT_ID con l'ID del progetto GCP
-# TODO: Sostituire BACKEND_API_KEY_SECRET_NAME con il nome del segreto
-BACKEND_API_KEY_SECRET_NAME = "BACKEND_API_KEY" # nome del segreto in Secret Manager
+BACKEND_API_KEY_SECRET_NAME = "api-key-backend" # nome del segreto in Secret Manager
 PROJECT_ID = os.environ.get("GCP_PROJECT") # L'ID del progetto viene fornito dalle Cloud Functions
-
 
 # TODO: Definire l'URL del server di backend
 BACKEND_SERVER_URL = "https://server.com/api/scans"
@@ -49,30 +46,26 @@ def process_user_scan(cloud_event):
     """
     data = cloud_event.data
     bucket_name = data["bucket"]
-    file_path = data["name"]
+    file_path = data["name"] 
 
-    # TODO: Estrarre l'ID utente dal percorso del file o dai metadati
-    # Vedere dopo la configurazione se la struttura è corretta
-    try:
-        user_id = file_path.split('/')[1]
-        if not user_id:
-            raise ValueError("Impossibile estrarre l'ID utente dal percorso del file.")
-    except (IndexError, ValueError) as e:
-        print(f"Errore nell'estrazione dell'ID utente dal percorso '{file_path}': {e}")
-        return
+    # Ottenere l'ID utente e lo step dal metadata del file
+    user_id = data.get("metadata", {}).get("user_id")
+    step = data.get("metadata", {}).get("step")
 
     blob = storage.bucket(bucket_name).blob(file_path)
-    signed_url = blob.generate_signed_url(expiration=timedelta(minutes=15), method='GET')
+    scan_signed_url = blob.generate_signed_url(expiration=timedelta(minutes=15), method='GET')
+    blob = storage.bucket(bucket_name).blob(f"steps/{step}")
+    step_signed_url = blob.generate_signed_url(expiration=timedelta(minutes=15), method='GET')
 
-    # Registrzione dell'associazione utente-scansione nel database Firestore (rifinire dopo aver definito la struttura)
+    # Registrzione dell'associazione utente-scansione nel database Firestore
     try:
         scan_data = {
-            "userId": user_id,
-            "scanPath": file_path,
-            "scanUrl": signed_url,
-            "timestamp": firestore.SERVER_TIMESTAMP
+            "user": user_id,
+            "scan_path": file_path,
+            "status": 0,
+            "step": step,
+            "progress": 0
         }
-        # TODO: Sostituire con la collezione Firestore
         doc_ref = scans_collection_ref.add(scan_data)
     except Exception as e:
         print(f"Errore durante la scrittura su Firestore: {e}")
@@ -80,13 +73,13 @@ def process_user_scan(cloud_event):
 
     # Notifica il server di backend
     # TODO: Implementare la comunicazione con il server di backend
-    # Esempio:
     if BACKEND_SERVER_URL:
         try:
             payload = {
-                "userId": user_id,
-                "scanFirebaseUrl": signed_url,
-                "scanId": doc_ref.id
+                "user": user_id,
+                "scan_id": doc_ref.id,
+                "scan_url": scan_signed_url,
+                "step_url": step_signed_url
             }
             headers = {"Content-Type": "application/json"}
             if BACKEND_API_KEY:
