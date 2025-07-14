@@ -30,6 +30,8 @@ def clean_scans(request):
     HTTP Cloud Function per pulire tutti i file di scansione da Cloud Storage
     e le relative entry da Firestore (user_scans e scan_stats).
     Richiede l'autenticazione di un utente con un livello di autorizzazione sufficiente.
+    Args:
+        request (flask.Request): La richiesta HTTP per avviare la pulizia.
     """
     # Autenticazione e Controllo Autorizzazione
     auth_header = request.headers.get('Authorization')

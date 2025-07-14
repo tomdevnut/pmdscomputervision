@@ -41,8 +41,12 @@ BACKEND_API_KEY = get_secret(BACKEND_API_KEY_SECRET_NAME)
 @functions_framework.cloud_event
 def process_user_scan(cloud_event):
     """
-    Triggered by a new file upload to Cloud Storage.
-    Processes the uploaded scan, associates it with the user, and notifies the backend.
+    Cloud Event Function per processare le scansioni degli utenti.
+    Questa funzione viene attivata quando un file di scansione viene caricato in Cloud Storage e 
+    registra l'associazione tra l'utente e la scansione nel database Firestore.
+    Il server di backend viene notificato con i dettagli della scansione.
+    Args:
+        cloud_event (CloudEvent): L'evento che contiene i dati della scansione.
     """
     data = cloud_event.data
     bucket_name = data["bucket"]
