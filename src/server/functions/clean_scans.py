@@ -1,8 +1,5 @@
 import functions_framework
 from firebase_admin import initialize_app, firestore, storage, auth
-import requests
-import os
-from datetime import timedelta
 from google.cloud import secretmanager
 
 # Inizializzazione dell'SDK di Firebase Admin
@@ -13,21 +10,19 @@ db = firestore.client()
 secret_client = secretmanager.SecretManagerServiceClient()
 
 # Riferimenti alle collezioni Firestore
-# TODO: Definire la collezione Firestore per le scansioni e gli utenti (associazione utente-scansione)
-SCANS_COLLECTION_REF = db.collection('user_scans')
-# TODO: Definire la collezione Firestore per le statistiche delle scansioni
-STATS_COLLECTION_REF = db.collection('scan_stats')
-# TODO: Definire la collezione Firestore per i gradi di autorizzazione degli utenti
-USERS_ROLES_COLLECTION_REF = db.collection('user_roles')
+# Collezione che associa scansioni agli utenti
+SCANS_COLLECTION_REF = db.collection('scans')
+# Collezione per le statistiche delle scansioni
+STATS_COLLECTION_REF = db.collection('stats')
+# Collezione per i ruoli degli utenti
+USERS_COLLECTION_REF = db.collection('users')
 
-# Nome del bucket di Cloud Storage dove sono salvate le scansioni
-# TODO: Sostituire con il nome effettivo del bucket
-SCANS_BUCKET_NAME = "qualcosa.qualcosaltro.com"
+# Nome del bucket di Cloud Storage
+BUCKET_NAME = "pmds-project.appspot.com"
 
 
-# TODO: Definire il ruolo minimo richiesto per eseguire la pulizia
-ADMIN_ROLE = "admin"
-SUPERUSER_ROLE_LEVEL = 10
+# TODO: Definire il ruolo minimo richiesto per eseguire la pulizia (0 è l'utente normale, 1 è l'ingegnere, 2 è l'amministratore)
+SUPERUSER_ROLE_LEVEL = 1
 
 @functions_framework.http
 def clean_scans(request):
@@ -52,16 +47,15 @@ def clean_scans(request):
         print(f"Token ID non valido o scaduto: {e}")
         return ('Unauthorized', 401)
 
-    # TODO: Implementare il controllo del grado di autorizzazione dell'utente dal database
+    # Controllo del ruolo dell'utente
     user_is_authorized = False
     try:
-        user_role_doc = USERS_ROLES_COLLECTION_REF.document(uid).get()
+        user_role_doc = USERS_COLLECTION_REF.document(uid).get()
         if user_role_doc.exists:
             user_role_data = user_role_doc.to_dict()
-            if user_role_data.get('role') == ADMIN_ROLE or user_role_data.get('level', 0) >= SUPERUSER_ROLE_LEVEL:
+            if user_role_data.get('level', 0) >= SUPERUSER_ROLE_LEVEL and user_role_data.get('enabled', False):
                 user_is_authorized = True
         else:
-            print(f"Nessun ruolo trovato per l'utente {uid}.")
             return ('Forbidden', 403)
 
     except Exception as e:
@@ -69,16 +63,19 @@ def clean_scans(request):
         return ('Internal Server Error', 500)
 
     if not user_is_authorized:
-        print(f"Utente {uid} non autorizzato a eseguire la pulizia.")
         return ('Forbidden', 403)
 
     print(f"Utente {uid} autorizzato. Inizio la procedura di pulizia.")
 
     # Eliminazione dei file da Cloud Storage
     try:
-        bucket = storage.bucket(SCANS_BUCKET_NAME)
-        blobs = bucket.list_blobs()
+        bucket = storage.bucket(BUCKET_NAME)
+        blobs = bucket.list_blobs(prefix="comparisons/")
         deleted_files_count = 0
+        for blob in blobs:
+            blob.delete()
+            deleted_files_count += 1
+            blobs = bucket.list_blobs(prefix="scans/")
         for blob in blobs:
             blob.delete()
             deleted_files_count += 1
