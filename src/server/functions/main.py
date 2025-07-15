@@ -1,21 +1,38 @@
-# Welcome to Cloud Functions for Firebase for Python!
-# To get started, simply uncomment the below code or create your own.
-# Deploy with `firebase deploy`
-
 from firebase_functions import https_fn
 from firebase_functions.options import set_global_options
 from firebase_admin import initialize_app
 
-# For cost control, you can set the maximum number of containers that can be
-# running at the same time. This helps mitigate the impact of unexpected
-# traffic spikes by instead downgrading performance. This limit is a per-function
-# limit. You can override the limit for each function using the max_instances
-# parameter in the decorator, e.g. @https_fn.on_request(max_instances=5).
 set_global_options(max_instances=10)
 
-# initialize_app()
-#
-#
-# @https_fn.on_request()
-# def on_request_example(req: https_fn.Request) -> https_fn.Response:
-#     return https_fn.Response("Hello world!")
+# Initialize the Firebase Admin SDK
+initialize_app()
+
+# Trigger fatto con Cloud Storage
+from .upload_step import upload_step
+from .delete_step import delete_step
+from .process_user_scan import process_user_scan
+
+# Trigger fatto con Firestore
+from .new_stats import new_stats
+
+# Trigger fatto con HTTP
+from .clean_scans import clean_scans
+from .new_user import new_user
+from .enable_user import enable_user
+from .disable_user import disable_user
+from .delete_user import delete_user
+from .save_fcm_token import save_fcm_token
+
+# Lista di funzioni che verranno esportate (non necessaria per il funzionamento, ma utile per la documentazione)
+__all__ = [
+    "upload_step",
+    "delete_step",
+    "process_user_scan",
+    "clean_scans",
+    "new_user",
+    "enable_user",
+    "disable_user",
+    "delete_user",
+    "new_stats",
+    "save_fcm_token"
+]

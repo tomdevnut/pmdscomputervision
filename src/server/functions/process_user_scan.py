@@ -52,9 +52,21 @@ def process_user_scan(cloud_event):
     bucket_name = data["bucket"]
     file_path = data["name"] 
 
+    if not file_path.startswith("scans/"):
+        print(f"Il file {file_path} non è una scansione. Ignorato.")
+        return
+
     # Ottenere l'ID utente e lo step dal metadata del file
     user_id = data.get("metadata", {}).get("user_id")
     step = data.get("metadata", {}).get("step")
+
+    if not user_id:
+        print(f"Errore: user_id mancante nei metadati del file {file_path}.")
+        return
+    
+    if not step:
+        print(f"Errore: step mancante nei metadati del file {file_path}.")
+        return
 
     blob = storage.bucket(bucket_name).blob(file_path)
     scan_signed_url = blob.generate_signed_url(expiration=timedelta(minutes=15), method='GET')

@@ -98,7 +98,8 @@ def create_new_user(request):
             "name": name,
             "surname": surname,
             "level": level,
-            "enabled": True
+            "enabled": True,
+            "fcm_token": None  # Inizialmente impostato a None, verrà aggiornato una volta che l'utente fa il login dal suo dispositivo
         }
         # Salva il profilo utente nella collezione user_profiles
         USERS_PROFILES_COLLECTION_REF.document(new_user_uid).set(user_profile_data)
