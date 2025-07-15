@@ -11,6 +11,7 @@ initialize_app()
 from .upload_step import upload_step
 from .delete_step import delete_step
 from .process_user_scan import process_user_scan
+from .delete_scan import delete_scan
 
 # Trigger fatto con Firestore
 from .new_stats import new_stats
@@ -34,5 +35,6 @@ __all__ = [
     "disable_user",
     "delete_user",
     "new_stats",
-    "save_fcm_token"
+    "save_fcm_token",
+    "delete_scan"
 ]

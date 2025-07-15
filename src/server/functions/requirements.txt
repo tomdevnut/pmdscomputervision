@@ -4,4 +4,3 @@ firebase-admin
 
 # Dipendenze usate nelle funzioni
 requests
-google-cloud-secretmanager
