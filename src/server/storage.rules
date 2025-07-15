@@ -1,12 +1,64 @@
 rules_version = '2';
-
-// Craft rules based on data in your Firestore database
-// allow write: if firestore.get(
-//    /databases/(default)/documents/users/$(request.auth.uid)).data.isAdmin;
 service firebase.storage {
+
+  // Funzione helper per leggere il livello di autorizzazione da Firestore in modo sicuro.
+  // Restituisce il livello se presente e di tipo numerico, altrimenti 0.
+  // Basato sulla struttura: collezione 'users', campo 'level'.
+  function getAuthorizationLevel(uid) {
+    // Ritorna il livello più basso (0) se l'UID non è valido o vuoto.
+    // Altrimenti, tenta di recuperare il documento utente.
+    // Se il documento esiste E il campo 'level' esiste E 'level' è un numero intero,
+    // restituisce il valore di 'level'. Altrimenti, restituisce 0.
+    return uid != null && uid != ''
+           ? (firestore.get(/databases/(default)/documents/users/$(uid)).data.level is int
+             ? firestore.get(/databases/(default)/documents/users/$(uid)).data.level
+             : 0)
+           : 0;
+  }
+
   match /b/{bucket}/o {
-    match /{allPaths=**} {
-      allow read, write: if false;
+
+    // Regole per la cartella /scans
+    match /scans/{fileName} {
+      // Caricamento (write): consentito solo a utenti autenticati.
+      // E il 'userId' nei metadati del file deve corrispondere all'UID dell'utente autenticato.
+      allow write: if request.auth != null && request.auth.uid == request.resource.metadata.userId; // Nota: 'user' -> 'userId' se è il nome del campo nei metadati
+
+      // Eliminazione (delete): consentita a qualsiasi utente autenticato SOLO SE
+      // il documento corrispondente in Firestore ha 'progress' a 100 OPPURE 'status' a -1 (errore).
+      allow delete: if request.auth != null && 
+                      (firestore.get(/databases/(default)/documents/scans/$(fileName.split('.')[0])).data.progress == 100 ||
+                       firestore.get(/databases/(default)/documents/scans/$(fileName.split('.')[0])).data.status == -1);
+
+      // Lettura (read): consentita solo se l'utente autenticato è il proprietario del file
+      // (ovvero, il suo UID corrisponde al 'userId' nei metadati).
+      allow read: if request.auth != null && request.auth.uid == resource.metadata.userId; // Nota: 'user' -> 'userId'
+    }
+
+    // Regole per la cartella /steps
+    match /steps/{fileName} {
+      // Caricamento (write): consentito solo a utenti autenticati con livello 1 o superiore da Firestore.
+      allow write: if request.auth != null && getAuthorizationLevel(request.auth.uid) >= 1;
+
+      // Eliminazione (delete): consentito solo a utenti autenticati con livello 1 o superiore da Firestore.
+      allow delete: if request.auth != null && getAuthorizationLevel(request.auth.uid) >= 1;
+
+      // Lettura (read): consentita a tutti gli utenti autenticati.
+      allow read: if request.auth != null;
+    }
+
+    // Regole per la cartella /comparisons
+    match /comparisons/{fileName} {
+      // Caricamento (write): consentito SOLO al server di backend (tramite Admin SDK).
+      // Impostato su 'false' per impedire caricamenti diretti da parte degli utenti.
+      allow write: if false;
+
+      // Eliminazione (delete): consentita SOLO dalle Cloud Function.
+      // Impostato su 'false' per impedire cancellazioni dirette da parte degli utenti.
+      allow delete: if false;
+
+      // Lettura (read): consentita solo a utenti autenticati con livello 1 o superiore da Firestore.
+      allow read: if request.auth != null && getAuthorizationLevel(request.auth.uid) >= 1;
     }
   }
 }

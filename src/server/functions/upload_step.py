@@ -20,7 +20,6 @@ def upload_step(cloud_event):
         cloud_event (CloudEvent): L'evento che contiene i dati del file.
     """
     data = cloud_event.data
-    bucket_name = data["bucket"]
     file_path = data["name"]
 
     if not file_path.startswith("steps/"):
@@ -28,8 +27,8 @@ def upload_step(cloud_event):
         return
     
     # Ottenere l'ID utente dal metadata del file ed il nome del file step
-    user_id = data.get("metadata", {}).get("user_id")
-    step_name = data.get("metadata", {}).get("step_name")
+    user_id = data.get("metadata", {}).get("user")
+    step_name = data.get("metadata", {}).get("name")
     
     if not user_id:
         print(f"Errore: user_id mancante nei metadati del file {file_path}.")

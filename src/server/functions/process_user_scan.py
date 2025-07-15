@@ -57,7 +57,7 @@ def process_user_scan(cloud_event):
         return
 
     # Ottenere l'ID utente e lo step dal metadata del file
-    user_id = data.get("metadata", {}).get("user_id")
+    user_id = data.get("metadata", {}).get("user")
     step = data.get("metadata", {}).get("step")
 
     if not user_id:
