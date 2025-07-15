@@ -48,7 +48,7 @@ def delete_user(request):
         caller_role_doc = USERS_COLLECTION_REF.document(caller_uid).get()
         if caller_role_doc.exists:
             caller_role_data = caller_role_doc.to_dict()
-            caller_auth_level = caller_role_data.get('authorization_level', -1)
+            caller_auth_level = caller_role_data.get('level', -1)
         else:
             return ('Forbidden', 403)
     except Exception as e:
@@ -86,7 +86,7 @@ def delete_user(request):
         target_role_doc = USERS_COLLECTION_REF.document(target_uid).get()
         if target_role_doc.exists:
             target_role_data = target_role_doc.to_dict()
-            target_user_auth_level = target_role_data.get('authorization_level', -1)
+            target_user_auth_level = target_role_data.get('level', -1)
         else:
             return ('Not Found: Utente non trovato.', 404)
     except Exception as e:

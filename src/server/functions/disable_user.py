@@ -74,7 +74,7 @@ def disable_user(request):
         target_role_doc = USERS_COLLECTION_REF.document(target_uid).get()
         if target_role_doc.exists:
             target_role_data = target_role_doc.to_dict()
-            target_user_auth_level = target_role_data.get('authorization_level', -1)
+            target_user_auth_level = target_role_data.get('level', -1)
         else:
             return ('Not Found: Utente non trovato.', 404)
     except Exception as e:

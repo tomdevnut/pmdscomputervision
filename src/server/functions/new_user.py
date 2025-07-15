@@ -41,7 +41,7 @@ def create_new_user(request):
         caller_role_doc = USERS_PROFILES_COLLECTION_REF.document(caller_uid).get()
         if caller_role_doc.exists:
             caller_role_data = caller_role_doc.to_dict()
-            caller_auth_level = caller_role_data.get('authorization_level', -1)
+            caller_auth_level = caller_role_data.get('level', -1)
         else:
             return ('Forbidden', 403)
     except Exception as e:
@@ -66,7 +66,7 @@ def create_new_user(request):
 
         # Validazione input
         if not all([email, password, level is not None, name, surname]):
-            raise ValueError("Campi 'email', 'password', 'authorization_level', 'name', 'surname' sono tutti obbligatori.")
+            raise ValueError("Campi 'email', 'password', 'level', 'name', 'surname' sono tutti obbligatori.")
         if not isinstance(level, int) or level not in [0, 1]:
             raise ValueError("Il livello di autorizzazione deve essere 0 o 1.")
 
