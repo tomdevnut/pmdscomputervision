@@ -1,32 +1,30 @@
 import os
-import functions_framework
+from firebase_functions import storage_fn
 from firebase_admin import firestore, initialize_app
 
-# Inizializzazione dell'SDK di Firebase Admin
-initialize_app()
-db = firestore.client()
-
-# Riferimento alla collezione Firestore per gli step
-STEPS_COLLECTION_REF = db.collection('steps')
-SCANS_COLLECTION_REF = db.collection('scans')
-
-@functions_framework.cloud_event
-def delete_step(cloud_event):
+@storage_fn.on_object_deleted()
+def delete_step(event: storage_fn.CloudEvent) -> None:
     """
     Cloud Event Function che si attiva quando un file "step" viene eliminato da Cloud Storage.
     Rimuove il documento corrispondente dalla collezione 'steps' di Firestore.
     Tutte le scan associate assumono valore dello step come None.
     Args:
-        cloud_event (CloudEvent): L'evento che contiene i dati del file eliminato.
+        event (storage_fn.CloudEvent): L'evento che contiene i dati del file eliminato.
     """
 
-    data = cloud_event.data
-    file_path = data["name"]
+    db = firestore.client()
+
+    # Riferimento alla collezione Firestore per gli step
+    STEPS_COLLECTION_REF = db.collection('steps')
+    SCANS_COLLECTION_REF = db.collection('scans')
+
+
+    file_path = event.data.name
 
     if not file_path.startswith("steps/"):
         print(f"Il file {file_path} non è un file 'step'. Ignorato.")
         return
-    
+
     try:
         file_name = os.path.basename(file_path)
         doc_id_to_delete = os.path.splitext(file_name)[0]

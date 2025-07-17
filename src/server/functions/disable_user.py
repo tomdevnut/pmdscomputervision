@@ -1,20 +1,13 @@
-import functions_framework
+from firebase_functions import https_fn
 from firebase_admin import initialize_app, firestore, auth
 import json
 import os
 
-# Inizializzazione dell'SDK di Firebase Admin
-initialize_app()
-db = firestore.client()
-
-# Riferimenti alle collezioni Firestore
-USERS_COLLECTION_REF = db.collection('users')
-
 # Livello di autorizzazione minimo richiesto per disabilitare altri utenti
 REQUIRED_AUTH_LEVEL_TO_DISABLE_USERS = 2
 
-@functions_framework.http
-def disable_user(request):
+@https_fn.on_request()
+def disable_user(request: https_fn.Request) -> https_fn.Response:
     """
     HTTP Cloud Function per disabilitare un utente esistente in Firebase Authentication
     e aggiornare il suo stato nel database Firestore.
@@ -23,10 +16,17 @@ def disable_user(request):
     Args:
         request (flask.Request): La richiesta HTTP contenente i dati dell'utente da disabilitare.
     """
+
+    db = firestore.client()
+
+    # Riferimenti alle collezioni Firestore
+    USERS_COLLECTION_REF = db.collection('users')
+
+
     # Autenticazione e Controllo Autorizzazione del Chiamante
     auth_header = request.headers.get('Authorization')
     if not auth_header or not auth_header.startswith('Bearer '):
-        return ('Unauthorized', 401)
+        return https_fn.Response('Unauthorized', status=401)
 
     id_token = auth_header.split('Bearer ')[1]
     try:
@@ -34,7 +34,7 @@ def disable_user(request):
         decoded_token = auth.verify_id_token(id_token)
         caller_uid = decoded_token['uid']
     except Exception as e:
-        return ('Unauthorized', 401)
+        return https_fn.Response('Unauthorized', status=401)
 
     # Recupera il livello di autorizzazione del chiamante da Firestore
     caller_auth_level = -1 # Valore predefinito per utenti non trovati o non autorizzati
@@ -44,12 +44,12 @@ def disable_user(request):
             caller_role_data = caller_role_doc.to_dict()
             caller_auth_level = caller_role_data.get('level', -1)
         else:
-            return ('Forbidden', 403)
+            return https_fn.Response('Forbidden', status=403)
     except Exception as e:
-        return ('Internal Server Error', 500)
+        return https_fn.Response('Internal Server Error', status=500)
 
     if caller_auth_level < REQUIRED_AUTH_LEVEL_TO_DISABLE_USERS:
-        return ('Forbidden', 403)
+        return https_fn.Response('Forbidden', status=403)
 
     # Parsing dei Dati della Richiesta per l'utente target
     try:
@@ -64,9 +64,9 @@ def disable_user(request):
             raise ValueError("Il campo 'uid' dell'utente da disabilitare è obbligatorio.")
 
     except ValueError as e:
-        return (f'Bad Request: {e}', 400)
+        return https_fn.Response(f'Bad Request: {e}', status=400)
     except Exception as e:
-        return ('Bad Request: Formato JSON non valido.', 400)
+        return https_fn.Response('Bad Request: Formato JSON non valido.', status=400)
 
     # Controllo Autorizzazione Utente Target (non può essere di livello 2)
     target_user_auth_level = -1
@@ -76,12 +76,12 @@ def disable_user(request):
             target_role_data = target_role_doc.to_dict()
             target_user_auth_level = target_role_data.get('level', -1)
         else:
-            return ('Not Found: Utente non trovato.', 404)
+            return https_fn.Response('Not Found: Utente non trovato.', status=404)
     except Exception as e:
-        return ('Internal Server Error', 500)
+        return https_fn.Response('Internal Server Error', status=500)
 
     if target_user_auth_level == REQUIRED_AUTH_LEVEL_TO_DISABLE_USERS:
-        return ('Forbidden: Non è possibile disabilitare un utente di livello 2.', 403)
+        return https_fn.Response('Forbidden: Non è possibile disabilitare un utente di livello 2.', status=403)
 
     # Disabilitazione dell'Utente in Firebase Authentication (TODO: tenere o rimuovere?)
     try:
@@ -90,9 +90,9 @@ def disable_user(request):
             disabled=True
         )
     except auth.UserNotFoundError:
-        return ('Not Found: Utente non trovato.', 404)
+        return https_fn.Response('Not Found: Utente non trovato.', status=404)
     except Exception as e:
-        return (f'Internal Server Error: Errore nella disabilitazione utente Auth: {e}', 500)
+        return https_fn.Response(f'Internal Server Error: Errore nella disabilitazione utente Auth: {e}', status=500)
 
     # Aggiornamento dello Stato nel Database Firestore
     try:
@@ -101,6 +101,6 @@ def disable_user(request):
         })
 
     except Exception as e:
-        return (f'Internal Server Error: Errore nell\'aggiornamento Firestore: {e}', 500)
+        return https_fn.Response(f'Internal Server Error: Errore nell\'aggiornamento Firestore: {e}', status=500)
 
-    return (f'Utente {target_uid} disabilitato con successo!', 200)
+    return https_fn.Response(f'Utente {target_uid} disabilitato con successo!', status=200)

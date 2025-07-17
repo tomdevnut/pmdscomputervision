@@ -1,21 +1,6 @@
-import functions_framework
+from firebase_functions import https_fn
 from firebase_admin import initialize_app, firestore, storage, auth
 from google.cloud import secretmanager
-
-# Inizializzazione dell'SDK di Firebase Admin
-initialize_app()
-db = firestore.client()
-
-# Inizializzazione Secret Manager
-secret_client = secretmanager.SecretManagerServiceClient()
-
-# Riferimenti alle collezioni Firestore
-# Collezione che associa scansioni agli utenti
-SCANS_COLLECTION_REF = db.collection('scans')
-# Collezione per le statistiche delle scansioni
-STATS_COLLECTION_REF = db.collection('stats')
-# Collezione per i ruoli degli utenti
-USERS_COLLECTION_REF = db.collection('users')
 
 # Nome del bucket di Cloud Storage
 BUCKET_NAME = "pmds-project.appspot.com"
@@ -24,8 +9,8 @@ BUCKET_NAME = "pmds-project.appspot.com"
 # TODO: Definire il ruolo minimo richiesto per eseguire la pulizia (0 è l'utente normale, 1 è l'ingegnere, 2 è l'amministratore)
 SUPERUSER_ROLE_LEVEL = 1
 
-@functions_framework.http
-def clean_scans(request):
+@https_fn.on_request()
+def clean_scans(request: https_fn.Request) -> https_fn.Response:
     """
     HTTP Cloud Function per pulire tutti i file di scansione da Cloud Storage
     e le relative entry da Firestore (user_scans e scan_stats).
@@ -33,11 +18,25 @@ def clean_scans(request):
     Args:
         request (flask.Request): La richiesta HTTP per avviare la pulizia.
     """
+    
+    db = firestore.client()
+
+    # Inizializzazione Secret Manager
+    secret_client = secretmanager.SecretManagerServiceClient()
+
+    # Riferimenti alle collezioni Firestore
+    # Collezione che associa scansioni agli utenti
+    SCANS_COLLECTION_REF = db.collection('scans')
+    # Collezione per le statistiche delle scansioni
+    STATS_COLLECTION_REF = db.collection('stats')
+    # Collezione per i ruoli degli utenti
+    USERS_COLLECTION_REF = db.collection('users')
+
     # Autenticazione e Controllo Autorizzazione
     auth_header = request.headers.get('Authorization')
     if not auth_header or not auth_header.startswith('Bearer '):
         print("Richiesta non autorizzata.")
-        return ('Unauthorized', 401)
+        return https_fn.Response('Unauthorized', status=401)
 
     id_token = auth_header.split('Bearer ')[1]
     try:
@@ -47,7 +46,7 @@ def clean_scans(request):
         print(f"Utente {uid} ha richiesto la pulizia.")
     except Exception as e:
         print(f"Token ID non valido o scaduto: {e}")
-        return ('Unauthorized', 401)
+        return https_fn.Response('Unauthorized', status=401)
 
     # Controllo del ruolo dell'utente
     user_is_authorized = False
@@ -58,14 +57,14 @@ def clean_scans(request):
             if user_role_data.get('level', 0) >= SUPERUSER_ROLE_LEVEL and user_role_data.get('enabled', False):
                 user_is_authorized = True
         else:
-            return ('Forbidden', 403)
+            return https_fn.Response('Forbidden', status=403)
 
     except Exception as e:
         print(f"Errore durante il recupero del ruolo utente: {e}")
-        return ('Internal Server Error', 500)
+        return https_fn.Response('Internal Server Error', status=500)
 
     if not user_is_authorized:
-        return ('Forbidden', 403)
+        return https_fn.Response('Forbidden', status=403)
 
     print(f"Utente {uid} autorizzato. Inizio la procedura di pulizia.")
 
@@ -84,7 +83,7 @@ def clean_scans(request):
         print(f"Eliminati {deleted_files_count} file da Cloud Storage.")
     except Exception as e:
         print(f"Errore durante l'eliminazione dei file da Cloud Storage: {e}")
-        return (f"Errore durante la pulizia di Cloud Storage: {e}", 500)
+        return https_fn.Response(f"Errore durante la pulizia di Cloud Storage: {e}", status=500)
 
     # Pulizia della collezione 'user_scans' in Firestore
     try:
@@ -96,7 +95,7 @@ def clean_scans(request):
         print(f"Eliminate {deleted_user_scans_count} entry dalla collezione 'user_scans'.")
     except Exception as e:
         print(f"Errore durante la pulizia di 'user_scans' in Firestore: {e}")
-        return (f"Errore durante la pulizia di Firestore (user_scans): {e}", 500)
+        return https_fn.Response(f"Errore durante la pulizia di Firestore (user_scans): {e}", status=500)
 
     # Pulizia della collezione 'scan_stats' in Firestore
     try:
@@ -108,6 +107,6 @@ def clean_scans(request):
         print(f"Eliminate {deleted_stats_count} entry dalla collezione 'scan_stats'.")
     except Exception as e:
         print(f"Errore durante la pulizia di 'scan_stats' in Firestore: {e}")
-        return (f"Errore durante la pulizia di Firestore (scan_stats): {e}", 500)
+        return https_fn.Response(f"Errore durante la pulizia di Firestore (scan_stats): {e}", status=500)
 
-    return ('Pulizia completata con successo!', 200)
+    return https_fn.Response('Pulizia completata con successo!', status=200)

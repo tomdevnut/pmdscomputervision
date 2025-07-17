@@ -1,20 +1,18 @@
 from firebase_functions import firestore_fn
 from firebase_admin import initialize_app, firestore, messaging
 
-# Inizializzazione dell'SDK di Firebase Admin
-initialize_app()
-db = firestore.client()
-
-# Riferimento alla collezione Firestore per le statistiche
-SCANS_COLLECTION_REF = db.collection('stats')
-USERS_COLLECTION_REF = db.collection('users')
-
-@firestore_fn.on_document_created('stats/{scan_id}')
+@firestore_fn.on_document_created(document='stats/{scan_id}')
 def new_stats(event: firestore_fn.Event[firestore_fn.Change]) -> None:
     """
     Trigger che si attiva alla creazione di una nuova statistica in Firestore.
     Invia una notifica push all'utente che ha richiesto la scansione.
     """
+
+    db = firestore.client()
+
+    # Riferimento alla collezione Firestore per le statistiche
+    SCANS_COLLECTION_REF = db.collection('stats')
+    USERS_COLLECTION_REF = db.collection('users')
 
     try:
         stat_data = event.data.to_dict()

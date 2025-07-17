@@ -1,20 +1,13 @@
-import functions_framework
+from firebase_functions import https_fn
 from firebase_admin import initialize_app, firestore, auth
 import json
 import os
 
-# Inizializzazione dell'SDK di Firebase Admin
-initialize_app()
-db = firestore.client()
-
-# Riferimenti alle collezioni Firestore
-USERS_PROFILES_COLLECTION_REF = db.collection('users')
-
 # Livello di autorizzazione minimo richiesto per creare nuovi utenti
 REQUIRED_AUTH_LEVEL_TO_CREATE_USERS = 2
 
-@functions_framework.http
-def create_new_user(request):
+@https_fn.on_request()
+def new_user(request: https_fn.Request) -> https_fn.Response:
     """
     HTTP Cloud Function per creare nuovi utenti in Firebase Authentication
     e salvare i loro dettagli in Firestore.
@@ -22,10 +15,17 @@ def create_new_user(request):
     Args:
         request (flask.Request): La richiesta HTTP contenente i dati del nuovo utente.
     """
+
+    db = firestore.client()
+
+    # Riferimenti alle collezioni Firestore
+    USERS_PROFILES_COLLECTION_REF = db.collection('users')
+
+
     # Autenticazione e Controllo Autorizzazione del Chiamante
     auth_header = request.headers.get('Authorization')
     if not auth_header or not auth_header.startswith('Bearer '):
-        return ('Unauthorized', 401)
+        return https_fn.Response('Unauthorized', status=401)
 
     id_token = auth_header.split('Bearer ')[1]
     try:
@@ -33,7 +33,7 @@ def create_new_user(request):
         decoded_token = auth.verify_id_token(id_token)
         caller_uid = decoded_token['uid']
     except Exception as e:
-        return ('Unauthorized', 401)
+        return https_fn.Response('Unauthorized', status=401)
 
     # Recupera il livello di autorizzazione del chiamante da Firestore
     caller_auth_level = -1 # Valore predefinito per utenti non trovati o non autorizzati
@@ -43,14 +43,14 @@ def create_new_user(request):
             caller_role_data = caller_role_doc.to_dict()
             caller_auth_level = caller_role_data.get('level', -1)
         else:
-            return ('Forbidden', 403)
+            return https_fn.Response('Forbidden', status=403)
     except Exception as e:
         print(f"Errore durante il recupero del ruolo del chiamante: {e}")
-        return ('Internal Server Error', 500)
+        return https_fn.Response('Internal Server Error', status=500)
 
     if caller_auth_level < REQUIRED_AUTH_LEVEL_TO_CREATE_USERS:
         print(f"Utente {caller_uid} (livello {caller_auth_level}) non autorizzato a creare nuovi utenti. Richiesto livello {REQUIRED_AUTH_LEVEL_TO_CREATE_USERS}.")
-        return ('Forbidden', 403)
+        return https_fn.Response('Forbidden', status=403)
 
     # Parsing dei Dati della Richiesta per il nuovo utente
     try:
@@ -72,10 +72,10 @@ def create_new_user(request):
 
     except ValueError as e:
         print(f"Errore di validazione input: {e}")
-        return (f'Bad Request: {e}', 400)
+        return https_fn.Response(f'Bad Request: {e}', status=400)
     except Exception as e:
         print(f"Errore nel parsing della richiesta JSON: {e}")
-        return ('Bad Request: Formato JSON non valido.', 400)
+        return https_fn.Response('Bad Request: Formato JSON non valido.', status=400)
 
     # Creazione del nuovo utente in Firebase Authentication
     try:
@@ -87,10 +87,10 @@ def create_new_user(request):
         new_user_uid = user_record.uid
     except auth.EmailAlreadyExistsError:
         print(f"Errore: L'email {email} esiste già.")
-        return ('Conflict: Email già registrata.', 409)
+        return https_fn.Response('Conflict: Email già registrata.', status=409)
     except Exception as e:
         print(f"Errore nella creazione dell'utente Firebase Auth: {e}")
-        return (f'Internal Server Error: Errore nella creazione utente Auth: {e}', 500)
+        return https_fn.Response(f'Internal Server Error: Errore nella creazione utente Auth: {e}', status=500)
 
     # Salvataggio dei Dettagli Utente e Livello di Autorizzazione in Firestore
     try:
@@ -106,6 +106,6 @@ def create_new_user(request):
     except Exception as e:
         print(f"Errore nel salvataggio dei dettagli utente/ruolo in Firestore: {e}")
         auth.delete_user(new_user_uid)
-        return (f'Internal Server Error: Errore nel salvataggio Firestore: {e}', 500)
+        return https_fn.Response(f'Internal Server Error: Errore nel salvataggio Firestore: {e}', status=500)
 
-    return (f'Utente {email} (UID: {new_user_uid}) creato e dettagli salvati con successo!', 201)
+    return https_fn.Response(f'Utente {email} (UID: {new_user_uid}) creato e dettagli salvati con successo!', status=201)

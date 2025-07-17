@@ -17,7 +17,6 @@ service firebase.storage {
   }
 
   match /b/{bucket}/o {
-
     // Regole per la cartella /scans
     match /scans/{fileName} {
       // Caricamento (write): consentito solo a utenti autenticati.

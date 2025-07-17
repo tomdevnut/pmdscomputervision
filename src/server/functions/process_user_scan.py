@@ -1,19 +1,9 @@
-import functions_framework
+from firebase_functions import storage_fn
 from firebase_admin import initialize_app, firestore, storage
 import requests
 import os
 from datetime import timedelta
 from google.cloud import secretmanager
-
-# Inizializza l'SDK di Firebase Admin
-initialize_app()
-db = firestore.client()
-
-# Inizializzazione secret manager per la gestione dei segreti
-secret_client = secretmanager.SecretManagerServiceClient()
-
-# Riferimenti alle collezioni Firestore con associazione scansioni e utenti
-scans_collection_ref = db.collection('scans')
 
 # Percorso del segreto in Secret Manager
 BACKEND_API_KEY_SECRET_NAME = "api-key-backend" # nome del segreto in Secret Manager
@@ -28,6 +18,9 @@ def get_secret(secret_name):
         print("Errore: ID progetto GCP non trovato.")
         return None
     try:
+        # Inizializzazione secret manager per la gestione dei segreti
+        secret_client = secretmanager.SecretManagerServiceClient()
+
         name = f"projects/{PROJECT_ID}/secrets/{secret_name}/versions/latest"
         response = secret_client.access_secret_version(request={"name": name})
         return response.payload.data.decode("UTF-8")
@@ -35,30 +28,36 @@ def get_secret(secret_name):
         print(f"Errore nel recupero del segreto '{secret_name}': {e}")
         return None
 
-# Recupero la chiave API del backend dal Secret Manager
-BACKEND_API_KEY = get_secret(BACKEND_API_KEY_SECRET_NAME)
-
-@functions_framework.cloud_event
-def process_user_scan(cloud_event):
+@storage_fn.on_object_finalized()
+def process_user_scan(event: storage_fn.CloudEvent) -> None:
     """
     Cloud Event Function per processare le scansioni degli utenti.
     Questa funzione viene attivata quando un file di scansione viene caricato in Cloud Storage e 
     registra l'associazione tra l'utente e la scansione nel database Firestore.
     Il server di backend viene notificato con i dettagli della scansione.
     Args:
-        cloud_event (CloudEvent): L'evento che contiene i dati della scansione.
+        event (storage_fn.CloudEvent): L'evento che contiene i dati della scansione.
     """
-    data = cloud_event.data
-    bucket_name = data["bucket"]
-    file_path = data["name"] 
+
+    db = firestore.client()
+
+    # Riferimenti alle collezioni Firestore con associazione scansioni e utenti
+    scans_collection_ref = db.collection('scans')
+
+    # Recupero la chiave API del backend dal Secret Manager
+    BACKEND_API_KEY = get_secret(BACKEND_API_KEY_SECRET_NAME)
+
+    bucket_name = event.data.bucket
+    file_path = event.data.name
+    metadata = event.data.metadata or {}
 
     if not file_path.startswith("scans/"):
         print(f"Il file {file_path} non è una scansione. Ignorato.")
         return
 
     # Ottenere l'ID utente e lo step dal metadata del file
-    user_id = data.get("metadata", {}).get("user")
-    step = data.get("metadata", {}).get("step")
+    user_id = metadata.get("user")
+    step = metadata.get("step")
 
     if not user_id:
         print(f"Errore: user_id mancante nei metadati del file {file_path}.")

@@ -2,21 +2,19 @@ from firebase_functions import storage_fn
 from firebase_admin import initialize_app, firestore, storage
 import os
 
-# Inizializzazione dell'SDK di Firebase Admin
-initialize_app()
-db = firestore.client()
-
-# Riferimenti alle collezioni Firestore
-SCANS_COLLECTION_REF = db.collection('scans')
-STATS_COLLECTION_REF = db.collection('stats')
-
 @storage_fn.on_object_deleted()
-def on_scan_file_deleted(event: storage_fn.CloudEvent):
+def delete_scan(event: storage_fn.CloudEvent):
     """
     Trigger che si attiva all'eliminazione di un file da Cloud Storage.
     Se il file è una scansione, esegue la pulizia a cascata dei dati
     corrispondenti in Firestore e dei file di output in Storage.
     """
+    db = firestore.client()
+
+    # Riferimenti alle collezioni Firestore
+    SCANS_COLLECTION_REF = db.collection('scans')
+    STATS_COLLECTION_REF = db.collection('stats')
+
     bucket_name = event.data.bucket
     file_path = event.data.name
 
