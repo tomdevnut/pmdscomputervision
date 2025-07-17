@@ -1,6 +1,4 @@
 from flask import Flask
-from flask_bcrypt import Bcrypt
-from flask_jwt_extended import JWTManager
 
 
 def create_app():
@@ -14,11 +12,6 @@ def create_app():
         print("Firebase Admin SDK initialized successfully.")
     except Exception as e:
         print(f"Error initializing Firebase Admin SDK: {e}")
-
-
-    bcrypt = Bcrypt(app)
-    jwt = JWTManager(app)
-
 
     from app import routes
     return app

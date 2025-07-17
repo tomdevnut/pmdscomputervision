@@ -1,95 +1,56 @@
 from flask import Flask, request, render_template, jsonify
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+import requests
+import os
 from app import app, bcrypt
 
 @app.route('/')
 def index():
     return render_template('')
 
-@app.post('/create_user')
-@jwt_required()
-def create_user():
+@app.post('/start_pipeline')
+def start_pipeline():
     data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
 
-    if not username or not password:
-        return jsonify({"msg": "Username and password are required"}), 400
-    
-    # Controllo se l'utente esiste già
-    # @TODO: chiedere a Sola classe User
+    scan_url = data.get('scan_url')
+    step_url = data.get('step_url')
+    user_id = data.get('user')
+    scan_id = data.get('scan_id')
 
-@app.post('/login')
-def login():
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
+    if not scan_url or not step_url:
+        return jsonify({"msg": "scan_url and step_url are required"}), 400
 
-    if not username or not password:
-        return jsonify({"msg": "Username and password are required"}), 400
-    
-    # Hashiamo la password
-    pw_hash = bcrypt.generate_password_hash(password)
+    try:
+        # Scarico il file di scansione
+        scan_response = requests.get(scan_url, timeout=30)
+        scan_response.raise_for_status()
 
-    # Database query per verificare le credenziali (@TODO: vedere con Sola)
-    user = User.query.filter_by(username=username).first()
-    if user and user.check_password(password):
-        # Le credenziali sono valide, crea un token di accesso
-        access_token = create_access_token(identity=user.username)
-        return jsonify(access_token=access_token), 200
-    else:
-        return jsonify({"msg": "Bad username or password"}), 401
-    
+        # Scarico il file step
+        step_response = requests.get(step_url, timeout=30)
+        step_response.raise_for_status()
 
-    # Controlliamo se l'utente esiste nel database
+        # Creo una directory temporanea per salvare i dati che verranno usati dalla pipeline
+        os.makedirs('/tmp/scans', exist_ok=True)
+        os.makedirs('/tmp/steps', exist_ok=True)
 
+        # Salvo temporaneamente i file
+        # TODO: capire estensione dei file
+        scan_filename = f"/tmp/scans/{scan_id}_scan"
+        step_filename = f"/tmp/steps/{scan_id}_step"
 
-    # Se l'utente esiste, creiamo un JWT e lo restituiamo
-    # Se l'utente non esiste, restituiamo un errore
-    
-    return
+        with open(scan_filename, 'wb') as scan_file:
+            scan_file.write(scan_response.content)
 
-@app.post('/logout')
-@jwt_required()
-def logout():
-    # Per il logout, non è necessario fare nulla specifico con JWT
-    # Il client può semplicemente eliminare il token
-    return jsonify({"msg": "Logout successful"}), 200
+        with open(step_filename, 'wb') as step_file:
+            step_file.write(step_response.content)
 
-@app.get('/api/steps_IDs')
-@jwt_required()
-def get_steps_IDs():
-    current_user = get_jwt_identity()
-    # Recupera gli ID dei passi dal database per l'utente corrente
+        # TODO: Avviare la pipeline con i file scaricati in parallelo rispetto a questo thread
 
-@app.get('/api/processing_state')
+        # Elimino i file temporanei
+        os.remove(scan_filename)
+        os.remove(step_filename)
 
-
-@app.get('/api/server_mesh_download')
-
-
-# Understand how to send BIG DATA
-@app.post('/api/client_object_creation')
-
-@app.post('/api/client_scan_upload')
-
-@app.post('/api/client_step_upload')
-
-@app.post('/api/client_scan_delete')
-
-@app.post('/api/client_step_delete')
-
-
-# class User(db.Model):
-#     id = Column(Integer, primary_key=True)
-#     username = Column(String(20), unique=True, nullable=False)
-#     password = Column(String(60), nullable=False) # La password hashata
-
-#     def __repr__(self):
-#         return f"User('{self.username}')"
-
-#     def set_password(self, password):
-#         self.password = bcrypt.generate_password_hash(password).decode('utf-8')
-
-#     def check_password(self, password):
-#         return bcrypt.check_password_hash(self.password, password)
+        return jsonify({"msg": "Pipeline started successfully"}), 200
+    except requests.exceptions.RequestException as e:
+        return jsonify({"msg": f"Errore durante il download: {str(e)}"}), 500
+    except Exception as e:
+        return jsonify({"msg": f"Errore durante l'elaborazione: {str(e)}"}), 500

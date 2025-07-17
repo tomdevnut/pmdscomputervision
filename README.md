@@ -30,8 +30,3 @@ source venv/bin/activate
 ```bash
 pip install -r requirements.txt
 ```
-
-## How to create an SSL certificate for only testing purpouse (not production)
-```bash
-openssl req -x509 -newkey rsa:4096 -nodes -out ./certificate/cert.pem -keyout ./certificate/key.pem -days 365
-````
