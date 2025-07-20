@@ -1,7 +1,7 @@
 from flask import Flask, request, render_template, jsonify
 import requests
 import os
-from app import app, bcrypt
+from app import app
 
 @app.route('/')
 def index():
@@ -9,6 +9,13 @@ def index():
 
 @app.post('/start_pipeline')
 def start_pipeline():
+    # Verifica della chiave API
+    auth_header = request.headers.get('Authorization')
+    expected_token = f"Bearer {app.config['BACKEND_API_KEY']}"
+
+    if not auth_header or auth_header != expected_token:
+        return jsonify({"msg": "Unauthorized"}), 401
+
     data = request.get_json()
 
     scan_url = data.get('scan_url')
