@@ -1,11 +1,14 @@
 from firebase_functions import https_fn
 from firebase_functions.options import set_global_options
 from firebase_admin import initialize_app
+import os
 
 set_global_options(max_instances=10)
 
-# Initialize the Firebase Admin SDK
-initialize_app()
+# Initialize the Firebase Admin SDK only if not in a test environment.
+# Pytest sets the 'PYTEST_CURRENT_TEST' environment variable.
+if "PYTEST_CURRENT_TEST" not in os.environ:
+    initialize_app()
 
 # Trigger fatto con Cloud Storage
 from upload_step import upload_step

@@ -1,0 +1,5 @@
+# Development and testing dependencies
+pytest
+requests
+firebase-admin
+google-cloud-storage
