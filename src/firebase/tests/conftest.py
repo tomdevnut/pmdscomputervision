@@ -8,7 +8,7 @@ import requests
 os.environ["FIREBASE_AUTH_EMULATOR_HOST"] = "127.0.0.1:9099"
 os.environ["FIRESTORE_EMULATOR_HOST"] = "127.0.0.1:8080"
 os.environ["FIREBASE_STORAGE_EMULATOR_HOST"] = "127.0.0.1:9199"
-PROJECT_ID = "pmds-project-emulator"
+PROJECT_ID = "pmds-project"
 BUCKET_NAME = "pmds-project.appspot.com"
 
 @pytest.fixture(scope="session", autouse=True)
