@@ -1,9 +1,47 @@
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'main_page.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  Future<void> _signIn() async {
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+      // Navigate to the main page on successful login
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainPage()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      // Show an error message if login fails
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? 'Login failed')),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   // struttura basic con Scaffold (fornisce la struttura visiva principale, sfondo, body, app bar...)
   @override
@@ -40,9 +78,11 @@ class LoginPage extends StatelessWidget {
               const SizedBox(height: 40),
 
               // Campo di testo: Username
-              TextField( // campo di inserimento testo
-                decoration: InputDecoration( // controlla l'aspetto del campo (colore, bordi, hint)
-                  hintText: 'Username',
+              TextField(
+                controller: _emailController, // Add this controller
+                keyboardType: TextInputType.emailAddress, // Set keyboard type
+                decoration: InputDecoration(
+                  hintText: 'Email', // Changed from 'Username'
                   filled: true,
                   fillColor: Colors.grey[900],
                   hintStyle: const TextStyle(color: Colors.white54),
@@ -57,7 +97,8 @@ class LoginPage extends StatelessWidget {
               const SizedBox(height: 16),
 
               // campo di testo: Password
-              TextField( // campo di inserimento testo
+              TextField(
+                controller: _passwordController, // Add this controller
                 obscureText: true, // per nascondere i caratteri
                 decoration: InputDecoration(
                   hintText: 'Password',
@@ -78,15 +119,9 @@ class LoginPage extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 height:50,
-                child: ElevatedButton( // bottone con sfondo e ombra
-                  onPressed: () {
-                    // logica di login (API, validazione, ecc.)
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const MainPage()),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom( // personalizza colore e bordi
+                child: ElevatedButton(
+                  onPressed: _signIn, // Call the signIn method
+                  style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFFFF7C00),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
