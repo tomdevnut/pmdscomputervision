@@ -4,7 +4,7 @@ import json
 import os
 
 # Nome del bucket di Cloud Storage dove sono salvate le scansioni
-BUCKET = "pmds-project.appspot.com"
+BUCKET = "pmds-project.firebasestorage.app"
 
 # Livello di autorizzazione minimo richiesto per eliminare altri utenti
 REQUIRED_AUTH_LEVEL_TO_DELETE_USERS = 2

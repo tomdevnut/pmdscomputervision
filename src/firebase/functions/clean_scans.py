@@ -3,7 +3,7 @@ from firebase_admin import initialize_app, firestore, storage, auth
 from google.cloud import secretmanager
 
 # Nome del bucket di Cloud Storage
-BUCKET_NAME = "pmds-project.appspot.com"
+BUCKET_NAME = "pmds-project.firebasestorage.app"
 
 
 # TODO: Definire il ruolo minimo richiesto per eseguire la pulizia (0 è l'utente normale, 1 è l'ingegnere, 2 è l'amministratore)

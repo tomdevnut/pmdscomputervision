@@ -4,3 +4,4 @@ requests
 firebase-admin
 firebase-functions
 google-cloud-storage
+google-cloud-secret-manager

@@ -3,13 +3,15 @@ import firebase_admin
 from firebase_admin import credentials, firestore, auth, storage
 import os
 import requests
+import json
+from google.cloud import secretmanager
 
 # --- Emulator Configuration ---
 os.environ["FIREBASE_AUTH_EMULATOR_HOST"] = "127.0.0.1:9099"
 os.environ["FIRESTORE_EMULATOR_HOST"] = "127.0.0.1:8080"
 os.environ["FIREBASE_STORAGE_EMULATOR_HOST"] = "127.0.0.1:9199"
 PROJECT_ID = "pmds-project"
-BUCKET_NAME = "pmds-project.appspot.com"
+BUCKET_NAME = "pmds-project.firebasestorage.app"
 
 @pytest.fixture(scope="session", autouse=True)
 def firebase_emulator_setup():
@@ -19,10 +21,15 @@ def firebase_emulator_setup():
     before any tests are run.
     """
     if not firebase_admin._apps:
-        firebase_admin.initialize_app(options={
-            "projectId": PROJECT_ID,
-            "storageBucket": BUCKET_NAME,
-        })
+        gcp_project_id = "46991235039"
+        secret_id = "backend-service-account-key"
+        client = secretmanager.SecretManagerServiceClient()
+        name = f"projects/{gcp_project_id}/secrets/{secret_id}/versions/latest"
+        response = client.access_secret_version(request={"name": name})
+        creds_payload = response.payload.data.decode("UTF-8")
+        creds_dict = json.loads(creds_payload)
+
+        firebase_admin.initialize_app(credentials.Certificate(creds_dict))
     yield
 
 
