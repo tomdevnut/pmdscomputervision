@@ -108,4 +108,4 @@ def new_user(request: https_fn.Request) -> https_fn.Response:
         auth.delete_user(new_user_uid)
         return https_fn.Response(f'Internal Server Error: Errore nel salvataggio Firestore: {e}', status=500)
 
-    return https_fn.Response(f'Utente {email} (UID: {new_user_uid}) creato e dettagli salvati con successo!', status=201)
+    return https_fn.Response(f'Utente {email} (UID: {new_user_uid}) creato e dettagli salvati con successo!', status=200)

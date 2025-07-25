@@ -1,7 +1,7 @@
 import requests
 import pytest
 
-BASE_URL = "http://127.0.0.1:5001/pmds-project-emulator/us-central1"
+BASE_URL = "http://127.0.0.1:5001/pmds-project/us-central1"
 
 def test_clean_scans_unauthorized():
     """Tests that the function requires authentication."""
@@ -35,4 +35,4 @@ def test_clean_scans_success_as_admin(create_user_in_emulator, get_firebase_id_t
     assert response.status_code == 200
     # The response text should indicate success, e.g., "Scan cleanup started."
     # This depends on the actual implementation of the function.
-    assert "pulizia delle scansioni" in response.text.lower()
+    assert "Pulizia completata con successo!" in response.text.lower()

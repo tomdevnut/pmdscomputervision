@@ -2,7 +2,7 @@ import requests
 import pytest
 from firebase_admin import firestore
 
-BASE_URL = "http://127.0.0.1:5001/pmds-project-emulator/us-central1"
+BASE_URL = "http://127.0.0.1:5001/pmds-project/us-central1"
 
 def test_save_fcm_token_success(create_user_in_emulator, get_firebase_id_token):
     """Tests that a user can save their FCM token."""
@@ -18,7 +18,7 @@ def test_save_fcm_token_success(create_user_in_emulator, get_firebase_id_token):
     response = requests.post(url, json={"fcm_token": fcm_token}, headers=headers)
 
     assert response.status_code == 200
-    assert "Token FCM salvato con successo" in response.text
+    assert f"FCM token per l\'utente {user.uid} salvato con successo." in response.text
 
     # Verify in Firestore
     db = firestore.client()

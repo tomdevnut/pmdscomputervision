@@ -29,7 +29,10 @@ def firebase_emulator_setup():
         creds_payload = response.payload.data.decode("UTF-8")
         creds_dict = json.loads(creds_payload)
 
-        firebase_admin.initialize_app(credentials.Certificate(creds_dict))
+        firebase_admin.initialize_app(credentials.Certificate(creds_dict), {
+            'projectId': PROJECT_ID,
+            'storageBucket': BUCKET_NAME
+        })
     yield
 
 

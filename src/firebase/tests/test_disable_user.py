@@ -1,7 +1,7 @@
 import requests
 import pytest
 
-BASE_URL = "http://127.0.0.1:5001/pmds-project-emulator/us-central1"
+BASE_URL = "http://127.0.0.1:5001/pmds-project/us-central1"
 
 def test_disable_user_success(create_user_in_emulator, get_firebase_id_token):
     """Tests that an admin can successfully disable a user."""

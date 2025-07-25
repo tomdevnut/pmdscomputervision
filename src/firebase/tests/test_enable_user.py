@@ -2,7 +2,7 @@ import requests
 import pytest
 
 # The base URL for the emulated functions
-BASE_URL = "http://127.0.0.1:5001/pmds-project-emulator/us-central1"
+BASE_URL = "http://127.0.0.1:5001/pmds-project/us-central1"
 
 def test_enable_user_unauthorized():
     """Tests that the function requires authentication."""
