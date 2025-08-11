@@ -5,10 +5,6 @@ from google.cloud import secretmanager
 client = secretmanager.SecretManagerServiceClient()
 
 class Config:
-    # Configurazione per il database SQL di Flask (per username/password)
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///site.db'
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-
     # ID del progetto GCP
     PROJECT_ID = os.environ.get('GCP_PROJECT_ID')
 
