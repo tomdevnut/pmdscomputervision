@@ -15,11 +15,14 @@ class ScansPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.asset( // inserimento banner
-              'assets/banner.png',
-              width: double.infinity,
-              height: 160,
-              fit: BoxFit.cover,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12), 
+              child: Image.asset( // inserimento banner
+                'assets/banner.png',
+                width: double.infinity,
+                height: 160,
+                fit: BoxFit.cover,
+              ),
             ),
 
             const SizedBox(height: 20),
@@ -53,13 +56,17 @@ class ScansPage extends StatelessWidget {
         ),
       ),
 
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // schermata "Nuova Scansione"
-        },
-        backgroundColor: const Color(0xFFFF7C00),
-        child: const Icon(Icons.add),
-      ),
+    floatingActionButton: FloatingActionButton(
+      onPressed: () {
+        // Naviga alla schermata "Nuova Scansione" -> scanning_page.dart
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ScanningPage()),
+        );
+      },
+      backgroundColor: const Color(0xFFFF7C00),
+      child: const Icon(Icons.add),
+    ),
 
 
     );

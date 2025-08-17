@@ -93,7 +93,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 style: TextStyle(color: Colors.white70),
               ),
               Text(
-                _userData?['level']?.toString() ?? '...',
+                _userData?['level']?.toString() ?? 'Loading...',
                 style: const TextStyle(color: Colors.white, fontSize: 18),
               ),
 
