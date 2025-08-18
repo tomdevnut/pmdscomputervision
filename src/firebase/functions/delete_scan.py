@@ -48,7 +48,6 @@ def delete_scan(event: storage_fn.CloudEvent):
                 if blob.exists():
                     blob.delete()
             
-            # Elimina il documento della statistica
             stat_doc_ref.delete()
 
         # Elimina il documento della scansione principale

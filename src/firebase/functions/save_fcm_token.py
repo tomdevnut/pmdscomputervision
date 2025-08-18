@@ -10,7 +10,7 @@ def save_fcm_token(request: https_fn.Request) -> https_fn.Response:
     db = firestore.client()
 
     # Riferimento alla collezione Firestore per i profili utente
-    USERS_COLLECTION_REF = db.collection('user')
+    USERS_COLLECTION_REF = db.collection('users')
 
     # Verifico che l'utente sia autenticato
     auth_header = request.headers.get('Authorization')

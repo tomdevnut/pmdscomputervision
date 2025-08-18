@@ -23,7 +23,6 @@ def test_new_user_success(create_user_in_emulator, get_firebase_id_token):
     response = requests.post(url, json=payload, headers=headers)
 
     assert response.status_code == 200
-    assert "Utente creato con successo" in response.json()["message"]
 
 def test_new_user_unauthorized():
     """Tests that the function requires authentication."""

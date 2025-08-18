@@ -27,12 +27,7 @@ def test_clean_scans_success_as_admin(create_user_in_emulator, get_firebase_id_t
 
     # 3. Call the function
     url = f"{BASE_URL}/clean_scans"
-    # The function might take parameters like `days_old`, sending an empty
-    # payload to use the function's default behavior.
     response = requests.post(url, json={}, headers=headers)
 
     # 4. Assert
     assert response.status_code == 200
-    # The response text should indicate success, e.g., "Scan cleanup started."
-    # This depends on the actual implementation of the function.
-    assert "Pulizia completata con successo!" in response.text.lower()

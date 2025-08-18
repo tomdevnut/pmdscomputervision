@@ -161,3 +161,6 @@ def delete_user(request: https_fn.Request) -> https_fn.Response:
         USERS_COLLECTION_REF.document(target_uid).delete()
     except Exception as e:
         return https_fn.Response(f'Internal Server Error: Errore nell\'eliminazione del profilo utente in Firestore: {e}', status=500)
+
+    # Aggiungi questa riga per restituire una risposta di successo
+    return https_fn.Response(f"Utente {target_uid} eliminato con successo.", status=200)

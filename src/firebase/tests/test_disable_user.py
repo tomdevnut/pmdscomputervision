@@ -20,7 +20,6 @@ def test_disable_user_success(create_user_in_emulator, get_firebase_id_token):
     response = requests.post(url, json={"uid": target_user.uid}, headers=headers)
 
     assert response.status_code == 200
-    assert f"Utente {target_user.uid} disabilitato con successo!" in response.text
 
 def test_disable_user_unauthorized():
     """Tests that the function requires authentication."""

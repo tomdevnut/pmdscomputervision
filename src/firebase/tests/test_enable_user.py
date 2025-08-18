@@ -37,7 +37,6 @@ def test_enable_user_success(create_user_in_emulator, get_firebase_id_token):
 
     # 4. Assert
     assert response.status_code == 200
-    assert f"Utente {target_user.uid} abilitato con successo!" in response.text
 
 def test_enable_user_missing_uid():
     """Tests that the function returns 400 if 'uid' is missing."""

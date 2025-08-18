@@ -71,13 +71,17 @@ def clean_scans(request: https_fn.Request) -> https_fn.Response:
     # Eliminazione dei file da Cloud Storage
     try:
         bucket = storage.bucket(BUCKET_NAME)
-        blobs = bucket.list_blobs(prefix="comparisons/")
         deleted_files_count = 0
-        for blob in blobs:
+
+        # Pulisce la cartella "comparisons/"
+        blobs_comparisons = bucket.list_blobs(prefix="comparisons/")
+        for blob in blobs_comparisons:
             blob.delete()
             deleted_files_count += 1
-            blobs = bucket.list_blobs(prefix="scans/")
-        for blob in blobs:
+
+        # Pulisce la cartella "scans/"
+        blobs_scans = bucket.list_blobs(prefix="scans/")
+        for blob in blobs_scans:
             blob.delete()
             deleted_files_count += 1
         print(f"Eliminati {deleted_files_count} file da Cloud Storage.")

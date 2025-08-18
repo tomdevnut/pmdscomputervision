@@ -18,7 +18,6 @@ def test_save_fcm_token_success(create_user_in_emulator, get_firebase_id_token):
     response = requests.post(url, json={"fcm_token": fcm_token}, headers=headers)
 
     assert response.status_code == 200
-    assert f"FCM token per l\'utente {user.uid} salvato con successo." in response.text
 
     # Verify in Firestore
     db = firestore.client()

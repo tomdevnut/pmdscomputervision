@@ -17,19 +17,10 @@ BUCKET_NAME = "pmds-project.firebasestorage.app"
 def firebase_emulator_setup():
     """
     Initializes the Firebase Admin SDK to connect to the local emulators.
-    This fixture runs once per test session and cleans up the emulators
-    before any tests are run.
+    This fixture runs once per test session.
     """
     if not firebase_admin._apps:
-        gcp_project_id = "46991235039"
-        secret_id = "backend-service-account-key"
-        client = secretmanager.SecretManagerServiceClient()
-        name = f"projects/{gcp_project_id}/secrets/{secret_id}/versions/latest"
-        response = client.access_secret_version(request={"name": name})
-        creds_payload = response.payload.data.decode("UTF-8")
-        creds_dict = json.loads(creds_payload)
-
-        firebase_admin.initialize_app(credentials.Certificate(creds_dict), {
+        firebase_admin.initialize_app(options={
             'projectId': PROJECT_ID,
             'storageBucket': BUCKET_NAME
         })
