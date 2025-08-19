@@ -28,6 +28,8 @@ def delete_user(request: https_fn.Request) -> https_fn.Response:
     STATS_COLLECTION_REF = db.collection('stats')
     STEPS_COLLECTION_REF = db.collection('steps')
 
+    bucket = storage.bucket(BUCKET)
+
 
     # Autenticazione e Controllo Autorizzazione del Chiamante
     auth_header = request.headers.get('Authorization')
@@ -99,8 +101,8 @@ def delete_user(request: https_fn.Request) -> https_fn.Response:
     try:
         auth.delete_user(target_uid)
     except auth.UserNotFoundError:
-        print(f"Utente {target_uid} non trovato in Firebase Auth. Potrebbe essere già stato eliminato.")
-        # Non è un errore critico se l'utente non esiste già in Auth, ma i dati associati potrebbero esistere
+        print(f"Utente {target_uid} non trovato in Firebase Authentication. Potrebbe essere già stato eliminato.")
+        # Non è un errore critico se l'utente non esiste già in Authentication, ma i dati associati potrebbero esistere
     except Exception as e:
         return https_fn.Response(f'Internal Server Error: Errore nell\'eliminazione utente Auth: {e}', status=500)
 
@@ -108,36 +110,40 @@ def delete_user(request: https_fn.Request) -> https_fn.Response:
     
     # Eliminazione dei file di scansione da Cloud Storage
     try:
-        bucket = storage.bucket(BUCKET)
         docs_to_delete_scans = SCANS_COLLECTION_REF.where('user', '==', target_uid).stream()
         
         for doc in docs_to_delete_scans:
             scan_data = doc.to_dict()
-            scan_path = scan_data.get('scan_path')
             scan_id = doc.id
             
             # Cancella i file su Cloud Storage
-            if scan_path:
-                try:
-                    blob = bucket.blob(scan_path)
-                    if blob.exists():
-                        blob.delete()
-                except Exception as e:
-                    print(f"Errore durante l'eliminazione del file {scan_path} da Cloud Storage: {e}")
-            
-            # Cancella le statistiche associate a questa scansione
+            # TODO: definire il corretto formato del file
             try:
-                # Query per eliminare le statistiche associate a questa scansione
-                stats_docs_to_delete = STATS_COLLECTION_REF.where('scan', '==', scan_id).stream()
-                for stat_doc in stats_docs_to_delete:
-                    blob = bucket.blob(stat_doc.to_dict().get('out_path'))
-                    if blob.exists():
-                        blob.delete()
+                blob = bucket.blob(f'scans/{scan_id}.obj')
+                if blob.exists():
+                    blob.delete()
+            except Exception as e:
+                print(f"Errore durante l'eliminazione del file {scan_id} da Cloud Storage: {e}")
+
+            # Cancella le statistiche associate a questa scansione da Cloud Storage
+            # TODO: definire il corretto formato del file
+            try:
+                blob = bucket.blob(f'stats/{scan_id}.json')
+                if blob.exists():
+                    blob.delete()
+            except Exception as e:
+                print(f"Errore durante l'eliminazione delle statistiche per la scansione {scan_id}: {e}")
+
+            # Cancella le statistiche associate a questa scansione da Firestore
+            try:
+                stat_docs = STATS_COLLECTION_REF.where('scan', '==', scan_id).stream()
+                # dovrebbe esserci una sola statistica per scansione, ma per precauzione uso un for
+                for stat_doc in stat_docs: 
                     stat_doc.reference.delete()
             except Exception as e:
                 print(f"Errore durante l'eliminazione delle statistiche per la scansione {scan_id}: {e}")
 
-            # Cancella la scansione stessa
+            # Cancella la scansione stessa da Firestore
             doc.reference.delete()
         
     except Exception as e:
@@ -149,7 +155,8 @@ def delete_user(request: https_fn.Request) -> https_fn.Response:
             steps_docs_to_delete = STEPS_COLLECTION_REF.where('user', '==', target_uid).stream()
             for step_doc in steps_docs_to_delete:
                 # Cancella i file associati a questo step
-                blob = storage.bucket(BUCKET).blob(step_doc.to_dict().get('step_path'))
+                # TODO: definire il corretto formato del file
+                blob = storage.bucket(BUCKET).blob(f'steps/{step_doc.id}.obj')
                 if blob.exists():
                     blob.delete()
                 step_doc.reference.delete()

@@ -15,8 +15,7 @@ def new_stats(event: firestore_fn.Event[firestore_fn.Change]) -> None:
     USERS_COLLECTION_REF = db.collection('users')
 
     try:
-        stat_data = event.data.to_dict()
-        scan_id = stat_data.get("scan")
+        scan_id = event.document.id # L'ID della scansione è l'ID della statistica
 
         scan_doc = SCANS_COLLECTION_REF.document(scan_id).get()
         if not scan_doc.exists:

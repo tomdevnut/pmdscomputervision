@@ -8,8 +8,12 @@ def delete_step(event: storage_fn.CloudEvent) -> None:
     Cloud Event Function che si attiva quando un file "step" viene eliminato da Cloud Storage.
     Rimuove il documento corrispondente dalla collezione 'steps' di Firestore.
     Tutte le scan associate assumono valore dello step come None.
-    Args:
-        event (storage_fn.CloudEvent): L'evento che contiene i dati del file eliminato.
+    Le regole di eliminazione sono definite nelle regole di Cloud Storage.
+    In particolare:
+
+        // Eliminazione (delete): consentito solo a utenti autenticati con livello 1 o superiore da Firestore.
+            allow delete: if request.auth != null && getAuthorizationLevel(request.auth.uid) >= 1;
+
     """
 
     db = firestore.client()
@@ -27,7 +31,7 @@ def delete_step(event: storage_fn.CloudEvent) -> None:
 
     try:
         file_name = os.path.basename(file_path)
-        doc_id_to_delete = os.path.splitext(file_name)[0]
+        doc_id_to_delete = os.path.splitext(file_name)[0]  # è l'ID del documento Firestore
 
         # Elimina il documento da Firestore usando il suo ID
         STEPS_COLLECTION_REF.document(doc_id_to_delete).delete()

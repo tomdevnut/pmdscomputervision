@@ -60,7 +60,7 @@ def process_user_scan(event: storage_fn.CloudEvent) -> None:
     step = metadata.get("step")
 
     if not user_id:
-        print(f"Errore: user_id mancante nei metadati del file {file_path}.")
+        print(f"Errore: user mancante nei metadati del file {file_path}.")
         return
     
     if not step:
@@ -76,7 +76,6 @@ def process_user_scan(event: storage_fn.CloudEvent) -> None:
     try:
         scan_data = {
             "user": user_id,
-            "scan_path": file_path,
             "status": 0,
             "step": step,
             "progress": 0
@@ -87,7 +86,6 @@ def process_user_scan(event: storage_fn.CloudEvent) -> None:
         return
 
     # Notifica il server di backend
-    # TODO: Implementare la comunicazione con il server di backend
     if BACKEND_SERVER_URL:
         try:
             payload = {

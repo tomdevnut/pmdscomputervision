@@ -13,7 +13,8 @@ SUPERUSER_ROLE_LEVEL = 1
 def clean_scans(request: https_fn.Request) -> https_fn.Response:
     """
     HTTP Cloud Function per pulire tutti i file di scansione da Cloud Storage
-    e le relative entry da Firestore (user_scans e scan_stats).
+    e le relative entry da Firestore (scans e stats).
+    La funzione pulisce tutte le scansioni e tutte le statistiche
     Richiede l'autenticazione di un utente con un livello di autorizzazione sufficiente.
     Args:
         request (flask.Request): La richiesta HTTP per avviare la pulizia.
@@ -89,28 +90,28 @@ def clean_scans(request: https_fn.Request) -> https_fn.Response:
         print(f"Errore durante l'eliminazione dei file da Cloud Storage: {e}")
         return https_fn.Response(f"Errore durante la pulizia di Cloud Storage: {e}", status=500)
 
-    # Pulizia della collezione 'user_scans' in Firestore
+    # Pulizia della collezione 'scans' in Firestore
     try:
         docs = SCANS_COLLECTION_REF.stream()
         deleted_user_scans_count = 0
         for doc in docs:
             doc.reference.delete()
             deleted_user_scans_count += 1
-        print(f"Eliminate {deleted_user_scans_count} entry dalla collezione 'user_scans'.")
+        print(f"Eliminate {deleted_user_scans_count} entry dalla collezione 'scans'.")
     except Exception as e:
-        print(f"Errore durante la pulizia di 'user_scans' in Firestore: {e}")
-        return https_fn.Response(f"Errore durante la pulizia di Firestore (user_scans): {e}", status=500)
+        print(f"Errore durante la pulizia di 'scans' in Firestore: {e}")
+        return https_fn.Response(f"Errore durante la pulizia di Firestore (scans): {e}", status=500)
 
-    # Pulizia della collezione 'scan_stats' in Firestore
+    # Pulizia della collezione 'stats' in Firestore
     try:
         docs = STATS_COLLECTION_REF.stream()
         deleted_stats_count = 0
         for doc in docs:
             doc.reference.delete()
             deleted_stats_count += 1
-        print(f"Eliminate {deleted_stats_count} entry dalla collezione 'scan_stats'.")
+        print(f"Eliminate {deleted_stats_count} entry dalla collezione 'stats'.")
     except Exception as e:
-        print(f"Errore durante la pulizia di 'scan_stats' in Firestore: {e}")
-        return https_fn.Response(f"Errore durante la pulizia di Firestore (scan_stats): {e}", status=500)
+        print(f"Errore durante la pulizia di 'stats' in Firestore: {e}")
+        return https_fn.Response(f"Errore durante la pulizia di Firestore (stats): {e}", status=500)
 
     return https_fn.Response('Pulizia completata con successo!', status=200)

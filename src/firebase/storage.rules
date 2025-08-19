@@ -20,18 +20,21 @@ service firebase.storage {
     // Regole per la cartella /scans
     match /scans/{fileName} {
       // Caricamento (write): consentito solo a utenti autenticati.
-      // E il 'userId' nei metadati del file deve corrispondere all'UID dell'utente autenticato.
-      allow write: if request.auth != null && request.auth.uid == request.resource.metadata.userId; // Nota: 'user' -> 'userId' se è il nome del campo nei metadati
+      // E il 'user' nei metadati del file deve corrispondere all'UID dell'utente autenticato.
+      allow write: if request.auth != null && request.auth.uid == request.resource.metadata.user;
 
       // Eliminazione (delete): consentita a qualsiasi utente autenticato SOLO SE
-      // il documento corrispondente in Firestore ha 'progress' a 100 OPPURE 'status' a -1 (errore).
+      // il documento corrispondente in Firestore ha 'progress' a 100 OPPURE 'status' a -1 (errore) E
+      // chi sta cancellando la scansione è il proprietario oppure ha livello >= 1.
       allow delete: if request.auth != null && 
                       (firestore.get(/databases/(default)/documents/scans/$(fileName.split('.')[0])).data.progress == 100 ||
-                       firestore.get(/databases/(default)/documents/scans/$(fileName.split('.')[0])).data.status == -1);
+                       firestore.get(/databases/(default)/documents/scans/$(fileName.split('.')[0])).data.status == -1) &&
+                       (getAuthorizationLevel(request.auth.id) >= 1 ||
+                        request.resource.metadata.user == request.auth.uid);
 
       // Lettura (read): consentita solo se l'utente autenticato è il proprietario del file
-      // (ovvero, il suo UID corrisponde al 'userId' nei metadati).
-      allow read: if request.auth != null && request.auth.uid == resource.metadata.userId; // Nota: 'user' -> 'userId'
+      // (ovvero, il suo UID corrisponde al 'user' nei metadati) oppure se l'utente è di livello 1/2.
+      allow read: if request.auth != null && (request.auth.uid == resource.metadata.user || getAuthorizationLevel(request.auth.id) >= 1);
     }
 
     // Regole per la cartella /steps
@@ -56,7 +59,8 @@ service firebase.storage {
       // Impostato su 'false' per impedire cancellazioni dirette da parte degli utenti.
       allow delete: if false;
 
-      // Lettura (read): consentita solo a utenti autenticati con livello 1 o superiore da Firestore.
+      // Lettura (read): consentita solo a utenti autenticati con livello 1 o superiore da Firestore
+      // oppure se è il proprietario della scansione da cui deriva l'analisi.
       allow read: if request.auth != null && getAuthorizationLevel(request.auth.uid) >= 1;
     }
   }
