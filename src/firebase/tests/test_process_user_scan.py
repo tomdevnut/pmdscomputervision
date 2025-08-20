@@ -1,5 +1,6 @@
 from firebase_admin import storage, firestore
 import time
+import pytest
 
 def test_process_user_scan_success(create_user_in_emulator, get_storage_bucket_name):
     """
@@ -9,25 +10,27 @@ def test_process_user_scan_success(create_user_in_emulator, get_storage_bucket_n
     # 1. Setup
     user_id = "user_for_scan_test"
     step_id = "step_for_scan_test"
+    scan_id = "test_scan"
     create_user_in_emulator(uid=user_id, email="scanuser@test.com", password="password", level=1)
 
     bucket = storage.bucket(get_storage_bucket_name)
     
-    # Create dummy files to upload
+    # Crea dummy files to upload
     scan_content = b"dummy scan data"
     step_content = b"dummy step data"
     
-    scan_blob_name = f"scans/test_scan.bin"
+    scan_blob_name = f"scans/{scan_id}.bin"
     step_blob_name = f"steps/{step_id}.bin"
 
     # Upload step file (dependency)
     step_blob = bucket.blob(step_blob_name)
     step_blob.upload_from_string(step_content)
 
-    # Upload scan file with metadata to trigger the function
+    # Upload scan file with metadata
     scan_blob = bucket.blob(scan_blob_name)
-    scan_blob.metadata = {"user": user_id, "step": f"{step_id}.bin"}
     scan_blob.upload_from_string(scan_content)
+    scan_blob.metadata = {"user": user_id, "step": f"{step_id}"}
+    scan_blob.update()
 
     # 2. Give the function time to execute
     time.sleep(5) # Wait for the trigger to fire and execute

@@ -122,7 +122,7 @@ def delete_user(request: https_fn.Request) -> https_fn.Response:
             # Cancella le statistiche associate a questa scansione da Cloud Storage
             # TODO: definire il corretto formato del file
             try:
-                blob = bucket.blob(f'stats/{scan_id}.json')
+                blob = bucket.blob(f'comparisons/{scan_id}.json')
                 if blob.exists():
                     blob.delete()
             except Exception as e:
@@ -150,7 +150,7 @@ def delete_user(request: https_fn.Request) -> https_fn.Response:
             for step_doc in steps_docs_to_delete:
                 # Cancella i file associati a questo step
                 # TODO: definire il corretto formato del file
-                blob = storage.bucket(BUCKET).blob(f'steps/{step_doc.id}.obj')
+                blob = bucket.blob(f'steps/{step_doc.id}.obj')
                 if blob.exists():
                     blob.delete()
                 step_doc.reference.delete()

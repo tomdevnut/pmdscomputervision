@@ -1,4 +1,5 @@
 import requests
+import firebase_admin.firestore as firestore
 
 def test_new_user_success(create_user_in_emulator, get_firebase_id_token, get_base_url):
     """Tests successful creation of a new user by an admin."""
