@@ -1,13 +1,7 @@
 from firebase_functions import https_fn
-from firebase_admin import initialize_app, firestore, storage, auth
+from firebase_admin import firestore, storage, auth
 from google.cloud import secretmanager
-
-# Nome del bucket di Cloud Storage
-BUCKET_NAME = "pmds-project.firebasestorage.app"
-
-
-# TODO: Definire il ruolo minimo richiesto per eseguire la pulizia (0 è l'utente normale, 1 è l'ingegnere, 2 è l'amministratore)
-SUPERUSER_ROLE_LEVEL = 1
+from config import BUCKET_NAME, SUPERUSER_ROLE_LEVEL
 
 @https_fn.on_request()
 def clean_scans(request: https_fn.Request) -> https_fn.Response:

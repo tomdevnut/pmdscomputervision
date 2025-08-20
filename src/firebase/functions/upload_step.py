@@ -1,8 +1,9 @@
 import os
 from firebase_functions import storage_fn
-from firebase_admin import initialize_app, firestore
+from firebase_admin import firestore
+from config import BUCKET_NAME
 
-@storage_fn.on_object_finalized()
+@storage_fn.on_object_finalized(bucket=BUCKET_NAME)
 def upload_step(event: storage_fn.CloudEvent) -> None:
     """
     Cloud Event Function che si attiva quando un nuovo file "step" viene caricato su Cloud Storage.
@@ -24,9 +25,8 @@ def upload_step(event: storage_fn.CloudEvent) -> None:
         print(f"Il file {file_path} non è un file 'step'. Ignorato.")
         return
     
-    # Ottenere l'ID utente dal metadata del file ed il nome del file step
-    user_id = metadata.get("metadata", {}).get("user")
-    step_name = metadata.get("metadata", {}).get("name")
+    user_id = metadata.get("user")
+    step_name = metadata.get("name")
     
     if not user_id:
         print(f"Errore: user_id mancante nei metadati del file {file_path}.")

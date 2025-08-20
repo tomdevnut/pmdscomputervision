@@ -1,5 +1,5 @@
 from firebase_functions import firestore_fn
-from firebase_admin import initialize_app, firestore, messaging
+from firebase_admin import firestore, messaging
 
 @firestore_fn.on_document_created(document='stats/{scan_id}')
 def new_stats(event: firestore_fn.Event[firestore_fn.Change]) -> None:
@@ -15,7 +15,7 @@ def new_stats(event: firestore_fn.Event[firestore_fn.Change]) -> None:
     USERS_COLLECTION_REF = db.collection('users')
 
     try:
-        scan_id = event.document.id # L'ID della scansione è l'ID della statistica
+        scan_id = event.params["scan_id"]
 
         scan_doc = SCANS_COLLECTION_REF.document(scan_id).get()
         if not scan_doc.exists:

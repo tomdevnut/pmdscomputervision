@@ -1,13 +1,7 @@
 from firebase_functions import https_fn
-from firebase_admin import initialize_app, firestore, auth, storage
-import json
-import os
+from firebase_admin import firestore, auth, storage
+from config import BUCKET_NAME, MANAGE_USERS_MIN_LEVEL
 
-# Nome del bucket di Cloud Storage dove sono salvate le scansioni
-BUCKET = "pmds-project.firebasestorage.app"
-
-# Livello di autorizzazione minimo richiesto per eliminare altri utenti
-REQUIRED_AUTH_LEVEL_TO_DELETE_USERS = 2
 
 @https_fn.on_request()
 def delete_user(request: https_fn.Request) -> https_fn.Response:
@@ -28,7 +22,7 @@ def delete_user(request: https_fn.Request) -> https_fn.Response:
     STATS_COLLECTION_REF = db.collection('stats')
     STEPS_COLLECTION_REF = db.collection('steps')
 
-    bucket = storage.bucket(BUCKET)
+    bucket = storage.bucket(BUCKET_NAME)
 
 
     # Autenticazione e Controllo Autorizzazione del Chiamante
@@ -56,7 +50,7 @@ def delete_user(request: https_fn.Request) -> https_fn.Response:
     except Exception as e:
         return https_fn.Response('Internal Server Error', status=500)
 
-    if caller_auth_level < REQUIRED_AUTH_LEVEL_TO_DELETE_USERS:
+    if caller_auth_level < MANAGE_USERS_MIN_LEVEL:
         return https_fn.Response('Forbidden', status=403)
 
     # Parsing dei Dati della Richiesta per l'Utente Target
@@ -94,7 +88,7 @@ def delete_user(request: https_fn.Request) -> https_fn.Response:
     except Exception as e:
         return https_fn.Response('Internal Server Error', status=500)
 
-    if target_user_auth_level == REQUIRED_AUTH_LEVEL_TO_DELETE_USERS:
+    if target_user_auth_level == MANAGE_USERS_MIN_LEVEL:
         return https_fn.Response('Forbidden: Non è possibile eliminare un utente di livello 2.', status=403)
 
     # Eliminazione dell'Utente da Firebase Authentication

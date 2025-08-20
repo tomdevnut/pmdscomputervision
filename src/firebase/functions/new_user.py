@@ -1,10 +1,6 @@
 from firebase_functions import https_fn
-from firebase_admin import initialize_app, firestore, auth
-import json
-import os
-
-# Livello di autorizzazione minimo richiesto per creare nuovi utenti
-REQUIRED_AUTH_LEVEL_TO_CREATE_USERS = 2
+from firebase_admin import firestore, auth
+from config import MANAGE_USERS_MIN_LEVEL
 
 @https_fn.on_request()
 def new_user(request: https_fn.Request) -> https_fn.Response:
@@ -48,8 +44,8 @@ def new_user(request: https_fn.Request) -> https_fn.Response:
         print(f"Errore durante il recupero del ruolo del chiamante: {e}")
         return https_fn.Response('Internal Server Error', status=500)
 
-    if caller_auth_level < REQUIRED_AUTH_LEVEL_TO_CREATE_USERS:
-        print(f"Utente {caller_uid} (livello {caller_auth_level}) non autorizzato a creare nuovi utenti. Richiesto livello {REQUIRED_AUTH_LEVEL_TO_CREATE_USERS}.")
+    if caller_auth_level < MANAGE_USERS_MIN_LEVEL:
+        print(f"Utente {caller_uid} (livello {caller_auth_level}) non autorizzato a creare nuovi utenti. Richiesto livello {MANAGE_USERS_MIN_LEVEL}.")
         return https_fn.Response('Forbidden', status=403)
 
     # Parsing dei Dati della Richiesta per il nuovo utente

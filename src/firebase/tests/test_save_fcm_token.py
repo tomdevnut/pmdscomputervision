@@ -1,10 +1,7 @@
 import requests
-import pytest
 from firebase_admin import firestore
 
-BASE_URL = "http://127.0.0.1:5001/pmds-project/us-central1"
-
-def test_save_fcm_token_success(create_user_in_emulator, get_firebase_id_token):
+def test_save_fcm_token_success(create_user_in_emulator, get_firebase_id_token, get_base_url):
     """Tests that a user can save their FCM token."""
     user_email = "user@test.com"
     user_pass = "password"
@@ -13,7 +10,7 @@ def test_save_fcm_token_success(create_user_in_emulator, get_firebase_id_token):
     user_token = get_firebase_id_token(user_email, user_pass)
     headers = {"Authorization": f"Bearer {user_token}"}
 
-    url = f"{BASE_URL}/save_fcm_token"
+    url = f"{get_base_url}/save_fcm_token"
     fcm_token = "a_fake_fcm_token_string"
     response = requests.post(url, json={"fcm_token": fcm_token}, headers=headers)
 

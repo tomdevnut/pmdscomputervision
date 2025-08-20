@@ -1,8 +1,7 @@
-import pytest
 from firebase_admin import storage, firestore
 import time
 
-def test_delete_scan_trigger_deletes_firestore_and_output_files():
+def test_delete_scan_trigger_deletes_firestore_and_output_files(get_storage_bucket_name):
     """
     Tests that deleting a scan file from Storage correctly triggers the deletion
     of the associated Firestore documents (in 'scans' and 'stats') and the
@@ -10,7 +9,7 @@ def test_delete_scan_trigger_deletes_firestore_and_output_files():
     """
     # 1. Setup: Creare tutti i dati e i file necessari
     db = firestore.client()
-    bucket = storage.bucket()
+    bucket = storage.bucket(get_storage_bucket_name)
     
     scan_id = "scan_to_be_deleted_by_trigger"
     user_id = "user_for_trigger_test"

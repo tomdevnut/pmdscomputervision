@@ -1,16 +1,12 @@
 from firebase_functions import storage_fn
-from firebase_admin import initialize_app, firestore, storage
+from firebase_admin import firestore, storage
 import requests
 import os
 from datetime import timedelta
 from google.cloud import secretmanager
+from config import BUCKET_NAME, BACKEND_API_KEY_SECRET_NAME, BACKEND_SERVER_URL
 
-# Percorso del segreto in Secret Manager
-BACKEND_API_KEY_SECRET_NAME = "api-key-backend" # nome del segreto in Secret Manager
-PROJECT_ID = os.environ.get("GCP_PROJECT") # L'ID del progetto viene fornito dalle Cloud Functions
-
-# TODO: Definire l'URL del server di backend
-BACKEND_SERVER_URL = "https://server.com/api/scans"
+PROJECT_ID = os.environ.get("GCP_PROJECT")
 
 # Funzione per recuperare il segreto
 def get_secret(secret_name):
@@ -28,7 +24,7 @@ def get_secret(secret_name):
         print(f"Errore nel recupero del segreto '{secret_name}': {e}")
         return None
 
-@storage_fn.on_object_finalized()
+@storage_fn.on_object_finalized(bucket=BUCKET_NAME)
 def process_user_scan(event: storage_fn.CloudEvent) -> None:
     """
     Cloud Event Function per processare le scansioni degli utenti.

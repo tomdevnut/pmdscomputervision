@@ -1,10 +1,7 @@
 from firebase_functions import https_fn
-from firebase_admin import initialize_app, firestore, auth
-import json
-import os
+from firebase_admin import firestore, auth
 
-# Livello di autorizzazione minimo richiesto per disabilitare altri utenti
-REQUIRED_AUTH_LEVEL_TO_DISABLE_USERS = 2
+from config import MANAGE_USERS_MIN_LEVEL
 
 @https_fn.on_request()
 def disable_user(request: https_fn.Request) -> https_fn.Response:
@@ -48,7 +45,7 @@ def disable_user(request: https_fn.Request) -> https_fn.Response:
     except Exception as e:
         return https_fn.Response('Internal Server Error', status=500)
 
-    if caller_auth_level < REQUIRED_AUTH_LEVEL_TO_DISABLE_USERS:
+    if caller_auth_level < MANAGE_USERS_MIN_LEVEL:
         return https_fn.Response('Forbidden', status=403)
 
     # Parsing dei Dati della Richiesta per l'utente target
@@ -80,7 +77,7 @@ def disable_user(request: https_fn.Request) -> https_fn.Response:
     except Exception as e:
         return https_fn.Response('Internal Server Error', status=500)
 
-    if target_user_auth_level == REQUIRED_AUTH_LEVEL_TO_DISABLE_USERS:
+    if target_user_auth_level == MANAGE_USERS_MIN_LEVEL:
         return https_fn.Response('Forbidden: Non è possibile disabilitare un utente di livello 2.', status=403)
 
     # Disabilitazione dell'Utente in Firebase Authentication (TODO: tenere o rimuovere?)

@@ -1,8 +1,9 @@
 from firebase_functions import storage_fn
-from firebase_admin import initialize_app, firestore, storage
+from firebase_admin import firestore, storage
 import os
+from config import BUCKET_NAME
 
-@storage_fn.on_object_deleted()
+@storage_fn.on_object_deleted(bucket=BUCKET_NAME)
 def delete_scan(event: storage_fn.CloudEvent):
     """
     Trigger che si attiva all'eliminazione di un file da Cloud Storage.

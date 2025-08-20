@@ -1,12 +1,7 @@
-import pytest
 from firebase_admin import storage, firestore
 import time
-import os
 
-# Note: Testing storage triggers requires observing side effects,
-# as the function itself doesn't return a direct response.
-
-def test_process_user_scan_success(create_user_in_emulator):
+def test_process_user_scan_success(create_user_in_emulator, get_storage_bucket_name):
     """
     Tests the process_user_scan trigger by uploading a file with metadata.
     It then checks Firestore for the created scan document.
@@ -16,7 +11,7 @@ def test_process_user_scan_success(create_user_in_emulator):
     step_id = "step_for_scan_test"
     create_user_in_emulator(uid=user_id, email="scanuser@test.com", password="password", level=1)
 
-    bucket = storage.bucket()
+    bucket = storage.bucket(get_storage_bucket_name)
     
     # Create dummy files to upload
     scan_content = b"dummy scan data"

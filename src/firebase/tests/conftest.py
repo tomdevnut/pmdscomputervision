@@ -1,10 +1,8 @@
 import pytest
 import firebase_admin
-from firebase_admin import credentials, firestore, auth, storage
+from firebase_admin import firestore, auth, storage
 import os
 import requests
-import json
-from google.cloud import secretmanager
 
 # --- Emulator Configuration ---
 os.environ["FIREBASE_AUTH_EMULATOR_HOST"] = "127.0.0.1:9099"
@@ -12,6 +10,7 @@ os.environ["FIRESTORE_EMULATOR_HOST"] = "127.0.0.1:8080"
 os.environ["FIREBASE_STORAGE_EMULATOR_HOST"] = "127.0.0.1:9199"
 PROJECT_ID = "pmds-project"
 BUCKET_NAME = "pmds-project.firebasestorage.app"
+BASE_URL = "http://127.0.0.1:5001/pmds-project/us-central1"
 
 @pytest.fixture(scope="session", autouse=True)
 def firebase_emulator_setup():
@@ -100,3 +99,11 @@ def get_firebase_id_token():
             pytest.fail(f"Failed to get ID token for {email}: {e.response.text if e.response else e}")
 
     return _get_token
+
+@pytest.fixture(scope="session")
+def get_storage_bucket_name():
+    return BUCKET_NAME
+
+@pytest.fixture(scope="session")
+def get_base_url():
+    return BASE_URL

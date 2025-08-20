@@ -1,8 +1,7 @@
-import pytest
 from firebase_admin import storage, firestore
 import time
 
-def test_delete_step_trigger():
+def test_delete_step_trigger(get_storage_bucket_name):
     """
     Tests the delete_step trigger.
     It verifies that deleting a step file from Storage:
@@ -10,7 +9,7 @@ def test_delete_step_trigger():
     2. Sets the 'step' field to None in any associated scan documents.
     """
     db = firestore.client()
-    bucket = storage.bucket()
+    bucket = storage.bucket(get_storage_bucket_name)
 
     # 1. Setup
     step_id = "step_to_be_deleted_001"

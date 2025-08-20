@@ -1,15 +1,12 @@
 import requests
-import pytest
 
-BASE_URL = "http://127.0.0.1:5001/pmds-project/us-central1"
-
-def test_clean_scans_unauthorized():
+def test_clean_scans_unauthorized(get_base_url):
     """Tests that the function requires authentication."""
-    url = f"{BASE_URL}/clean_scans"
+    url = f"{get_base_url}/clean_scans"
     response = requests.post(url, json={})
     assert response.status_code == 401
 
-def test_clean_scans_success_as_admin(create_user_in_emulator, get_firebase_id_token):
+def test_clean_scans_success_as_admin(create_user_in_emulator, get_firebase_id_token, get_base_url):
     """
     Tests that an admin can successfully trigger the clean_scans function.
     Note: This test only checks for a successful response (200 OK).
@@ -26,7 +23,7 @@ def test_clean_scans_success_as_admin(create_user_in_emulator, get_firebase_id_t
     headers = {"Authorization": f"Bearer {admin_token}"}
 
     # 3. Call the function
-    url = f"{BASE_URL}/clean_scans"
+    url = f"{get_base_url}/clean_scans"
     response = requests.post(url, json={}, headers=headers)
 
     # 4. Assert

@@ -1,10 +1,6 @@
 from firebase_functions import https_fn
-from firebase_admin import initialize_app, firestore, auth
-import json
-import os
-
-# Livello di autorizzazione minimo richiesto per abilitare altri utenti
-REQUIRED_AUTH_LEVEL_TO_ENABLE_USERS = 2
+from firebase_admin import firestore, auth
+from config import MANAGE_USERS_MIN_LEVEL
 
 @https_fn.on_request()
 def enable_user(request: https_fn.Request) -> https_fn.Response:
@@ -47,7 +43,7 @@ def enable_user(request: https_fn.Request) -> https_fn.Response:
     except Exception as e:
         return https_fn.Response('Internal Server Error', status=500)
 
-    if caller_auth_level < REQUIRED_AUTH_LEVEL_TO_ENABLE_USERS:
+    if caller_auth_level < MANAGE_USERS_MIN_LEVEL:
         return https_fn.Response('Forbidden', status=403)
 
     # Parsing dei Dati della richiesta per l'utente target
