@@ -3,7 +3,7 @@ from firebase_functions.options import set_global_options
 from firebase_admin import initialize_app
 import os
 
-set_global_options(max_instances=10)
+set_global_options(max_instances=10, region="europe-west3")
 
 # Initialize the Firebase Admin SDK only if not in a test environment.
 # Pytest sets the 'PYTEST_CURRENT_TEST' environment variable.

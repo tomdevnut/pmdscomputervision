@@ -14,8 +14,8 @@ def test_delete_scan_trigger_deletes_firestore_and_output_files(create_user_in_e
     scan_id = "scan_to_be_deleted_by_trigger"
 
     # Percorsi dei file in Storage
-    scan_file_path = f"scans/{scan_id}.obj"
-    output_file_path = f"comparisons/{scan_id}.json"
+    scan_file_path = f"scans/{scan_id}.ply"
+    output_file_path = f"comparisons/{scan_id}.ply"
 
     # Creare il file di scansione principale in Storage
     scan_blob = bucket.blob(scan_file_path)

@@ -10,7 +10,7 @@ os.environ["FIRESTORE_EMULATOR_HOST"] = "127.0.0.1:8080"
 os.environ["STORAGE_EMULATOR_HOST"] = "http://127.0.0.1:9199"
 PROJECT_ID = "pmds-project"
 BUCKET_NAME = "pmds-project.firebasestorage.app"
-BASE_URL = "http://127.0.0.1:5001/pmds-project/us-central1"
+BASE_URL = "http://127.0.0.1:5001/pmds-project/europe-west3"
 
 @pytest.fixture(scope="session", autouse=True)
 def firebase_emulator_setup():

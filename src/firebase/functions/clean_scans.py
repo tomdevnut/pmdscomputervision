@@ -1,6 +1,5 @@
 from firebase_functions import https_fn
 from firebase_admin import firestore, storage, auth
-from google.cloud import secretmanager
 from config import BUCKET_NAME, SUPERUSER_ROLE_LEVEL
 
 @https_fn.on_request()
@@ -15,9 +14,6 @@ def clean_scans(request: https_fn.Request) -> https_fn.Response:
     """
     
     db = firestore.client()
-
-    # Inizializzazione Secret Manager
-    secret_client = secretmanager.SecretManagerServiceClient()
 
     # Riferimenti alle collezioni Firestore
     # Collezione che associa scansioni agli utenti

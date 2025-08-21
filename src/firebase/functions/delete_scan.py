@@ -49,8 +49,7 @@ def delete_scan(event: storage_fn.CloudEvent):
 
         # Recupera e elimina la statistica associata (l'id della statistica è lo stesso della scansione)
 
-        # TODO: definire il formato corretto
-        stats_blob = bucket.blob(f'comparisons/{doc_id}.json')
+        stats_blob = bucket.blob(f'comparisons/{doc_id}.ply')
         if stats_blob.exists():
             stats_blob.delete()
             print(f"Eliminato il file di statistiche '{stats_blob.name}'.")

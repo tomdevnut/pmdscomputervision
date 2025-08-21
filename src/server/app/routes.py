@@ -20,7 +20,6 @@ def start_pipeline():
 
     scan_url = data.get('scan_url')
     step_url = data.get('step_url')
-    user_id = data.get('user')
     scan_id = data.get('scan_id')
 
     if not scan_url or not step_url:
@@ -40,9 +39,8 @@ def start_pipeline():
         os.makedirs('/tmp/steps', exist_ok=True)
 
         # Salvo temporaneamente i file
-        # TODO: capire estensione dei file
-        scan_filename = f"/tmp/scans/{scan_id}_scan"
-        step_filename = f"/tmp/steps/{scan_id}_step"
+        scan_filename = f"/tmp/scans/{scan_id}_scan.ply"
+        step_filename = f"/tmp/steps/{scan_id}_step.step"
 
         with open(scan_filename, 'wb') as scan_file:
             scan_file.write(scan_response.content)
