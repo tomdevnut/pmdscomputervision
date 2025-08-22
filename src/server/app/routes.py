@@ -2,10 +2,8 @@ from flask import Flask, request, render_template, jsonify
 import requests
 import os
 from app import app
-
-@app.route('/')
-def index():
-    return render_template('')
+import threading
+from app.worker import pipeline_worker
 
 @app.post('/start_pipeline')
 def start_pipeline():
@@ -21,6 +19,7 @@ def start_pipeline():
     scan_url = data.get('scan_url')
     step_url = data.get('step_url')
     scan_id = data.get('scan_id')
+    # user_id = data.get('user')
 
     if not scan_url or not step_url:
         return jsonify({"msg": "scan_url and step_url are required"}), 400
@@ -48,11 +47,8 @@ def start_pipeline():
         with open(step_filename, 'wb') as step_file:
             step_file.write(step_response.content)
 
-        # TODO: Avviare la pipeline con i file scaricati in parallelo rispetto a questo thread
-
-        # Elimino i file temporanei
-        os.remove(scan_filename)
-        os.remove(step_filename)
+        thread = threading.Thread(target=pipeline_worker, args=(scan_filename, step_filename, scan_id))
+        thread.start()
 
         return jsonify({"msg": "Pipeline started successfully"}), 200
     except requests.exceptions.RequestException as e:

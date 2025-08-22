@@ -61,7 +61,10 @@ service firebase.storage {
 
       // Lettura (read): consentita solo a utenti autenticati con livello 1 o superiore da Firestore
       // oppure se è il proprietario della scansione da cui deriva l'analisi.
-      allow read: if request.auth != null && getAuthorizationLevel(request.auth.uid) >= 1;
+      allow read: if request.auth != null && (
+              getAuthorizationLevel(request.auth.uid) >= 1 ||
+              firestore.get(/databases/(default)/documents/scans/$(fileName.split('.')[0])).user == request.auth.id
+            );
     }
   }
 }
