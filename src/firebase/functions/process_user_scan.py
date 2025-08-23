@@ -54,6 +54,8 @@ def process_user_scan(event: storage_fn.CloudEvent) -> None:
     # Ottenere l'ID utente e lo step dal metadata del file
     user_id = metadata.get("user")
     step = metadata.get("step")
+    name = metadata.get("scan_name")
+    timestamp = metadata.get("timeCreated")
 
     if not user_id:
         print(f"Errore: user mancante nei metadati del file {file_path}.")
@@ -61,6 +63,10 @@ def process_user_scan(event: storage_fn.CloudEvent) -> None:
     
     if not step:
         print(f"Errore: step mancante nei metadati del file {file_path}.")
+        return
+
+    if not name:
+        print(f"Errore: scan_name mancante nei metadati del file {file_path}.")
         return
 
     blob = storage.bucket(bucket_name).blob(file_path)
@@ -74,7 +80,9 @@ def process_user_scan(event: storage_fn.CloudEvent) -> None:
             "user": user_id,
             "status": 0,
             "step": step,
-            "progress": 0
+            "progress": 0,
+            "name": name,
+            "timestamp": timestamp
         }
         doc_ref = scans_collection_ref.add(scan_data)
     except Exception as e:

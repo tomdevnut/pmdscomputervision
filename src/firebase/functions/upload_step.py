@@ -26,8 +26,9 @@ def upload_step(event: storage_fn.CloudEvent) -> None:
         return
     
     user_id = metadata.get("user")
-    step_name = metadata.get("name")
-    
+    step_name = metadata.get("step_name")
+    description = metadata.get("description")
+
     if not user_id:
         print(f"Errore: user_id mancante nei metadati del file {file_path}.")
         return
@@ -35,12 +36,16 @@ def upload_step(event: storage_fn.CloudEvent) -> None:
     if not step_name:
         print(f"Errore: step_name mancante nei metadati del file {file_path}.")
         return
-    
+
+    if not description:
+        print(f"Errore: description mancante nei metadati del file {file_path}.")
+        return
+
     try:
         step_data = {
             "name": step_name,
-            "path": file_path,
-            "user": user_id
+            "user": user_id,
+            "description": description
         }
 
         # Estraggo l'UUID del file dal percorso
