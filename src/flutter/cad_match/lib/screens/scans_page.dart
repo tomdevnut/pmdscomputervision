@@ -72,10 +72,14 @@ class _ScansPageState extends State<ScansPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Banner image
-            Image.asset(
-              'assets/banner.png',
-              fit: BoxFit.cover,
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12), 
+              child: Image.asset( // inserimento banner
+                'assets/banner.png',
+                width: double.infinity,
+                height: 160,
+                fit: BoxFit.cover,
+              ),
             ),
 
             const SizedBox(height: 20),
@@ -142,42 +146,19 @@ class _ScansPageState extends State<ScansPage> {
         ),
       ),
 
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final user = FirebaseAuth.instance.currentUser;
-          
-          if (user == null) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Please sign in first')),
-            );
-            return;
-          }
-          
-          try {
-            final docRef = await FirebaseFirestore.instance
-                .collection('scans')
-                .add({
-                  'user': user.uid,
-                  'uid': user.uid,
-                  'progress': 20,
-                  'scan_path': '',
-                  'status': 0,
-                  'step': '',
-                  'created_at': FieldValue.serverTimestamp(),
-                });
-            
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Scan added successfully!')),
-            );
-          } catch (e) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error: $e')),
-            );
-          }
-        },
-        backgroundColor: const Color(0xFFFF7C00),
-        child: const Icon(Icons.add),
-      ),
+    floatingActionButton: FloatingActionButton(
+      onPressed: () {
+        // Naviga alla schermata "Nuova Scansione" -> scanning_page.dart
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const ScanningPage()),
+        );
+      },
+      backgroundColor: const Color(0xFFFF7C00),
+      child: const Icon(Icons.add),
+    ),
+
+
     );
   }
 }

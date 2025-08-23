@@ -59,9 +59,12 @@ class _LoginPageState extends State<LoginPage> {
               // image e title
               const SizedBox(height: 50), // spaziatura verticale
 
-              Image.asset( // carica l'immagine da file
-                'assets/logo.png',
-                height: 150,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12), 
+                child: Image.asset( // carica l'immagine da file
+                  'assets/logo.png',
+                  height: 150,  
+                ),
               ),
 
               const SizedBox(height: 20),
