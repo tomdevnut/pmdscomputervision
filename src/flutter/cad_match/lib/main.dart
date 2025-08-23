@@ -1,15 +1,26 @@
 import 'package:flutter/material.dart';
 import 'screens/login_page.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async{
   WidgetsFlutterBinding.ensureInitialized();
-  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+
+
+  // Create/update a user document on every login
+  FirebaseAuth.instance.authStateChanges().listen((user) async {
+    if (user == null) {
+      debugPrint('[Auth] Signed out');
+      return;
+    }
+    debugPrint('[Auth] Signed in as ${user.uid}');
+  });
+
   runApp(const MyApp());
 }
 

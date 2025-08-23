@@ -1,73 +1,187 @@
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'dart:async';
 
-class ScansPage extends StatelessWidget {
+class ScansPage extends StatefulWidget {
   const ScansPage({super.key});
 
-  // Scaffold
   @override
-  Widget build(BuildContext context) { // costruisce la UI
+  State<ScansPage> createState() => _ScansPageState();
+}
+
+class _ScansPageState extends State<ScansPage> {
+  Stream<QuerySnapshot>? _scansStream;
+  StreamSubscription<User?>? _authSub;
+
+  Stream<QuerySnapshot> _scansFor(String uid) async* {
+    // First, get the user's level from Firestore
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+    
+    final userData = userDoc.data();
+    final userLevel = userData?['level'] as int? ?? 1; // Default to level 1
+    
+    if (userLevel >= 2) {
+      // Level 2 or higher: show all scans
+      yield* FirebaseFirestore.instance
+          .collection('scans')
+          .snapshots();
+    } else {
+      // Level 1: show only user's own scans
+      yield* FirebaseFirestore.instance
+          .collection('scans')
+          .where('user', isEqualTo: uid)
+          .snapshots();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    
+    final user = FirebaseAuth.instance.currentUser;
+    
+    if (user != null) {
+      _scansStream = _scansFor(user.uid);
+    } else {
+      _authSub = FirebaseAuth.instance.authStateChanges().listen((u) {
+        if (u != null && mounted) {
+          setState(() {
+            _scansStream = _scansFor(u.uid);
+          });
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-
-      body: Padding( // per avere spazio interno
+      body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Image.asset( // inserimento banner
+            // Banner image
+            Image.asset(
               'assets/banner.png',
-              width: double.infinity,
-              height: 160,
               fit: BoxFit.cover,
             ),
 
             const SizedBox(height: 20),
 
-            // Titolo 'Your Scans"
+            // Title 'Your Scans'
             const Text(
               'Your Scans',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 20,
+                fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
 
             const SizedBox(height: 10),
 
-            // Lista di alcuni elementi scansione
-            Expanded( // la lista occupa tutto lo spazio disponibile sotto il titolo
-              child: ListView( // lista scrollabile
-                children: const [
-                  ScanItem(title: 'Scan 1'), // widget creato sotto per rappresentare ogni riga
-                  ScanItem(title: 'Scan 2'),
-                  ScanItem(title: 'Scan 3'),
-                  ScanItem(title: 'Scan 4'),
-                  ScanItem(title: 'Scan 5'),
-                ],
-              )
-            )
+            // Scans list
+            Expanded(
+              child: _scansStream == null
+                  ? const Center(
+                      child: Text(
+                        'Please sign in to view scans',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    )
+                  : StreamBuilder<QuerySnapshot>(
+                      stream: _scansStream,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Text(
+                              'Error: ${snapshot.error}',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          );
+                        }
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return const Center(
+                            child: Text(
+                              'No scans found. Press + to add one!',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          );
+                        }
 
+                        final scans = snapshot.data!.docs;
+
+                        return ListView.builder(
+                          itemCount: scans.length,
+                          itemBuilder: (context, index) {
+                            final scan = scans[index];
+                            final data = scan.data() as Map<String, dynamic>;
+                            final title = data['scan_name'] as String? ?? 'No Title';
+                            return ScanItem(title: title);
+                          },
+                        );
+                      },
+                    ),
+            ),
           ],
         ),
       ),
 
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // schermata "Nuova Scansione"
+        onPressed: () async {
+          final user = FirebaseAuth.instance.currentUser;
+          
+          if (user == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Please sign in first')),
+            );
+            return;
+          }
+          
+          try {
+            final docRef = await FirebaseFirestore.instance
+                .collection('scans')
+                .add({
+                  'user': user.uid,
+                  'uid': user.uid,
+                  'progress': 20,
+                  'scan_path': '',
+                  'status': 0,
+                  'step': '',
+                  'created_at': FieldValue.serverTimestamp(),
+                });
+            
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Scan added successfully!')),
+            );
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Error: $e')),
+            );
+          }
         },
         backgroundColor: const Color(0xFFFF7C00),
         child: const Icon(Icons.add),
       ),
-
-
     );
   }
 }
 
-
-// Widget riutilizzabile per ogni scansione nella lista
 class ScanItem extends StatelessWidget {
   final String title;
 
@@ -86,7 +200,7 @@ class ScanItem extends StatelessWidget {
         ),
         trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white54),
         onTap: () {
-
+          // Handle scan item tap
         },
       ),
     );
