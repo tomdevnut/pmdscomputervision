@@ -24,7 +24,7 @@ def test_upload_step_trigger_creates_document_with_correct_data(get_storage_buck
 
     # 2. Action: Upload a dummy file with the required metadata
     blob = bucket.blob(storage_path)
-    blob.metadata = {"user": admin_uid, "name": step_name}
+    blob.metadata = {"user": admin_uid, "step_name": step_name, "description": "Step description"}
     
     blob.upload_from_string(
         "dummy step data",
@@ -45,4 +45,4 @@ def test_upload_step_trigger_creates_document_with_correct_data(get_storage_buck
     step_data = step_doc.to_dict()
     assert step_data.get("name") == step_name
     assert step_data.get("user") == admin_uid
-    assert step_data.get("path") == storage_path
+    assert step_data.get("description") == "Step description"

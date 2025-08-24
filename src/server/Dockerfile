@@ -16,5 +16,4 @@ COPY . .
 EXPOSE 5000
 
 # Comando per avviare l'applicazione
-# Utilizza Gunicorn per un'applicazione Flask in produzione
 CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]

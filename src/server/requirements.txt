@@ -3,4 +3,3 @@ requests
 firebase_admin
 gunicorn
 google-cloud-secret-manager
-threading
