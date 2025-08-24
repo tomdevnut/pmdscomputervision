@@ -38,7 +38,7 @@ def delete_step(event: storage_fn.CloudEvent) -> None:
         STEPS_COLLECTION_REF.document(doc_id_to_delete).delete()
 
         # Aggiorna le scansioni associate a questo step
-        scans = SCANS_COLLECTION_REF.where("step", "==", doc_id_to_delete).stream()
+        scans = SCANS_COLLECTION_REF.where(field_path="step", op_string="==", value=doc_id_to_delete).stream()
         for scan in scans:
             SCANS_COLLECTION_REF.document(scan.id).update({"step": None})
     except Exception as e:

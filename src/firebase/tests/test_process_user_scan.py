@@ -19,8 +19,8 @@ def test_process_user_scan_success(create_user_in_emulator, get_storage_bucket_n
     scan_content = b"dummy scan data"
     step_content = b"dummy step data"
     
-    scan_blob_name = f"scans/{scan_id}.bin"
-    step_blob_name = f"steps/{step_id}.bin"
+    scan_blob_name = f"scans/{scan_id}.ply"
+    step_blob_name = f"steps/{step_id}.ply"
 
     # Upload step file (dependency)
     step_blob = bucket.blob(step_blob_name)
@@ -28,9 +28,12 @@ def test_process_user_scan_success(create_user_in_emulator, get_storage_bucket_n
 
     # Upload scan file with metadata
     scan_blob = bucket.blob(scan_blob_name)
+    scan_blob.metadata = {
+        "user": user_id,
+        "step": step_id,
+        "scan_name": "Prova"
+    }
     scan_blob.upload_from_string(scan_content)
-    scan_blob.metadata = {"user": user_id, "step": f"{step_id}"}
-    scan_blob.update()
 
     # 2. Give the function time to execute
     time.sleep(5) # Wait for the trigger to fire and execute
@@ -38,12 +41,12 @@ def test_process_user_scan_success(create_user_in_emulator, get_storage_bucket_n
     # 3. Verify the result in Firestore
     db = firestore.client()
     scans_ref = db.collection('scans')
-    query = scans_ref.where("user_id", "==", user_id).limit(1).stream()
-    
+    query = scans_ref.where(field_path="user", op_string="==", value=user_id).limit(1).stream()
+
     docs = list(query)
     assert len(docs) == 1, "Scan document was not created in Firestore"
     
     scan_data = docs[0].to_dict()
-    assert scan_data["user_id"] == user_id
-    assert "scan_url" in scan_data
-    assert "step_url" in scan_data
+    assert scan_data["user"] == user_id
+    assert "name" in scan_data
+    assert "timestamp" in scan_data

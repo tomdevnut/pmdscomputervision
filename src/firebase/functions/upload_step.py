@@ -30,7 +30,7 @@ def upload_step(event: storage_fn.CloudEvent) -> None:
     description = metadata.get("description")
 
     if not user_id:
-        print(f"Errore: user_id mancante nei metadati del file {file_path}.")
+        print(f"Errore: user mancante nei metadati del file {file_path}.")
         return
     
     if not step_name:

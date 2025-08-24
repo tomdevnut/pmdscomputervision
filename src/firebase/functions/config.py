@@ -5,6 +5,10 @@ BUCKET_NAME: str = os.getenv("FIREBASE_STORAGE_BUCKET", "pmds-project.firebasest
 
 # BACKEND
 BACKEND_API_KEY_SECRET_NAME = "api-key-backend"
+
+# SERVICE ACCOUNT
+SERVICE_ACCOUNT = "backend-service-account-key"
+
 # TODO: Definire l'URL del server di backend
 BACKEND_SERVER_URL = "https://server.com/api/scans"
 
@@ -13,4 +17,5 @@ BACKEND_SERVER_URL = "https://server.com/api/scans"
 SUPERUSER_ROLE_LEVEL: int = 1
 MANAGE_USERS_MIN_LEVEL: int = 2 
 
-# TODO: aggiungere altre configurazioni? Magari i prefissi dei percorsi dei file?
+# GCP
+PROJECT_ID = "pmds-project"

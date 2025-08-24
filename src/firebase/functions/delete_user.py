@@ -104,8 +104,8 @@ def delete_user(request: https_fn.Request) -> https_fn.Response:
     
     # Eliminazione dei file di scansione da Cloud Storage
     try:
-        docs_to_delete_scans = SCANS_COLLECTION_REF.where('user', '==', target_uid).stream()
-        
+        docs_to_delete_scans = SCANS_COLLECTION_REF.where(field_path='user', op_string='==', value=target_uid).stream()
+
         for doc in docs_to_delete_scans:
             scan_data = doc.to_dict()
             scan_id = doc.id
@@ -128,7 +128,7 @@ def delete_user(request: https_fn.Request) -> https_fn.Response:
 
             # Cancella le statistiche associate a questa scansione da Firestore
             try:
-                stat_docs = STATS_COLLECTION_REF.where('scan', '==', scan_id).stream()
+                stat_docs = STATS_COLLECTION_REF.where(field_path='scan', op_string='==', value=scan_id).stream()
                 # dovrebbe esserci una sola statistica per scansione, ma per precauzione uso un for
                 for stat_doc in stat_docs: 
                     stat_doc.reference.delete()
@@ -144,7 +144,7 @@ def delete_user(request: https_fn.Request) -> https_fn.Response:
     # Pulizia della collezione 'steps' in Firestore (solo se l'utente è di livello 1)
     try:
         if target_user_auth_level == 1:
-            steps_docs_to_delete = STEPS_COLLECTION_REF.where('user', '==', target_uid).stream()
+            steps_docs_to_delete = STEPS_COLLECTION_REF.where(field_path='user', op_string='==', value=target_uid).stream()
             for step_doc in steps_docs_to_delete:
                 # Cancella i file associati a questo step
                 blob = bucket.blob(f'steps/{step_doc.id}.step')
