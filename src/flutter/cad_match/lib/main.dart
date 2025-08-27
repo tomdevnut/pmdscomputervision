@@ -10,8 +10,6 @@ void main() async{
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-
-
   // Create/update a user document on every login
   FirebaseAuth.instance.authStateChanges().listen((user) async {
     if (user == null) {
