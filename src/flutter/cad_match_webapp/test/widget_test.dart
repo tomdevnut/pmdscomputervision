@@ -20,10 +20,3 @@ void main() {
     expect(find.text('Sign In'), findsOneWidget);
   });
 }
-    await tester.pump();
-
-    // Verify that our counter has incremented.
-    expect(find.text('0'), findsNothing);
-    expect(find.text('1'), findsOneWidget);
-  });
-}
