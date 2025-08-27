@@ -6,7 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter/services.dart';
 
 class ScanningPage extends StatefulWidget {
-  const ScanningPage({Key? key}) : super(key: key);
+  const ScanningPage({super.key});
 
   @override
   State<ScanningPage> createState() => _ScanningPageState();
@@ -34,7 +34,7 @@ class _ScanningPageState extends State<ScanningPage> {
 
   // Questo metodo viene chiamato quando la sessione ARKit è pronta.
   void onARKitViewCreated(ARKitController arKitController) {
-    this._arKitController = arKitController;
+    _arKitController = arKitController;
     // Ascolta gli aggiornamenti della sessione ARKit.
     _arKitController!.onAddNodeForAnchor = _handleAddAnchor;
   }

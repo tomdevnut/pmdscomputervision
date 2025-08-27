@@ -8,23 +8,23 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-  class _LoginPageState extends State<LoginPage> {
-    final TextEditingController _emailController = TextEditingController();
-    final TextEditingController _passwordController = TextEditingController();
+class _LoginPageState extends State<LoginPage> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
 
-    @override
-    void dispose() {
-      _emailController.dispose();
-      _passwordController.dispose();
-      super.dispose();
-    }
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
-    Future<void> _signIn() async {
-      // Per ora passiamo a main_page
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const MainPage()),
-      );
-    }
+  Future<void> _signIn() async {
+    // Per ora passiamo a main_page
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const MainPage()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,9 +43,7 @@ class LoginPage extends StatefulWidget {
             );
           } else {
             // Layout per schermi stretti (mobile)
-            return SingleChildScrollView(
-              child: _buildLoginContent(context),
-            );
+            return SingleChildScrollView(child: _buildLoginContent(context));
           }
         },
       ),
@@ -106,7 +104,7 @@ class LoginPage extends StatefulWidget {
                   ),
                 ),
                 SizedBox(height: 16),
-                
+
                 // Campo di testo per la Password
                 TextField(
                   obscureText: true,
@@ -122,7 +120,7 @@ class LoginPage extends StatefulWidget {
                   ),
                 ),
                 SizedBox(height: 24),
-                
+
                 // Bottone "Sign In"
                 SizedBox(
                   width: double.infinity,

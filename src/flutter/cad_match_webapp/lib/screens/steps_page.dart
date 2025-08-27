@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
-import 'single_scan.dart';
+import 'new_step.dart';
+import 'single_step.dart';
 
-class ScansPage extends StatelessWidget {
-  const ScansPage({super.key});
+class StepsPage extends StatelessWidget {
+  const StepsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Utilizziamo un Row per allineare il titolo e il pulsante
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'SCANS',
+              'STEPS',
               style: TextStyle(
                 color: Color(0xFF111416),
                 fontSize: 28,
@@ -21,33 +23,52 @@ class ScansPage extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            const SizedBox(height: 44),
+            // Un pulsante + per aggiungere un nuovo step
+            InkWell(
+              onTap: () {
+                // Naviga verso la schermata di caricamento
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const StepUpload()),
+                );
+              },
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: ShapeDecoration(
+                  color: const Color(0xFF002C58),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                child: const Icon(Icons.add, color: Colors.white, size: 20),
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 20),
-        // Lista di scansioni
-        _buildScanItem(context, 'Scan 1', 'Uploaded: 2024-01-15'),
+        // Lista di step
+        _buildStepItem(context, 'Step 1', 'Uploaded: 2024-01-15'),
         const SizedBox(height: 12),
-        _buildScanItem(context, 'Scan 2', 'Uploaded: 2024-01-10'),
+        _buildStepItem(context, 'Step 2', 'Uploaded: 2024-01-10'),
         const SizedBox(height: 12),
-        _buildScanItem(context, 'Scan 3', 'Uploaded: 2024-01-05'),
+        _buildStepItem(context, 'Step 3', 'Uploaded: 2024-01-05'),
         const SizedBox(height: 12),
-        _buildScanItem(context, 'Scan 4', 'Uploaded: 2024-01-05'),
+        _buildStepItem(context, 'Step 4', 'Uploaded: 2024-01-05'),
       ],
     );
   }
 
-  // Metodo helper per costruire gli elementi della lista scansioni
-  Widget _buildScanItem(
+  // Metodo helper per costruire gli elementi della lista degli step
+  Widget _buildStepItem(
     BuildContext context,
-    String scanName,
+    String stepName,
     String uploadDate,
   ) {
     return InkWell(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const SingleScan()),
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const SingleStep()),
         );
       },
       child: Container(
@@ -73,14 +94,14 @@ class ScansPage extends StatelessWidget {
                     ),
                   ),
                   child: const Icon(
-                    Icons.view_in_ar,
+                    Icons.file_copy,
                     color: Colors.white,
                     size: 20,
                   ),
                 ),
                 const SizedBox(width: 12),
                 Text(
-                  scanName,
+                  stepName,
                   style: const TextStyle(
                     color: Color(0xFF111416),
                     fontSize: 18,
