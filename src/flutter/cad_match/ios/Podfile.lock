@@ -1188,6 +1188,7 @@ PODS:
     - abseil/meta/type_traits
     - abseil/xcprivacy
   - abseil/xcprivacy (1.20240722.0)
+  - ARKit (0.2.0)
   - arkit_plugin (0.0.1):
     - Flutter
     - GLTFSceneKit
@@ -1386,6 +1387,7 @@ PODS:
   - RecaptchaInterop (101.0.0)
 
 DEPENDENCIES:
+  - ARKit
   - arkit_plugin (from `.symlinks/plugins/arkit_plugin/ios`)
   - camera_avfoundation (from `.symlinks/plugins/camera_avfoundation/ios`)
   - cloud_firestore (from `.symlinks/plugins/cloud_firestore/ios`)
@@ -1397,6 +1399,7 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - abseil
+    - ARKit
     - BoringSSL-GRPC
     - Firebase
     - FirebaseAppCheckInterop
@@ -1435,6 +1438,7 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   abseil: a05cc83bf02079535e17169a73c5be5ba47f714b
+  ARKit: fba9c14ab222cdfb6f093dde005d627625ac5202
   arkit_plugin: c08c4e6f334a922154c2caf2f6fadfaefb51c181
   BoringSSL-GRPC: dded2a44897e45f28f08ae87a55ee4bcd19bc508
   camera_avfoundation: adb0207d868b2d873e895371d88448399ab78d87
@@ -1462,6 +1466,6 @@ SPEC CHECKSUMS:
   path_provider_foundation: 2b6b4c569c0fb62ec74538f866245ac84301af46
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
 
-PODFILE CHECKSUM: ca20ffbe31de99cd2d670eaee93366a4dabb889d
+PODFILE CHECKSUM: be1d39be44e099258e8e79d4a825fce2d30c7553
 
 COCOAPODS: 1.16.2

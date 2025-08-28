@@ -1,23 +1,33 @@
 import 'package:flutter/material.dart';
-import 'scans_page.dart'; // Importa la pagina di scansione, assicurati che il nome del file sia corretto.
+import 'scans_page.dart';
+import 'users_page.dart';
+import 'settings_page.dart';
+import 'steps_page.dart';
 
 class MainPage extends StatefulWidget {
-  const MainPage({super.key});
+  final int initialPageIndex;
+
+  const MainPage({super.key, this.initialPageIndex = 0});
 
   @override
   State<MainPage> createState() => _MainPageState();
 }
 
 class _MainPageState extends State<MainPage> {
-  int _selectedPageIndex = 0;
+  late int _selectedPageIndex;
 
   final List<Widget> _pages = const [
     ScansPage(),
-    // Aggiungi qui altre pagine per gli altri menu
-    Center(child: Text('Steps Page Placeholder')),
-    Center(child: Text('Settings Page Placeholder')),
-    Center(child: Text('Users Management Page Placeholder')),
+    StepsPage(),
+    SettingsPage(),
+    UsersPage(),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedPageIndex = widget.initialPageIndex;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,34 +51,32 @@ class _MainPageState extends State<MainPage> {
                 ),
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Padding(
-                  padding: EdgeInsets.fromLTRB(28, 60, 0, 0),
-                  child: Text(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: Column(
+                children: [
+                  const Text(
                     'CADmatch',
                     style: TextStyle(
                       color: Color(0xFF111416),
-                      fontSize: 28, // Dimensione del font ridotta
+                      fontSize: 24,
                       fontFamily: 'Inter',
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ),
-                const SizedBox(height: 30),
-                _buildMenuItem(context, 'Scans', 0),
-                const SizedBox(height: 12),
-                _buildMenuItem(context, 'Steps', 1),
-                const SizedBox(height: 12),
-                _buildMenuItem(context, 'Settings', 2),
-                const SizedBox(height: 12),
-                _buildMenuItem(context, 'Users Management', 3),
-              ],
+                  const SizedBox(height: 40),
+                  _buildMenuItem(context, 'Scans', 0),
+                  const SizedBox(height: 16),
+                  _buildMenuItem(context, 'Steps', 1),
+                  const SizedBox(height: 16),
+                  _buildMenuItem(context, 'Settings', 2),
+                  const SizedBox(height: 16),
+                  _buildMenuItem(context, 'Users Management', 3),
+                ],
+              ),
             ),
           ),
           // Contenuto principale a destra.
-          // Expanded prende tutto lo spazio rimanente orizzontalmente.
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
@@ -112,7 +120,8 @@ class _MainPageState extends State<MainPage> {
                 color: const Color(0xFF002C58),
                 fontSize: 18, // Dimensione del font ridotta
                 fontFamily: 'Inter',
-                fontWeight: FontWeight.w400,
+                fontWeight: FontWeight.w500,
+                height: 1.20,
               ),
             ),
           ],

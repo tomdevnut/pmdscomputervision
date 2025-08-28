@@ -1,6 +1,6 @@
 
 import 'package:flutter/material.dart'; // per usare i widget Material di Flutter
-import 'scans_page.dart'; // schermata delle scansioni
+// import 'scans_page.dart'; // schermata delle scansioni
 import 'steps_page.dart'; // schermata degli step
 import 'profile_page.dart'; // schermata del profilo
 
@@ -16,7 +16,7 @@ class _MainPageState extends State<MainPage> { // classe privata (_) che contien
   // 0 = SCANS, 1 = STEPS, 2 = PROFILE
 
   final List<Widget> pages = const [ // lista delle pagine disponibili
-    ScansPage(),
+    //ScansPage(),
     StepsPage(),
     ProfilePage(),
   ];
