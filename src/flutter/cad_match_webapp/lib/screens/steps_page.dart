@@ -10,7 +10,6 @@ class StepsPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Utilizziamo un Row per allineare il titolo e il pulsante
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -23,7 +22,7 @@ class StepsPage extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            // Un pulsante + per aggiungere un nuovo step
+            // TODO: mostrare il pulsante + solo se utente di livello >= 1
             InkWell(
               onTap: () {
                 // Naviga verso la schermata di caricamento

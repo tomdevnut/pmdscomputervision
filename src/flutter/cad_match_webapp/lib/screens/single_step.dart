@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'main_page.dart';
 
 class SingleStep extends StatelessWidget {
@@ -77,7 +76,7 @@ class SingleStep extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 60), // Spazio prima del pulsante
-              // Pulsante "Delete" corretto
+              // Pulsante "Delete"
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [_buildDeleteButton(context)],
@@ -178,7 +177,7 @@ class SingleStep extends StatelessWidget {
     );
   }
 
-  // Costruisce il pulsante "Delete" con dimensioni ridotte
+  // Costruisce il pulsante "Delete"
   Widget _buildDeleteButton(BuildContext context) {
     return InkWell(
       onTap: () {
@@ -205,6 +204,7 @@ class SingleStep extends StatelessWidget {
     );
   }
 
+  // Mostra il dialogo di conferma per la cancellazione
   void _showConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,

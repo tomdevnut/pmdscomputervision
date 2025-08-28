@@ -64,7 +64,8 @@ class SettingsPage extends StatelessWidget {
             );
           },
         ),
-
+        
+        // TODO: mostrare questa voce solo se utente di livello alto
         const SizedBox(height: 12),
         _buildSettingsItem(
           context,

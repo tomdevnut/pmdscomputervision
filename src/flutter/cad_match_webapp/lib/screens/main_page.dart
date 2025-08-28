@@ -16,11 +16,13 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   late int _selectedPageIndex;
 
+  // TODO: mostrare solo le pagine autorizzate in base al ruolo dell'utente
+  
   final List<Widget> _pages = const [
     ScansPage(),
     StepsPage(),
     SettingsPage(),
-    UsersPage(),
+    UsersPage(), // solo utenti livello 2
   ];
 
   @override
@@ -31,16 +33,13 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Utilizziamo un Row per creare un layout orizzontale,
-    // perfetto per la barra laterale e il contenuto principale.
     return Scaffold(
       backgroundColor: const Color(0xFFE1EDFF),
       body: Row(
         children: [
           // Navigazione a sinistra.
-          // Ha una larghezza fissa per mantenere il design.
           Container(
-            width: 280, // Larghezza ridotta per un look più compatto
+            width: 280,
             height: double.infinity,
             decoration: const ShapeDecoration(
               color: Colors.white,
@@ -98,8 +97,8 @@ class _MainPageState extends State<MainPage> {
         });
       },
       child: Container(
-        width: 250, // Larghezza ridotta
-        height: 50, // Altezza ridotta
+        width: 250,
+        height: 50,
         margin: const EdgeInsets.symmetric(horizontal: 14),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: ShapeDecoration(
@@ -118,7 +117,7 @@ class _MainPageState extends State<MainPage> {
               title,
               style: TextStyle(
                 color: const Color(0xFF002C58),
-                fontSize: 18, // Dimensione del font ridotta
+                fontSize: 18,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w500,
                 height: 1.20,

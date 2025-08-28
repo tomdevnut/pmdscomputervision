@@ -10,7 +10,6 @@ class StepUpload extends StatefulWidget {
 }
 
 class _StepUploadState extends State<StepUpload> {
-  // Dichiarazione di un oggetto PlatformFile per memorizzare il file caricato
   PlatformFile? _selectedFile;
 
   Future<void> _pickFile() async {
@@ -317,6 +316,7 @@ class _StepUploadState extends State<StepUpload> {
     return InkWell(
       onTap: () {
         if (_selectedFile != null) {
+          // TODO: Implement save functionality
         } else {
           // Do nothing
         }

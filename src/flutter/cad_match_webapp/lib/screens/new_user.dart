@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'main_page.dart';
-import 'package:flutter/services.dart';
 import 'dart:math';
 
 class NewUser extends StatefulWidget {
@@ -73,7 +72,6 @@ class _NewUserState extends State<NewUser> {
     TextEditingController? controller,
   }) {
     return Column(
-      // Ensure the column content aligns to the start (left)
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
@@ -103,8 +101,6 @@ class _NewUserState extends State<NewUser> {
         ),
         const SizedBox(height: 8),
         Container(
-          // Constraints are removed to allow the field to expand
-          // within the new two-column layout.
           width: 400,
           decoration: BoxDecoration(
             color: Colors.white,
@@ -255,6 +251,7 @@ class _NewUserState extends State<NewUser> {
     return InkWell(
       onTap: () {
         // TODO: Implementare la logica per salvare i dati inseriti.
+        // Si può fare il check che ci sia tutto prima di rendere cliccabile il pulsante
       },
       child: Container(
         width: 150,
@@ -315,7 +312,7 @@ class _NewUserState extends State<NewUser> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // First column for Email and Name
+                    // First column for Email, Name, and Level
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -339,7 +336,7 @@ class _NewUserState extends State<NewUser> {
                       ],
                     ),
                     const SizedBox(width: 24), // Space between the columns
-                    // Second column for Surname, Password, and Level
+                    // Second column for Surname, and Password
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
