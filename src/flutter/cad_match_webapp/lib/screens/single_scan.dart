@@ -32,7 +32,7 @@ class SingleScan extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Prima colonna (Name e Description)
+                  // Prima colonna
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,7 +59,7 @@ class SingleScan extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 40), // Spazio tra le colonne
-                  // Seconda colonna (Author e Upload Date)
+                  // Seconda colonna
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,7 +189,7 @@ class SingleScan extends StatelessWidget {
     );
   }
 
-  // Costruisce il pulsante "Delete" con dimensioni ridotte
+  // Costruisce il pulsante "Delete"
   Widget _buildDeleteButton(BuildContext context) {
     return InkWell(
       onTap: () {
@@ -216,6 +216,7 @@ class SingleScan extends StatelessWidget {
     );
   }
 
+  // Mostra il dialogo di conferma per la cancellazione
   void _showConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -235,7 +236,7 @@ class SingleScan extends StatelessWidget {
             ),
           ),
           content: const Text(
-            'This action will permanently delete the step. All associated scans will not be deleted.',
+            'This action will permanently delete the scan.',
             style: TextStyle(
               color: Color(0xFF6B7582),
               fontSize: 16,

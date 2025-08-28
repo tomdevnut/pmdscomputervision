@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-
-// Devi importare la MainPage per poterla usare per la navigazione
 import 'main_page.dart';
 
 class SingleUserPage extends StatelessWidget {
   final bool isUserEnabled;
-  final bool showControls;
+  final bool showControls; // se provengo dalla pagina settings non mostro i controlli, TODO: se l'utente ha livello 2 non posso cancellarlo/disabilitarlo
   final int mainPageIndex;
 
   const SingleUserPage({
@@ -20,7 +18,7 @@ class SingleUserPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: const Color(
         0xFFE1EDFF,
-      ), // Imposta il colore di sfondo per coerenza
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -46,8 +44,6 @@ class SingleUserPage extends StatelessWidget {
         children: [
           InkWell(
             onTap: () {
-              // Usa Navigator.pushReplacement per tornare alla MainPage e impostare
-              // la pagina iniziale su 3 (che corrisponde a UsersPage).
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
@@ -201,7 +197,6 @@ class SingleUserPage extends StatelessWidget {
           color: isEnabled ? const Color(0xFFD32F2F) : const Color(0xFF03A411),
           onTap: () {
             // TODO: Logica per (dis)abilitare l'utente
-            print("Pulsante 'Enable/Disable' premuto!");
           },
         ),
         const SizedBox(width: 70),
@@ -261,6 +256,7 @@ class SingleUserPage extends StatelessWidget {
     );
   }
 
+  // Mostra il dialogo di conferma per la cancellazione
   void _showConfirmationDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -307,7 +303,7 @@ class SingleUserPage extends StatelessWidget {
             TextButton(
               onPressed: () {
                 // Azione per il tasto "YES"
-                // TODO: Implementare la logica di pulizia qui
+                // TODO: Implementare la logica
                 Navigator.of(context).pop(); // Chiude il popup
               },
               child: const Text(
