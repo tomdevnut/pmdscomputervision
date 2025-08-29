@@ -1,190 +1,217 @@
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:flutter/material.dart';
-// import 'dart:async';
-// import 'scanning_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'dart:async';
+import 'package:intl/intl.dart';
+import '../utils.dart';
 
-// class ScansPage extends StatefulWidget {
-//   const ScansPage({super.key});
+class ScansPage extends StatefulWidget {
+  const ScansPage({super.key});
 
-//   @override
-//   State<ScansPage> createState() => _ScansPageState();
-// }
+  @override
+  State<ScansPage> createState() => _ScansPageState();
+}
 
-// class _ScansPageState extends State<ScansPage> {
-//   Stream<QuerySnapshot>? _scansStream;
-//   StreamSubscription<User?>? _authSub;
+class _ScansPageState extends State<ScansPage> {
+  Stream<QuerySnapshot>? _scansStream;
+  StreamSubscription<User?>? _authSub;
 
-//   Stream<QuerySnapshot> _scansFor(String uid) async* {
-//     // First, get the user's level from Firestore
-//     final userDoc = await FirebaseFirestore.instance
-//         .collection('users')
-//         .doc(uid)
-//         .get();
-    
-//     final userData = userDoc.data();
-//     final userLevel = userData?['level'] as int? ?? 1; // Default to level 1
-    
-//     if (userLevel >= 2) {
-//       // Level 2 or higher: show all scans
-//       yield* FirebaseFirestore.instance
-//           .collection('scans')
-//           .snapshots();
-//     } else {
-//       // Level 1: show only user's own scans
-//       yield* FirebaseFirestore.instance
-//           .collection('scans')
-//           .where('user', isEqualTo: uid)
-//           .snapshots();
-//     }
-//   }
+  @override
+  void initState() {
+    super.initState();
+    _initializeScansStream();
+  }
 
-//   @override
-//   void initState() {
-//     super.initState();
-    
-//     final user = FirebaseAuth.instance.currentUser;
-    
-//     if (user != null) {
-//       _scansStream = _scansFor(user.uid);
-//     } else {
-//       _authSub = FirebaseAuth.instance.authStateChanges().listen((u) {
-//         if (u != null && mounted) {
-//           setState(() {
-//             _scansStream = _scansFor(u.uid);
-//           });
-//         }
-//       });
-//     }
-//   }
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
+  }
 
-//   @override
-//   void dispose() {
-//     _authSub?.cancel();
-//     super.dispose();
-//   }
+  void _initializeScansStream() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      _setScansStream(user.uid);
+    } else {
+      _authSub = FirebaseAuth.instance.authStateChanges().listen((u) {
+        if (u != null && mounted) {
+          _setScansStream(u.uid);
+        }
+      });
+    }
+  }
 
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Colors.black,
-//       body: Padding(
-//         padding: const EdgeInsets.all(16),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             ClipRRect(
-//               borderRadius: BorderRadius.circular(12), 
-//               child: Image.asset( // inserimento banner
-//                 'assets/banner.png',
-//                 width: double.infinity,
-//                 height: 160,
-//                 fit: BoxFit.cover,
-//               ),
-//             ),
+  Future<void> _setScansStream(String uid) async {
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+    final userData = userDoc.data();
+    final userLevel = userData?['level'] as int? ?? 1;
 
-//             const SizedBox(height: 20),
+    if (mounted) {
+      setState(() {
+        if (userLevel >= 2) {
+          _scansStream = FirebaseFirestore.instance
+              .collection('scans')
+              .snapshots();
+        } else {
+          _scansStream = FirebaseFirestore.instance
+              .collection('scans')
+              .where('user', isEqualTo: uid)
+              .snapshots();
+        }
+      });
+    }
+  }
 
-//             // Title 'Your Scans'
-//             const Text(
-//               'Your Scans',
-//               style: TextStyle(
-//                 color: Colors.white,
-//                 fontSize: 24,
-//                 fontWeight: FontWeight.bold,
-//               ),
-//             ),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              buildHeader('Your Scans'),
+              const SizedBox(height: 10),
+              _buildBanner(),
+              const SizedBox(height: 20),
+              _buildScansList(),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // Add your logic to handle the add button press
+        },
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: AppColors.white),
+      ),
+    );
+  }
 
-//             const SizedBox(height: 10),
+  Widget _buildBanner() {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Image.asset(
+        'assets/banner.png',
+        width: double.infinity,
+        height: 160,
+        fit: BoxFit.cover,
+      ),
+    );
+  }
 
-//             // Scans list
-//             Expanded(
-//               child: _scansStream == null
-//                   ? const Center(
-//                       child: Text(
-//                         'Please sign in to view scans',
-//                         style: TextStyle(color: Colors.white),
-//                       ),
-//                     )
-//                   : StreamBuilder<QuerySnapshot>(
-//                       stream: _scansStream,
-//                       builder: (context, snapshot) {
-//                         if (snapshot.connectionState == ConnectionState.waiting) {
-//                           return const Center(child: CircularProgressIndicator());
-//                         }
-//                         if (snapshot.hasError) {
-//                           return Center(
-//                             child: Text(
-//                               'Error: ${snapshot.error}',
-//                               style: const TextStyle(color: Colors.white),
-//                             ),
-//                           );
-//                         }
-//                         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-//                           return const Center(
-//                             child: Text(
-//                               'No scans found. Press + to add one!',
-//                               style: TextStyle(color: Colors.white),
-//                             ),
-//                           );
-//                         }
+  Widget _buildScansList() {
+    if (_scansStream == null) {
+      return const Expanded(
+        child: Center(
+          child: Text(
+            'Please sign in to view scans',
+            style: TextStyle(color: AppColors.textPrimary),
+          ),
+        ),
+      );
+    }
 
-//                         final scans = snapshot.data!.docs;
+    return Expanded(
+      child: StreamBuilder<QuerySnapshot>(
+        stream: _scansStream,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Error: ${snapshot.error}',
+                style: const TextStyle(color: AppColors.red),
+              ),
+            );
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(
+              child: Text(
+                'No scans found. Press + to add one!',
+                style: TextStyle(color: AppColors.textPrimary),
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+          return ListView.builder(
+            itemCount: snapshot.data!.docs.length,
+            itemBuilder: (context, index) {
+              final scan = snapshot.data!.docs[index];
+              final data = scan.data() as Map<String, dynamic>;
+              final title = data['name'] as String? ?? 'No Title';
+              final date = (data['timestamp'] as Timestamp?)?.toDate();
+              final status = data['status'] as int? ?? 0;
 
-//                         return ListView.builder(
-//                           itemCount: scans.length,
-//                           itemBuilder: (context, index) {
-//                             final scan = scans[index];
-//                             final data = scan.data() as Map<String, dynamic>;
-//                             final title = data['scan_name'] as String? ?? 'No Title';
-//                             return ScanItem(title: title);
-//                           },
-//                         );
-//                       },
-//                     ),
-//             ),
-//           ],
-//         ),
-//       ),
+              return ScanItem(title: title, date: date, status: status);
+            },
+          );
+        },
+      ),
+    );
+  }
+}
 
-//     floatingActionButton: FloatingActionButton(
-//       onPressed: () {
-//         // Naviga alla schermata "Nuova Scansione" -> scanning_page.dart
-//         Navigator.push(
-//           context,
-//           MaterialPageRoute(builder: (context) => const ScanningPage()),
-//         );
-//       },
-//       backgroundColor: const Color(0xFFFF7C00),
-//       child: const Icon(Icons.add),
-//     ),
+class ScanItem extends StatelessWidget {
+  final String title;
+  final DateTime? date;
+  final int status;
 
+  const ScanItem({
+    super.key,
+    required this.title,
+    required this.date,
+    required this.status,
+  });
 
-//     );
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: AppColors.tileBackground,
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: ListTile(
+        title: Text(
+          title,
+          style: const TextStyle(color: AppColors.textPrimary),
+        ),
+        subtitle: date != null
+            ? Text(
+                DateFormat.yMMMd().format(date!),
+                style: const TextStyle(color: AppColors.textSecondary),
+              )
+            : null,
+        trailing: const Icon(
+          Icons.arrow_forward_ios,
+          color: AppColors.white,
+          size: 16,
+        ),
+        leading: _buildStatusIcon(status),
+        onTap: () {
+          // Handle scan item tap
+        },
+      ),
+    );
+  }
 
-// class ScanItem extends StatelessWidget {
-//   final String title;
-
-//   const ScanItem({super.key, required this.title});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Card(
-//       color: Colors.grey[900],
-//       margin: const EdgeInsets.symmetric(vertical: 8),
-//       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-//       child: ListTile(
-//         title: Text(
-//           title,
-//           style: const TextStyle(color: Colors.white),
-//         ),
-//         trailing: const Icon(Icons.arrow_forward_ios, color: Colors.white54),
-//         onTap: () {
-//           // Handle scan item tap
-//         },
-//       ),
-//     );
-//   }
-// }
+  Widget _buildStatusIcon(int status) {
+    switch (status) {
+      case 2: // Completed
+        return const Icon(Icons.check_circle, color: AppColors.green);
+      case 1: // Inviato al server di backend
+        return const Icon(Icons.hourglass_top, color: AppColors.yellow);
+      case 0: // Ricevuto
+        return const Icon(Icons.inbox, color: AppColors.yellow);
+      default: // Errore (-1)
+        return const Icon(Icons.warning, color: AppColors.red);
+    }
+  }
+}

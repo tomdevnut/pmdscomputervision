@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'main_page.dart';
+import '../utils.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -43,17 +44,15 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  // struttura basic con Scaffold (fornisce la struttura visiva principale, sfondo, body, app bar...)
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,// imposto lo sfondo
+      backgroundColor: AppColors.backgroundColor,
 
-      // SafeArea, Padding, Column
-      body: SafeArea( // evita che i contenuti vadano sotto status bar
-        child: Padding( // aggiunge margine orizzontale per non attaccare tutto ai bordi
-          padding: const EdgeInsets.symmetric(horizontal:32),
-          child: Column( // organizza gli elementi in verticale
+      body: SafeArea( 
+        child: Padding( 
+          padding: const EdgeInsets.symmetric(horizontal:40),
+          child: Column( 
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               // image e title
@@ -72,9 +71,17 @@ class _LoginPageState extends State<LoginPage> {
               const Text( // mostra il messaggio di benvenuto
                 'Welcome to CADmatch',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.textPrimary,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const Text(
+                'Please log in',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 16,
                 ),
               ),
 
@@ -82,19 +89,19 @@ class _LoginPageState extends State<LoginPage> {
 
               // Campo di testo: Username
               TextField(
-                controller: _emailController, // Add this controller
-                keyboardType: TextInputType.emailAddress, // Set keyboard type
+                controller: _emailController, 
+                keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
-                  hintText: 'Email', // Changed from 'Username'
+                  hintText: 'Email', 
                   filled: true,
-                  fillColor: Colors.grey[900],
-                  hintStyle: const TextStyle(color: Colors.white54),
+                  fillColor: AppColors.textFieldBackground,
+                  hintStyle: const TextStyle(color: AppColors.textHint),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
                 ),
-                style: const TextStyle(color: Colors.white), // colore del testo inserito
+                style: const TextStyle(color: Colors.white),
               ),
 
               const SizedBox(height: 16),
@@ -106,8 +113,8 @@ class _LoginPageState extends State<LoginPage> {
                 decoration: InputDecoration(
                   hintText: 'Password',
                   filled: true,
-                  fillColor: Colors.grey[900],
-                  hintStyle: const TextStyle(color: Colors.white54),
+                  fillColor: AppColors.textFieldBackground,
+                  hintStyle: const TextStyle(color: AppColors.textHint),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
@@ -125,7 +132,7 @@ class _LoginPageState extends State<LoginPage> {
                 child: ElevatedButton(
                   onPressed: _signIn, // Call the signIn method
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFF7C00),
+                    backgroundColor: AppColors.primary,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -135,6 +142,7 @@ class _LoginPageState extends State<LoginPage> {
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
                     ),
                   ),
                 ),

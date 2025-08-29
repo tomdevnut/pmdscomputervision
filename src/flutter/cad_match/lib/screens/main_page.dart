@@ -1,8 +1,9 @@
 
 import 'package:flutter/material.dart'; // per usare i widget Material di Flutter
-// import 'scans_page.dart'; // schermata delle scansioni
+import 'scans_page.dart'; // schermata delle scansioni
 import 'steps_page.dart'; // schermata degli step
 import 'profile_page.dart'; // schermata del profilo
+import '../utils.dart';
 
 class MainPage extends StatefulWidget { // definizione di un widget principale chiamato MainPage
   const MainPage({super.key});
@@ -16,7 +17,7 @@ class _MainPageState extends State<MainPage> { // classe privata (_) che contien
   // 0 = SCANS, 1 = STEPS, 2 = PROFILE
 
   final List<Widget> pages = const [ // lista delle pagine disponibili
-    //ScansPage(),
+    ScansPage(),
     StepsPage(),
     ProfilePage(),
   ];
@@ -30,9 +31,9 @@ class _MainPageState extends State<MainPage> { // classe privata (_) che contien
         currentIndex: currentIndex, // collega la voce selezionata nella bottom nav con la pagina visibile
 
         // imposta lo stile della barra
-        backgroundColor: Colors.black,
-        selectedItemColor: Color(0xFFFF7C00),
-        unselectedItemColor: Colors.white70,
+        backgroundColor: AppColors.backgroundColor,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.unselected,
 
         // quando l'utente tocca una voce della barra: l'indice cambia, setState() aggiorna l'interfaccia
         onTap: (index) {
@@ -44,11 +45,11 @@ class _MainPageState extends State<MainPage> { // classe privata (_) che contien
         // definisce le 3 voci della bottom navigation bar con icona e testo
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.folder),
+            icon: Icon(Icons.view_in_ar),
             label: 'Scans',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.view_list),
+            icon: Icon(Icons.file_copy),
             label: 'Steps',
           ),
           BottomNavigationBarItem(

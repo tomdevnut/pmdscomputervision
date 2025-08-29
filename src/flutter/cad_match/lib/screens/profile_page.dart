@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'login_page.dart';
+import '../utils.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -23,10 +24,15 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadUserData() async {
     _user = FirebaseAuth.instance.currentUser;
     if (_user != null) {
-      final doc = await FirebaseFirestore.instance.collection('users').doc(_user!.uid).get();
-      setState(() {
-        _userData = doc.data();
-      });
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_user!.uid)
+          .get();
+      if (mounted) {
+        setState(() {
+          _userData = doc.data();
+        });
+      }
     }
   }
 
@@ -41,86 +47,143 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> _changePassword(BuildContext context) async {
+    // Implement change password functionality
+  }
+
+  Future<void> _sendLoginInfoEmail() async {
+    // Implement send login info email functionality
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black, // tema dark come nel resto dell'app
+      backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildHeader('Profile'),
+                const SizedBox(height: 20),
+                _buildProfileIcon(),
+                const SizedBox(height: 32),
+                _buildUserInfo(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Column(
+                      children: [
+                        const SizedBox(height: 32),
+                        _buildButton(
+                          'CHANGE PASSWORD',
+                          () => _changePassword(context),
+                        ),
+                        const SizedBox(height: 16),
+                        _buildButton(
+                          'RESEND LOGIN INFO EMAIL',
+                          _sendLoginInfoEmail,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildButton('LOGOUT', _signOut),
+                      ],
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileIcon() {
+    return const Center(
+      child: CircleAvatar(
+        radius: 60,
+        backgroundColor: AppColors.primary,
+        child: Icon(Icons.person, size: 60, color: AppColors.white),
+      ),
+    );
+  }
+
+  Widget _buildUserInfo() {
+    String nameAndSurname =
+        '${_userData?['name'] ?? ''} ${_userData?['surname'] ?? ''}';
+    return _user != null
+        ? Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
-              // Titolo "Profile"
-              const Text(
-                'Profile',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Icona profilo
-              const Center(
-                child: CircleAvatar(
-                  radius: 40,
-                  backgroundColor: Color(0xFFFF7C00),
-                  child: Icon(Icons.person, size: 40, color: Colors.white),
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Nome utente
-              const Text(
-                'Name:',
-                style: TextStyle(color: Colors.white70),
-              ),
-              Text(
-                _userData?['name'] ?? 'Loading...',
-                style: const TextStyle(color: Colors.white, fontSize: 18),
-              ),
-
+              _buildInfoRow('Name:', nameAndSurname),
               const SizedBox(height: 16),
-
-              // Livello operatore
-              const Text(
+              _buildInfoRow('Email:', _user?.email ?? 'Loading...'),
+              const SizedBox(height: 16),
+              _buildInfoRow(
                 'Level:',
-                style: TextStyle(color: Colors.white70),
-              ),
-              Text(
                 _userData?['level']?.toString() ?? 'Loading...',
-                style: const TextStyle(color: Colors.white, fontSize: 18),
               ),
-
               const SizedBox(height: 16),
-
-              // Email utente
-              const Text(
-                'Email:',
-                style: TextStyle(color: Colors.white70),
-              ),
-              Text(
-                _user?.email ?? 'Loading...',
-                style: const TextStyle(color: Colors.white, fontSize: 18),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Logout button
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _signOut,
-                  child: const Text('LOGOUT'),
-                ),
+              _buildInfoRow(
+                'Enabled:',
+                (_userData?['enabled'] ?? false) ? 'Yes' : 'No',
               ),
             ],
+          )
+        : Center(
+            child: Text(
+              'Please sign in to view your profile.',
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+              ),
+            ),
+          );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            color: AppColors.textSecondary,
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
           ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            color: AppColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildButton(String title, VoidCallback onPressed) {
+    return SizedBox(
+      width: 300,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Text(
+          title,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
       ),
     );
