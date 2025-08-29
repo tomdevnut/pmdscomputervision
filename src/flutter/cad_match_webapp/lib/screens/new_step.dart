@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import '../shared_utils.dart'; // Importa il file di utility condiviso
+import '../shared_utils.dart';
 
 class StepUpload extends StatefulWidget {
   const StepUpload({super.key});
@@ -21,6 +21,7 @@ class _StepUploadState extends State<StepUpload> {
     super.dispose();
   }
 
+  // Funzione per selezionare un file dal dispositivo
   Future<void> _pickFile() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles();
@@ -39,12 +40,14 @@ class _StepUploadState extends State<StepUpload> {
     }
   }
 
+  // Funzione per rimuovere il file selezionato
   void _removeFile() {
     setState(() {
       _selectedFile = null;
     });
   }
 
+  // Funzione per formattare la dimensione del file
   String _formatFileSize(int sizeInBytes) {
     if (sizeInBytes >= 1024 * 1024) {
       return "${(sizeInBytes / (1024 * 1024)).toStringAsFixed(2)} MB";
@@ -56,76 +59,95 @@ class _StepUploadState extends State<StepUpload> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBlue,
+      backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Utilizzo della funzione buildTopBar da shared_utils.dart
               buildTopBar(
                 context,
                 title: 'UPLOAD A NEW STEP',
                 mainPageIndex: 1,
               ),
               const SizedBox(height: 24),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Utilizzo della funzione buildInputField da shared_utils.dart
-                        buildInputField(
-                          label: 'Name',
-                          icon: Icons.abc,
-                          hintText: 'Enter a step name',
-                          controller: _nameController,
-                        ),
-                        const SizedBox(height: 24),
-                        // Utilizzo della funzione buildInputField per la descrizione
-                        buildInputField(
-                          label: 'Description',
-                          icon: Icons.description,
-                          hintText: 'Enter a description',
-                          controller: _descriptionController,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 24),
-                  // Sezione di caricamento del file
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        const Text(
-                          'Upload File',
-                          style: TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 16,
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w500,
+              Center(
+                child: SizedBox(
+                  width: 600, // Imposta una larghezza fissa per il contenuto
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      buildInputField(
+                        label: 'Name',
+                        icon: Icons.abc,
+                        hintText: 'Enter a step name',
+                        controller: _nameController,
+                      ),
+                      const SizedBox(height: 24),
+                      buildInputField(
+                        label: 'Description',
+                        icon: Icons.description,
+                        hintText: 'Enter a description',
+                        controller: _descriptionController,
+                      ),
+                      const SizedBox(height: 24),
+                      // Sezione di caricamento del file
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              // Container for the icon
+                              Container(
+                                width: 30,
+                                height: 30,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.file_copy,
+                                  color: AppColors.white,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              // Label text
+                              Text(
+                                'File',
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 20,
+                                  fontFamily: 'Inter',
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        if (_selectedFile == null)
-                          _buildUploadButton()
-                        else
-                          _buildFileDetails(),
-                      ],
-                    ),
+                          const SizedBox(height: 8),
+                          if (_selectedFile == null)
+                            buildButton(
+                              label: 'Upload File',
+                              onTap: _pickFile,
+                              icon: Icons.upload_file,
+                              backgroundColor: AppColors.primary,
+                            )
+                          else
+                            _buildFileDetails(),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
               const SizedBox(height: 40),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   buildButton(
-                    label: 'Save',
+                    label: 'Create step',
+                    icon: Icons.check_circle,
                     onTap: () {
                       if (_selectedFile != null) {
                         // TODO: Implementare la logica di salvataggio
@@ -136,30 +158,6 @@ class _StepUploadState extends State<StepUpload> {
                 ],
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Costruisce il pulsante per il caricamento del file
-  Widget _buildUploadButton() {
-    return InkWell(
-      onTap: _pickFile,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF2F2F4),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Text(
-          'Upload File',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontFamily: 'Inter',
-            fontWeight: FontWeight.w700,
           ),
         ),
       ),
@@ -190,7 +188,7 @@ class _StepUploadState extends State<StepUpload> {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const Icon(Icons.check_circle, color: Colors.green),
+              const Icon(Icons.check_circle, color: AppColors.green),
             ],
           ),
           const SizedBox(height: 8),
@@ -209,7 +207,7 @@ class _StepUploadState extends State<StepUpload> {
             child: const Text(
               'Remove file',
               style: TextStyle(
-                color: AppColors.danger,
+                color: AppColors.red,
                 fontSize: 16,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w400,

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'new_step.dart';
 import 'single_step.dart';
-import '../shared_utils.dart'; // Importa il file di utility condiviso
+import '../shared_utils.dart';
 
 class StepsPage extends StatelessWidget {
   const StepsPage({super.key});
@@ -25,7 +25,6 @@ class StepsPage extends StatelessWidget {
             ),
             // TODO: mostrare il pulsante + solo se utente di livello >= 1
             buildAddButton(context, () {
-              // Naviga verso la schermata di caricamento
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const StepUpload()),

@@ -18,7 +18,7 @@ class _MainPageState extends State<MainPage> {
   late int _selectedPageIndex;
 
   // TODO: mostrare solo le pagine autorizzate in base al ruolo dell'utente
-  
+
   final List<Widget> _pages = const [
     ScansPage(),
     StepsPage(),
@@ -35,10 +35,10 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBlue,
+      backgroundColor: AppColors.backgroundColor,
       body: Row(
         children: [
-          // Navigazione a sinistra.
+          // Menu a sinistra.
           Container(
             height: double.infinity,
             decoration: const ShapeDecoration(
@@ -57,7 +57,7 @@ class _MainPageState extends State<MainPage> {
                   const Text(
                     'CADmatch',
                     style: TextStyle(
-                      color: AppColors.primaryBlue,
+                      color: AppColors.secondary,
                       fontSize: 24,
                       fontFamily: 'Inter',
                       fontWeight: FontWeight.w700,
@@ -70,7 +70,7 @@ class _MainPageState extends State<MainPage> {
                   const SizedBox(height: 16),
                   _buildMenuItem(context, 'Settings', 2),
                   const SizedBox(height: 16),
-                  _buildMenuItem(context, 'Users Management', 3),
+                  _buildMenuItem(context, 'Users', 3),
                 ],
               ),
             ),
@@ -102,11 +102,11 @@ class _MainPageState extends State<MainPage> {
         margin: const EdgeInsets.symmetric(horizontal: 14),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: ShapeDecoration(
-          color: isActive ? AppColors.lightBlue : AppColors.white,
+          color: isActive ? AppColors.backgroundColor : AppColors.white,
           shape: RoundedRectangleBorder(
             side: BorderSide(
               width: 1,
-              color: isActive ? AppColors.primaryBlue : AppColors.white,
+              color: isActive ? AppColors.secondary : AppColors.white,
             ),
             borderRadius: BorderRadius.circular(8),
           ),

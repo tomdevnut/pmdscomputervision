@@ -18,7 +18,7 @@ class SingleUserPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBlue,
+      backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
@@ -87,7 +87,7 @@ class SingleUserPage extends StatelessWidget {
                   height: 44,
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: isEnabled ? AppColors.green : AppColors.errorRed,
+                    color: isEnabled ? AppColors.green : AppColors.red,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
@@ -157,9 +157,9 @@ class SingleUserPage extends StatelessWidget {
       children: [
         // Pulsante per abilitare/disabilitare
         buildButton(
-          label: isEnabled ? 'Disable User' : 'Enable User',
+          label: isEnabled ? 'Disable user' : 'Enable user',
           icon: isEnabled ? Icons.cancel : Icons.check_circle,
-          backgroundColor: isEnabled ? AppColors.danger : AppColors.green,
+          backgroundColor: isEnabled ? AppColors.red : AppColors.green,
           onTap: () {
             // TODO: Logica per (dis)abilitare l'utente
           },
@@ -167,9 +167,8 @@ class SingleUserPage extends StatelessWidget {
         const SizedBox(width: 30),
         // Pulsante per modificare la password
         buildButton(
-          label: 'Edit User\'s Password',
+          label: 'Edit user\'s password',
           icon: Icons.lock,
-          backgroundColor: AppColors.primary,
           onTap: () {
             Navigator.push(
               context,
@@ -185,9 +184,8 @@ class SingleUserPage extends StatelessWidget {
         const SizedBox(width: 30),
         // Pulsante per rimandare la mail con le info di accesso
         buildButton(
-          label: 'Resend Access Email',
+          label: 'Send password email',
           icon: Icons.email,
-          backgroundColor: AppColors.primary,
           onTap: () {
             // TODO: Logica per rimandare l'email
           },
@@ -195,9 +193,9 @@ class SingleUserPage extends StatelessWidget {
         const SizedBox(width: 30),
         // Pulsante per eliminare
         buildButton(
-          label: 'Delete User',
+          label: 'Delete user',
           icon: Icons.delete,
-          backgroundColor: AppColors.danger,
+          backgroundColor: AppColors.red,
           onTap: () {
             showConfirmationDialog(
               context: context,

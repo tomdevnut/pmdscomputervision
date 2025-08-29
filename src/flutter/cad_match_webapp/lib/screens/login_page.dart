@@ -21,7 +21,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _signIn() async {
-    // Per ora passiamo a main_page
+    // TODO: autenticazione (per ora passiamo a main_page)
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => const MainPage()),
     );
@@ -29,7 +29,6 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Scaffold fornisce la struttura di base della pagina
     return Scaffold(
       backgroundColor: AppColors.white,
       body: LayoutBuilder(
@@ -122,7 +121,7 @@ class _LoginPageState extends State<LoginPage> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             decoration: BoxDecoration(
-              color: AppColors.lightBlue,
+              color: AppColors.backgroundColor,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Column(
@@ -164,11 +163,10 @@ class _LoginPageState extends State<LoginPage> {
                   height: 48,
                   child: ElevatedButton(
                     onPressed: () {
-                      // Logica di autenticazione
                       _signIn();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryBlue,
+                      backgroundColor: AppColors.secondary,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),

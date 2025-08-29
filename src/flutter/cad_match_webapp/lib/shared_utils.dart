@@ -4,17 +4,15 @@ import 'screens/main_page.dart';
 // Definizione dei colori
 class AppColors {
   static const Color primary = Color(0xFF002C58);
-  static const Color primaryBlue = Color(0xFF0C7FF2);
-  static const Color lightBlue = Color(0xFFE1EDFF);
+  static const Color secondary = Color(0xFF0C7FF2);
+  static const Color backgroundColor = Color(0xFFE1EDFF);
   static const Color white = Colors.white;
   static const Color textPrimary = Color(0xFF111416);
   static const Color textSecondary = Color(0xFF6B7582);
-  static const Color errorRed = Color(0xFFD94451);
   static const Color borderGray = Color(0xFFDDE0E2);
   static const Color textHint = Color(0xFF6B7582);
   static const Color disabledButton = Color(0xFF6B7582);
-  static const Color enabledButton = Color(0xFF002C58);
-  static const Color danger = Color(0xFFD94451);
+  static const Color red = Color(0xFFD94451);
   static const Color green = Color(0xFF03A411);
 }
 
@@ -46,7 +44,7 @@ Widget buildTopBar(
             width: 44,
             height: 44,
             decoration: ShapeDecoration(
-              color: AppColors.primary,
+              color: AppColors.secondary,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -198,7 +196,7 @@ Widget buildInfoField({
 Widget buildButton({
   required String label,
   required Function() onTap,
-  Color backgroundColor = AppColors.primary,
+  Color backgroundColor = AppColors.secondary,
   bool isEnabled = true,
   IconData? icon,
 }) {
@@ -315,7 +313,7 @@ Widget buildAddButton(BuildContext context, VoidCallback onTap) {
       width: 44,
       height: 44,
       decoration: ShapeDecoration(
-        color: AppColors.primary,
+        color: AppColors.secondary,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
       child: const Icon(Icons.add, color: Colors.white, size: 20),
@@ -327,14 +325,15 @@ Widget buildAddButton(BuildContext context, VoidCallback onTap) {
 void showConfirmationDialog({
   required BuildContext context,
   required VoidCallback onConfirm,
-  String message = 'This action will permanently delete the user and their associated scans.',
+  String? message,
   String title = 'Are you sure?',
 }) {
   showDialog(
     context: context,
     builder: (BuildContext context) {
       return AlertDialog(
-        backgroundColor: AppColors.lightBlue,
+        backgroundColor: AppColors.white,
+        surfaceTintColor: AppColors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         title: Text(
           title,
@@ -346,7 +345,7 @@ void showConfirmationDialog({
           ),
         ),
         content: Text(
-          message,
+          message ?? '',
           style: TextStyle(
             color: AppColors.textSecondary,
             fontSize: 16,
@@ -373,13 +372,13 @@ void showConfirmationDialog({
           TextButton(
             onPressed: () {
               // Azione per il tasto "YES"
-              onConfirm();
               Navigator.of(context).pop(); // Chiude il popup
+              onConfirm();
             },
             child: const Text(
               'YES',
               style: TextStyle(
-                color: AppColors.danger,
+                color: AppColors.red,
                 fontSize: 16,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w700,

@@ -7,7 +7,7 @@ class SingleScan extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBlue,
+      backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
@@ -126,7 +126,7 @@ class SingleScan extends StatelessWidget {
                     onTap: () => showConfirmationDialog(context: context, message: 'This action will permanently delete the scan.', onConfirm: () {
                       // TODO: Logica per eliminare la scansione
                     }),
-                    backgroundColor: AppColors.errorRed,
+                    backgroundColor: AppColors.red,
                     icon: Icons.delete,
                   ),
                 ],

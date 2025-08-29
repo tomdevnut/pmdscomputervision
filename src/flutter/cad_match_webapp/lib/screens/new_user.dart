@@ -15,8 +15,7 @@ class _NewUserState extends State<NewUser> {
   final _surnameController = TextEditingController();
   final _passwordController = TextEditingController();
   String? _selectedLevel;
-  bool _obscurePassword =
-      true; // Nuova variabile per gestire la visibilità della password
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -43,7 +42,7 @@ class _NewUserState extends State<NewUser> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBlue,
+      backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
@@ -51,6 +50,15 @@ class _NewUserState extends State<NewUser> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               buildTopBar(context, title: 'CREATE A NEW USER'),
+              const Text(
+                'An email will be sent to the user with their login credentials.',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 18,
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               const SizedBox(height: 24),
               LayoutBuilder(
                 builder: (context, constraints) {
@@ -77,11 +85,11 @@ class _NewUserState extends State<NewUser> {
                                 icon: Icons.email,
                               ),
                               const SizedBox(height: 24),
-                              _buildLevelSelector(), 
+                              _buildLevelSelector(),
                             ],
                           ),
                         ),
-                        const SizedBox(width: 24), // Spazio tra le colonne
+                        const SizedBox(width: 24),
                         // Seconda colonna per Surname e Password
                         Expanded(
                           child: Column(
@@ -94,7 +102,7 @@ class _NewUserState extends State<NewUser> {
                                 icon: Icons.person,
                               ),
                               const SizedBox(height: 24),
-                              _buildPasswordInputField(), // Mantenuta come funzione specifica
+                              _buildPasswordInputField(),
                             ],
                           ),
                         ),
@@ -137,13 +145,14 @@ class _NewUserState extends State<NewUser> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Utilizzo della funzione buildSaveButton da shared_utils.dart
                   buildButton(
-                    label: 'Save',
+                    label: 'Create user',
+                    icon: Icons.check_circle,
                     onTap: () {
-                      // TODO: Implementa la logica di salvataggio
-                  },
-                ),],
+                      // TODO: Implementare la logica di salvataggio
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -194,7 +203,7 @@ class _NewUserState extends State<NewUser> {
               child: const Text(
                 'Generate password',
                 style: TextStyle(
-                  color: AppColors.primaryBlue,
+                  color: AppColors.secondary,
                   fontSize: 14,
                   fontFamily: 'Inter',
                   fontWeight: FontWeight.w400,

@@ -7,7 +7,7 @@ class SingleStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.lightBlue,
+      backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
@@ -92,7 +92,7 @@ class SingleStep extends StatelessWidget {
                   buildButton(
                     label: 'Delete Step',
                     icon: Icons.delete,
-                    backgroundColor: AppColors.danger,
+                    backgroundColor: AppColors.red,
                     onTap: () => showConfirmationDialog(context: context, message: 'This action will permanently delete the step. All associated scans will not be affected.', onConfirm: () {
                       // TODO: Logica per eliminare il passo
                     }),

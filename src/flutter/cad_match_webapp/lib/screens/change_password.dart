@@ -7,7 +7,8 @@ class ChangePassword extends StatefulWidget {
     this.requireOldPassword = true,
     this.previousPage = 0,
   });
-  final bool requireOldPassword;
+  final bool
+  requireOldPassword; // Se provengo dalla schermata degli utenti posso modificare la password senza sapere la vecchia password (funzioni manager), se provengo dalle mie impostazioni devo sapere anche quella vecchia
   final int previousPage;
   @override
   State<ChangePassword> createState() => _ChangePasswordState();
@@ -21,7 +22,7 @@ class _ChangePasswordState extends State<ChangePassword> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE1EDFF),
+      backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
@@ -32,17 +33,16 @@ class _ChangePasswordState extends State<ChangePassword> {
               const Text(
                 'A confirmation email will be sent to the user after the change.',
                 style: TextStyle(
-                  color: Color(0xFF6B7582),
+                  color: AppColors.textSecondary,
                   fontSize: 18,
                   fontFamily: 'Inter',
                   fontWeight: FontWeight.w500,
                 ),
               ),
               const SizedBox(height: 40),
-              // Nuovo contenitore per centrare e limitare la larghezza
               Center(
                 child: SizedBox(
-                  width: 500, // Imposta una larghezza fissa (puoi modificarla)
+                  width: 500,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -63,7 +63,6 @@ class _ChangePasswordState extends State<ChangePassword> {
                 ),
               ),
               const SizedBox(height: 100),
-              // Nuovo contenitore per centrare il bottone
               Center(
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -74,7 +73,7 @@ class _ChangePasswordState extends State<ChangePassword> {
                         label: 'Change Password',
                         icon: Icons.check,
                         onTap: () {
-                          // TODO: Implement change password functionality
+                          // TODO
                         },
                       ),
                     ),

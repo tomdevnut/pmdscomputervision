@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'single_user.dart';
 import 'login_page.dart';
@@ -51,8 +52,19 @@ class SettingsPage extends StatelessWidget {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const ChangePassword(previousPage: 2)),
+              MaterialPageRoute(
+                builder: (context) => const ChangePassword(previousPage: 2),
+              ),
             );
+          },
+        ),
+        const SizedBox(height: 12),
+        buildListItem(
+          title: 'Resend password',
+          icon: Icons.email,
+          hasArrow: false,
+          onTap: () {
+            // TODO: Implementare la logica di invio della password
           },
         ),
         const SizedBox(height: 12),
@@ -60,9 +72,16 @@ class SettingsPage extends StatelessWidget {
           title: 'Clean all scans',
           icon: Icons.delete_forever,
           hasArrow: false,
-          iconColor: AppColors.danger,
+          iconColor: AppColors.red,
           onTap: () {
-            _showDeleteConfirmationDialog(context, 'scans');
+            showConfirmationDialog(
+              context: context,
+              onConfirm: () {
+                // TODO: Implementare la logica di eliminazione
+              },
+              message:
+                  'This action will permanently delete all the scans on the server. This operation cannot be undone.',
+            );
           },
         ),
         const SizedBox(height: 12),
@@ -71,144 +90,20 @@ class SettingsPage extends StatelessWidget {
           hasArrow: false,
           icon: Icons.logout,
           onTap: () {
-            _showLogoutConfirmationDialog(context);
+            showConfirmationDialog(
+              context: context,
+              onConfirm: () {
+                // TODO: Implementare la logica di logout
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginPage()),
+                );
+              },
+              message: 'Are you sure you want to logout?',
+            );
           },
         ),
       ],
-    );
-  }
-
-  // Metodo per mostrare il popup di conferma
-  void _showDeleteConfirmationDialog(BuildContext context, String itemType) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          title: const Text(
-            'Confirm action',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 20,
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          content: Text(
-            'This action will permanently delete all $itemType.',
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 16,
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text(
-                'NO',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 16,
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                // TODO: Implementare la logica di pulizia qui
-                Navigator.of(context).pop();
-              },
-              child: const Text(
-                'YES',
-                style: TextStyle(
-                  color: AppColors.danger,
-                  fontSize: 16,
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  // Metodo per mostrare il popup di conferma del logout
-  void _showLogoutConfirmationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          backgroundColor: Colors.white,
-          surfaceTintColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          title: const Text(
-            'Confirm action',
-            style: TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 20,
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          content: const Text(
-            'Are you sure you want to log out?',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 16,
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text(
-                'NO',
-                style: TextStyle(
-                  color: AppColors.primary,
-                  fontSize: 16,
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                // TODO: Implementa la logica di logout
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginPage()),
-                  (Route<dynamic> route) => false,
-                );
-              },
-              child: const Text(
-                'YES',
-                style: TextStyle(
-                  color: AppColors.danger,
-                  fontSize: 16,
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }
