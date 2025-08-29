@@ -3,6 +3,7 @@ import 'scans_page.dart';
 import 'users_page.dart';
 import 'settings_page.dart';
 import 'steps_page.dart';
+import '../shared_utils.dart';
 
 class MainPage extends StatefulWidget {
   final int initialPageIndex;
@@ -34,12 +35,11 @@ class _MainPageState extends State<MainPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE1EDFF),
+      backgroundColor: AppColors.lightBlue,
       body: Row(
         children: [
           // Navigazione a sinistra.
           Container(
-            width: 280,
             height: double.infinity,
             decoration: const ShapeDecoration(
               color: Colors.white,
@@ -57,10 +57,10 @@ class _MainPageState extends State<MainPage> {
                   const Text(
                     'CADmatch',
                     style: TextStyle(
-                      color: Color(0xFF111416),
+                      color: AppColors.primaryBlue,
                       fontSize: 24,
                       fontFamily: 'Inter',
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 40),
@@ -102,11 +102,11 @@ class _MainPageState extends State<MainPage> {
         margin: const EdgeInsets.symmetric(horizontal: 14),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: ShapeDecoration(
-          color: isActive ? const Color(0xFFE1EDFF) : Colors.white,
+          color: isActive ? AppColors.lightBlue : AppColors.white,
           shape: RoundedRectangleBorder(
             side: BorderSide(
               width: 1,
-              color: isActive ? const Color(0xFF0C7FF2) : Colors.white,
+              color: isActive ? AppColors.primaryBlue : AppColors.white,
             ),
             borderRadius: BorderRadius.circular(8),
           ),
@@ -116,7 +116,7 @@ class _MainPageState extends State<MainPage> {
             Text(
               title,
               style: TextStyle(
-                color: const Color(0xFF002C58),
+                color: AppColors.textPrimary,
                 fontSize: 18,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w500,

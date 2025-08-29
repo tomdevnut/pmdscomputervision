@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'main_page.dart';
 import 'dart:math';
+import '../shared_utils.dart'; // Importa il file di utility condiviso
 
 class NewUser extends StatefulWidget {
   const NewUser({super.key});
@@ -15,8 +15,19 @@ class _NewUserState extends State<NewUser> {
   final _surnameController = TextEditingController();
   final _passwordController = TextEditingController();
   String? _selectedLevel;
+  bool _obscurePassword =
+      true; // Nuova variabile per gestire la visibilità della password
 
-  // Generates a random password
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _nameController.dispose();
+    _surnameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  // Genera una password casuale
   String _generateRandomPassword() {
     const chars =
         'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#\$%^&*()_-+=';
@@ -29,146 +40,213 @@ class _NewUserState extends State<NewUser> {
     );
   }
 
-  // Builds the top bar with the "BACK" button
-  Widget _buildTopBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 16.0),
-      child: InkWell(
-        onTap: () {
-          // Navigates back to the main page, specifically the users tab.
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const MainPage(initialPageIndex: 3),
-            ),
-          );
-        },
-        child: Row(
-          children: const [
-            Icon(Icons.arrow_back_ios, color: Color(0xFF111416), size: 24),
-            SizedBox(width: 8),
-            Text(
-              'BACK',
-              style: TextStyle(
-                color: Color(0xFF111416),
-                fontSize: 20,
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w500,
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.lightBlue,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              buildTopBar(context, title: 'CREATE A NEW USER'),
+              const SizedBox(height: 24),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth > 800) {
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Prima colonna per Email, Name, e Level
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              buildInputField(
+                                label: 'Name',
+                                hintText: 'Enter the name',
+                                controller: _nameController,
+                                icon: Icons.person,
+                              ),
+                              const SizedBox(height: 24),
+                              buildInputField(
+                                label: 'Email',
+                                hintText: 'Enter the email',
+                                controller: _emailController,
+                                icon: Icons.email,
+                              ),
+                              const SizedBox(height: 24),
+                              _buildLevelSelector(), 
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 24), // Spazio tra le colonne
+                        // Seconda colonna per Surname e Password
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              buildInputField(
+                                label: 'Surname',
+                                hintText: 'Enter the surname',
+                                controller: _surnameController,
+                                icon: Icons.person,
+                              ),
+                              const SizedBox(height: 24),
+                              _buildPasswordInputField(), // Mantenuta come funzione specifica
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  } else {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        buildInputField(
+                          label: 'Name',
+                          hintText: 'Enter the name',
+                          controller: _nameController,
+                          icon: Icons.person,
+                        ),
+                        const SizedBox(height: 24),
+                        buildInputField(
+                          label: 'Email',
+                          hintText: 'Enter the email',
+                          controller: _emailController,
+                          icon: Icons.email,
+                        ),
+                        const SizedBox(height: 24),
+                        buildInputField(
+                          label: 'Surname',
+                          hintText: 'Enter the surname',
+                          controller: _surnameController,
+                          icon: Icons.person,
+                        ),
+                        const SizedBox(height: 24),
+                        _buildPasswordInputField(),
+                        const SizedBox(height: 24),
+                        _buildLevelSelector(),
+                      ],
+                    );
+                  }
+                },
               ),
-            ),
-          ],
+              const SizedBox(height: 40),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Utilizzo della funzione buildSaveButton da shared_utils.dart
+                  buildButton(
+                    label: 'Save',
+                    onTap: () {
+                      // TODO: Implementa la logica di salvataggio
+                  },
+                ),],
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  // Builds a generic input field with an icon and label
-  Widget _buildInputField(
-    BuildContext context, {
-    required String label,
-    required IconData icon,
-    required String hintText,
-    bool isMultiLine = false,
-    TextEditingController? controller,
-  }) {
+  // Costruisce il campo di input per la password con il pulsante "Generate" e l'icona di visibilità
+  Widget _buildPasswordInputField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // Container for the icon
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: const Color(0xFF002C58),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: Colors.white, size: 20),
+            Row(
+              children: [
+                // Container for the icon
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(Icons.password, color: AppColors.white, size: 20),
+                ),
+                const SizedBox(width: 12),
+                // Label text
+                Text(
+                  'Password',
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 20,
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            // Label text
-            Text(
-              label,
-              style: const TextStyle(
-                color: Color(0xFF111416),
-                fontSize: 20,
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w500,
+            InkWell(
+              onTap: () {
+                setState(() {
+                  _passwordController.text = _generateRandomPassword();
+                });
+              },
+              child: const Text(
+                'Generate password',
+                style: TextStyle(
+                  color: AppColors.primaryBlue,
+                  fontSize: 14,
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w400,
+                  decoration: TextDecoration.underline,
+                ),
               ),
             ),
           ],
         ),
         const SizedBox(height: 8),
         Container(
-          width: 400,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFDDE0E2)),
+            border: Border.all(color: AppColors.borderGray),
           ),
           child: TextFormField(
-            controller: controller,
-            maxLines: isMultiLine ? 5 : 1,
+            controller: _passwordController,
+            obscureText: _obscurePassword,
             decoration: InputDecoration(
-              hintText: hintText,
+              hintText: 'Enter the password',
               hintStyle: const TextStyle(
-                color: Color(0xFF6B7582),
+                color: AppColors.textHint,
                 fontSize: 16,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w400,
               ),
               contentPadding: const EdgeInsets.all(15),
               border: InputBorder.none,
-            ),
-            style: const TextStyle(color: Color(0xFF111416), fontSize: 16),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // Builds the password field with the "Generate password" button
-  Widget _buildPasswordInputField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildInputField(
-          context,
-          label: 'Password',
-          icon: Icons.lock,
-          hintText: 'Enter a password',
-          controller: _passwordController,
-        ),
-        const SizedBox(height: 8),
-        InkWell(
-          onTap: () {
-            final newPassword = _generateRandomPassword();
-            _passwordController.value = _passwordController.value.copyWith(
-              text: newPassword,
-              selection: TextSelection.collapsed(offset: newPassword.length),
-            );
-          },
-          child: const Padding(
-            padding: EdgeInsets.symmetric(vertical: 8.0),
-            child: Text(
-              'Generate random password',
-              style: TextStyle(
-                color: Color(0xFF0C7FF2),
-                fontSize: 16,
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w500,
-                decoration: TextDecoration.underline,
+              suffixIcon: IconButton(
+                icon: Icon(
+                  _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                  color: AppColors.textSecondary,
+                ),
+                padding: const EdgeInsets.only(right: 12),
+                onPressed: () {
+                  setState(() {
+                    _obscurePassword = !_obscurePassword;
+                  });
+                },
               ),
             ),
+            style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
           ),
         ),
       ],
     );
   }
 
-  // Builds the level selector field
+  // Costruisce il selettore del livello
   Widget _buildLevelSelector() {
+    final levels = ['0', '1', '2'];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -179,17 +257,17 @@ class _NewUserState extends State<NewUser> {
               width: 30,
               height: 30,
               decoration: BoxDecoration(
-                color: const Color(0xFF002C58),
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.onetwothree, color: Colors.white, size: 20),
+              child: Icon(Icons.onetwothree, color: AppColors.white, size: 20),
             ),
             const SizedBox(width: 12),
             // Label text
             Text(
               'Level',
               style: const TextStyle(
-                color: Color(0xFF111416),
+                color: AppColors.textPrimary,
                 fontSize: 20,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w500,
@@ -199,34 +277,31 @@ class _NewUserState extends State<NewUser> {
         ),
         const SizedBox(height: 8),
         Container(
-          width: 400,
+          width: double.infinity,
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFDDE0E2)),
+            border: Border.all(color: AppColors.borderGray),
           ),
           child: DropdownButtonHideUnderline(
-            child: DropdownButtonFormField<String>(
-              initialValue: _selectedLevel,
-              decoration: const InputDecoration(
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.symmetric(horizontal: 15),
-                hintText: 'Select a level',
-                hintStyle: TextStyle(
-                  color: Color(0xFF6B7582),
-                  fontSize: 16,
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w400,
+            child: DropdownButton<String>(
+              isExpanded: true,
+              value: _selectedLevel,
+              hint: const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Select a level',
+                  style: TextStyle(color: AppColors.textHint),
                 ),
               ),
-              items: ['0', '1', '2'].map((String value) {
+              items: levels.map((String value) {
                 return DropdownMenuItem<String>(
                   value: value,
-                  child: Text(
-                    value,
-                    style: const TextStyle(
-                      color: Color(0xFF111416),
-                      fontSize: 16,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      value,
+                      style: const TextStyle(color: AppColors.textPrimary),
                     ),
                   ),
                 );
@@ -236,130 +311,24 @@ class _NewUserState extends State<NewUser> {
                   _selectedLevel = newValue;
                 });
               },
-              style: const TextStyle(color: Color(0xFF111416), fontSize: 16),
-              dropdownColor: Colors.white,
-              icon: const Icon(Icons.arrow_drop_down, color: Color(0xFF6B7582)),
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w400,
+              ),
+              icon: const Padding(
+                padding: EdgeInsets.only(right: 16),
+                child: Icon(
+                  Icons.keyboard_arrow_down,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              dropdownColor: AppColors.white, // Sfondo del menu a tendina
             ),
           ),
         ),
       ],
-    );
-  }
-
-  // Builds the "Save" button
-  Widget _buildSaveButton() {
-    return InkWell(
-      onTap: () {
-        // TODO: Implementare la logica per salvare i dati inseriti.
-        // Si può fare il check che ci sia tutto prima di rendere cliccabile il pulsante
-      },
-      child: Container(
-        width: 150,
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          color: const Color(0xFF002C58),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Text(
-          'Save',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
-            fontFamily: 'Inter',
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _nameController.dispose();
-    _surnameController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFE1EDFF),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
-          child: Column(
-            // Use a Column to stack the top bar, title, and form content
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _buildTopBar(context),
-              const Text(
-                'CREATE A NEW USER',
-                style: TextStyle(
-                  color: Color(0xFF111416),
-                  fontSize: 28,
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              const SizedBox(height: 24),
-              // Use a Center widget to center the entire Row
-              Center(
-                // Use a Row to create the two-column layout for the input fields
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // First column for Email, Name, and Level
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildInputField(
-                          context,
-                          label: 'Email',
-                          icon: Icons.email,
-                          hintText: 'Enter the email',
-                          controller: _emailController,
-                        ),
-                        const SizedBox(height: 24),
-                        _buildInputField(
-                          context,
-                          label: 'Name',
-                          icon: Icons.person,
-                          hintText: 'Enter the name',
-                          controller: _nameController,
-                        ),
-                        const SizedBox(height: 24),
-                        _buildLevelSelector(),
-                      ],
-                    ),
-                    const SizedBox(width: 24), // Space between the columns
-                    // Second column for Surname, and Password
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildInputField(
-                          context,
-                          label: 'Surname',
-                          icon: Icons.person,
-                          hintText: 'Enter the surname',
-                          controller: _surnameController,
-                        ),
-                        const SizedBox(height: 24),
-                        _buildPasswordInputField(),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 40),
-              Center(child: _buildSaveButton()),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

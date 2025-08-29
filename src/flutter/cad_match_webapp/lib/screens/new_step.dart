@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'main_page.dart';
+import '../shared_utils.dart'; // Importa il file di utility condiviso
 
 class StepUpload extends StatefulWidget {
   const StepUpload({super.key});
@@ -10,20 +10,27 @@ class StepUpload extends StatefulWidget {
 }
 
 class _StepUploadState extends State<StepUpload> {
+  final _nameController = TextEditingController();
+  final _descriptionController = TextEditingController();
   PlatformFile? _selectedFile;
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _descriptionController.dispose();
+    super.dispose();
+  }
 
   Future<void> _pickFile() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles();
 
       if (result != null && result.files.isNotEmpty) {
-        // Memorizza l'oggetto PlatformFile
         setState(() {
           _selectedFile = result.files.first;
         });
       }
     } catch (e) {
-      // mostra errore
       if (mounted) {
         ScaffoldMessenger.of(
           context,
@@ -49,22 +56,18 @@ class _StepUploadState extends State<StepUpload> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE1EDFF),
+      backgroundColor: AppColors.lightBlue,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildTopBar(context),
-              const Text(
-                'UPLOAD A NEW STEP',
-                style: TextStyle(
-                  color: Color(0xFF111416),
-                  fontSize: 28,
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w600,
-                ),
+              // Utilizzo della funzione buildTopBar da shared_utils.dart
+              buildTopBar(
+                context,
+                title: 'UPLOAD A NEW STEP',
+                mainPageIndex: 1,
               ),
               const SizedBox(height: 24),
               Row(
@@ -74,29 +77,64 @@ class _StepUploadState extends State<StepUpload> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildInputField(
-                          context,
-                          icon: Icons.tag,
-                          label: 'Step name',
-                          hintText: 'Enter step name',
+                        // Utilizzo della funzione buildInputField da shared_utils.dart
+                        buildInputField(
+                          label: 'Name',
+                          icon: Icons.abc,
+                          hintText: 'Enter a step name',
+                          controller: _nameController,
                         ),
                         const SizedBox(height: 24),
-                        _buildInputField(
-                          context,
-                          icon: Icons.description,
+                        // Utilizzo della funzione buildInputField per la descrizione
+                        buildInputField(
                           label: 'Description',
+                          icon: Icons.description,
                           hintText: 'Enter a description',
-                          isMultiLine: true,
+                          controller: _descriptionController,
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 40),
-                  Expanded(child: _buildUploadArea(context)),
+                  const SizedBox(width: 24),
+                  // Sezione di caricamento del file
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const Text(
+                          'Upload File',
+                          style: TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 16,
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        if (_selectedFile == null)
+                          _buildUploadButton()
+                        else
+                          _buildFileDetails(),
+                      ],
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 40),
-              Align(alignment: Alignment.center, child: _buildSaveButton()),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  buildButton(
+                    label: 'Save',
+                    onTap: () {
+                      if (_selectedFile != null) {
+                        // TODO: Implementare la logica di salvataggio
+                      }
+                    },
+                    isEnabled: _selectedFile != null,
+                  ),
+                ],
+              ),
             ],
           ),
         ),
@@ -104,242 +142,82 @@ class _StepUploadState extends State<StepUpload> {
     );
   }
 
-  Widget _buildTopBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 16.0),
-      child: InkWell(
-        onTap: () {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const MainPage(initialPageIndex: 1),
-            ),
-          );
-        },
-        child: Row(
-          children: const [
-            Icon(Icons.arrow_back_ios, color: Color(0xFF111416), size: 24),
-            SizedBox(width: 8),
-            Text(
-              'BACK',
-              style: TextStyle(
-                color: Color(0xFF111416),
-                fontSize: 20,
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildInputField(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String hintText,
-    bool isMultiLine = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            // Contenitore per l'icona
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                color: const Color(0xFF002C58),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(icon, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 12),
-            // Testo della label
-            Text(
-              label,
-              style: const TextStyle(
-                color: Color(0xFF111416),
-                fontSize: 20,
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFDDE0E2)),
-          ),
-          child: TextFormField(
-            maxLines: isMultiLine ? 5 : 1,
-            decoration: InputDecoration(
-              hintText: hintText,
-              hintStyle: const TextStyle(
-                color: Color(0xFF6B7582),
-                fontSize: 16,
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w400,
-              ),
-              contentPadding: const EdgeInsets.all(15),
-              border: InputBorder.none,
-            ),
-            style: const TextStyle(color: Color(0xFF111416), fontSize: 16),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildUploadArea(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 56),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          width: 2,
-          color: const Color(0xFFDBE8F2),
-          style: BorderStyle.solid,
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (_selectedFile == null)
-            // Area iniziale di upload con il pulsante "Choose file"
-            Column(
-              children: [
-                const Text(
-                  'Upload a step file',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Color(0xFF111416),
-                    fontSize: 20,
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ElevatedButton(
-                  onPressed: _pickFile,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFE5E7EB),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
-                    ),
-                  ),
-                  child: const Text(
-                    'Choose file',
-                    style: TextStyle(
-                      color: Color(0xFF111416),
-                      fontSize: 16,
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
-            )
-          else
-            // Visualizzatore del file caricato
-            Column(
-              children: [
-                InkWell(
-                  onTap:
-                      _pickFile, // Cliccando sul visualizzatore, si può scegliere un nuovo file
-                  child: Column(
-                    children: [
-                      const Icon(
-                        Icons.check_circle_outline,
-                        color: Colors.green,
-                        size: 50,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Chosen file: ${_selectedFile!.name}',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Color(0xFF111416),
-                          fontSize: 18,
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Size: ${_formatFileSize(_selectedFile!.size)}',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: Color(0xFF6B7582),
-                          fontSize: 16,
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w400,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-                // Pulsante per rimuovere il file
-                TextButton(
-                  onPressed: _removeFile,
-                  child: const Text(
-                    'Remove file',
-                    style: TextStyle(
-                      color: Color(0xFFD94451),
-                      fontSize: 16,
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w400,
-                      decoration: TextDecoration.underline,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSaveButton() {
+  // Costruisce il pulsante per il caricamento del file
+  Widget _buildUploadButton() {
     return InkWell(
-      onTap: () {
-        if (_selectedFile != null) {
-          // TODO: Implement save functionality
-        } else {
-          // Do nothing
-        }
-      },
+      onTap: _pickFile,
       child: Container(
-        width: 200,
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: (_selectedFile == null
-              ? const Color(0xFF6B7582)
-              : const Color(0xFF002C58)),
+          color: const Color(0xFFF2F2F4),
           borderRadius: BorderRadius.circular(12),
         ),
         child: const Text(
-          'Save',
+          'Upload File',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Colors.white,
-            fontSize: 20,
+            color: AppColors.textPrimary,
+            fontSize: 18,
             fontFamily: 'Inter',
             fontWeight: FontWeight.w700,
           ),
         ),
+      ),
+    );
+  }
+
+  // Costruisce la visualizzazione dei dettagli del file caricato
+  Widget _buildFileDetails() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.borderGray),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _selectedFile!.name,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 16,
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const Icon(Icons.check_circle, color: Colors.green),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Size: ${_formatFileSize(_selectedFile!.size)}',
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 14,
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: _removeFile,
+            child: const Text(
+              'Remove file',
+              style: TextStyle(
+                color: AppColors.danger,
+                fontSize: 16,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w400,
+                decoration: TextDecoration.underline,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

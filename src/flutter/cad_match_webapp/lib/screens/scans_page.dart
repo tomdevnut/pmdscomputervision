@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'single_scan.dart';
+import '../shared_utils.dart'; // Importa il file di utility condiviso
 
 class ScansPage extends StatelessWidget {
   const ScansPage({super.key});
@@ -15,7 +16,7 @@ class ScansPage extends StatelessWidget {
             const Text(
               'SCANS',
               style: TextStyle(
-                color: Color(0xFF111416),
+                color: AppColors.textPrimary,
                 fontSize: 28,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w500,
@@ -26,78 +27,58 @@ class ScansPage extends StatelessWidget {
         ),
         const SizedBox(height: 20),
         // Lista di scansioni
-        _buildScanItem(context, 'Scan 1', 'Uploaded: 2024-01-15'),
+        buildListItem(
+          title: 'Scan 1',
+          subtitle: 'Uploaded: 2024-01-15',
+          icon: Icons.view_in_ar,
+          hasArrow: true,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SingleScan()),
+            );
+          },
+        ),
         const SizedBox(height: 12),
-        _buildScanItem(context, 'Scan 2', 'Uploaded: 2024-01-10'),
+        buildListItem(
+          title: 'Scan 2',
+          subtitle: 'Uploaded: 2024-01-10',
+          icon: Icons.view_in_ar,
+          hasArrow: true,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SingleScan()),
+            );
+          },
+        ),
         const SizedBox(height: 12),
-        _buildScanItem(context, 'Scan 3', 'Uploaded: 2024-01-05'),
+        buildListItem(
+          title: 'Scan 3',
+          subtitle: 'Uploaded: 2024-01-05',
+          icon: Icons.view_in_ar,
+          hasArrow: true,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SingleScan()),
+            );
+          },
+        ),
         const SizedBox(height: 12),
-        _buildScanItem(context, 'Scan 4', 'Uploaded: 2024-01-05'),
+        buildListItem(
+          title: 'Scan 4',
+          subtitle: 'Uploaded: 2024-01-05',
+          icon: Icons.view_in_ar,
+          hasArrow: true,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SingleScan()),
+            );
+          },
+        ),
       ],
-    );
-  }
-
-  // Metodo helper per costruire gli elementi della lista scansioni
-  Widget _buildScanItem(
-    BuildContext context,
-    String scanName,
-    String uploadDate,
-  ) {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const SingleScan()),
-        );
-      },
-      child: Container(
-        width: double.infinity,
-        margin: const EdgeInsets.only(bottom: 8), // Spazio tra le voci
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.white, // Sfondo bianco
-          borderRadius: BorderRadius.circular(10), // Bordi arrotondati
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: ShapeDecoration(
-                    color: const Color(0xFF002C58),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.view_in_ar,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  scanName,
-                  style: const TextStyle(
-                    color: Color(0xFF111416),
-                    fontSize: 18,
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-            const Icon(
-              Icons.arrow_forward_ios,
-              size: 16,
-              color: Color(0xFF6B7582),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

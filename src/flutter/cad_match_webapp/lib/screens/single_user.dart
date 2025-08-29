@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'main_page.dart';
+import 'change_password.dart';
+import '../shared_utils.dart';
 
 class SingleUserPage extends StatelessWidget {
   final bool isUserEnabled;
-  final bool showControls; // se provengo dalla pagina settings non mostro i controlli, TODO: se l'utente ha livello 2 non posso cancellarlo/disabilitarlo
+  final bool
+  showControls; // se provengo dalla pagina settings non mostro i controlli, TODO: se l'utente ha livello 2 non posso cancellarlo/disabilitarlo
   final int mainPageIndex;
 
   const SingleUserPage({
@@ -16,59 +18,24 @@ class SingleUserPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFE1EDFF,
-      ),
+      backgroundColor: AppColors.lightBlue,
       body: SafeArea(
-        child: Column(
-          children: [
-            // Top bar con il pulsante "back"
-            _buildTopBar(context),
-            const SizedBox(height: 40),
-            // Sezione centrale con l'icona e le informazioni dell'utente
-            _buildUserInfoSection(isUserEnabled, 2),
-            const SizedBox(height: 100),
-            // Pulsanti di azione per la gestione dell'utente
-            if (showControls) _buildActionButtons(context, isUserEnabled),
-          ],
-        ),
-      ),
-    );
-  }
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
 
-  // Costruisce la barra superiore con il pulsante per tornare indietro
-  Widget _buildTopBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-      child: Row(
-        children: [
-          InkWell(
-            onTap: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      MainPage(initialPageIndex: mainPageIndex),
-                ),
-              );
-            },
-            child: Row(
-              children: const [
-                Icon(Icons.arrow_back_ios, color: Color(0xFF111416), size: 24),
-                SizedBox(width: 8),
-                Text(
-                  'BACK',
-                  style: TextStyle(
-                    color: Color(0xFF111416),
-                    fontSize: 20,
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
+          child: Column(
+            children: [
+              // Top bar con il pulsante "back"
+              buildTopBar(context, title: 'USER INFO', mainPageIndex: mainPageIndex),
+              const SizedBox(height: 40),
+              // Sezione centrale con l'icona e le informazioni dell'utente
+              _buildUserInfoSection(isUserEnabled, 2),
+              const SizedBox(height: 80),
+              // Pulsanti di azione per la gestione dell'utente
+              if (showControls) _buildActionButtons(context, isUserEnabled),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -81,7 +48,7 @@ class SingleUserPage extends StatelessWidget {
           width: 120,
           height: 120,
           decoration: ShapeDecoration(
-            color: const Color(0xFF002C58),
+            color: AppColors.primary,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
             ),
@@ -92,20 +59,20 @@ class SingleUserPage extends StatelessWidget {
         const Text(
           'User Xyz',
           style: TextStyle(
-            color: Color(0xFF111416),
+            color: AppColors.textPrimary,
             fontSize: 28,
             fontFamily: 'Inter',
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         const Text(
           'email@test.com',
           style: TextStyle(
-            color: Color(0xFF6B7582),
+            color: AppColors.textSecondary,
             fontSize: 18,
             fontFamily: 'Inter',
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: 24), // Spazio tra email e i nuovi box
@@ -120,14 +87,12 @@ class SingleUserPage extends StatelessWidget {
                   height: 44,
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: isEnabled
-                        ? const Color(0xFF03A411)
-                        : const Color(0xFFD32F2F),
+                    color: isEnabled ? AppColors.green : AppColors.errorRed,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     isEnabled ? Icons.check : Icons.close,
-                    color: Colors.white,
+                    color: AppColors.white,
                     size: 24,
                   ),
                 ),
@@ -135,7 +100,7 @@ class SingleUserPage extends StatelessWidget {
                 Text(
                   isEnabled ? 'Enabled' : 'Disabled',
                   style: const TextStyle(
-                    color: Color(0xFF111416),
+                    color: AppColors.textPrimary,
                     fontSize: 14,
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w500,
@@ -152,14 +117,14 @@ class SingleUserPage extends StatelessWidget {
                   height: 44,
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.grey[300],
+                    color: AppColors.borderGray,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Center(
                     child: Text(
                       '$level',
                       style: const TextStyle(
-                        color: Color(0xFF111416),
+                        color: AppColors.textPrimary,
                         fontSize: 18,
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.w600,
@@ -171,7 +136,7 @@ class SingleUserPage extends StatelessWidget {
                 Text(
                   'Level',
                   style: TextStyle(
-                    color: Color(0xFF111416),
+                    color: AppColors.textPrimary,
                     fontSize: 14,
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w500,
@@ -191,134 +156,60 @@ class SingleUserPage extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Pulsante per abilitare/disabilitare
-        _buildActionButton(
+        buildButton(
           label: isEnabled ? 'Disable User' : 'Enable User',
           icon: isEnabled ? Icons.cancel : Icons.check_circle,
-          color: isEnabled ? const Color(0xFFD32F2F) : const Color(0xFF03A411),
+          backgroundColor: isEnabled ? AppColors.danger : AppColors.green,
           onTap: () {
             // TODO: Logica per (dis)abilitare l'utente
           },
         ),
-        const SizedBox(width: 70),
+        const SizedBox(width: 30),
+        // Pulsante per modificare la password
+        buildButton(
+          label: 'Edit User\'s Password',
+          icon: Icons.lock,
+          backgroundColor: AppColors.primary,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const ChangePassword(
+                  requireOldPassword: false,
+                  previousPage: 3,
+                ),
+              ),
+            );
+          },
+        ),
+        const SizedBox(width: 30),
+        // Pulsante per rimandare la mail con le info di accesso
+        buildButton(
+          label: 'Resend Access Email',
+          icon: Icons.email,
+          backgroundColor: AppColors.primary,
+          onTap: () {
+            // TODO: Logica per rimandare l'email
+          },
+        ),
+        const SizedBox(width: 30),
         // Pulsante per eliminare
-        _buildActionButton(
+        buildButton(
           label: 'Delete User',
           icon: Icons.delete,
-          color: const Color(0xFFD32F2F),
+          backgroundColor: AppColors.danger,
           onTap: () {
-            _showConfirmationDialog(context);
+            showConfirmationDialog(
+              context: context,
+              message:
+                  'This action will permanently delete the user and their associated scans.',
+              onConfirm: () {
+                // TODO: Logica per eliminare l'utente
+              },
+            );
           },
         ),
       ],
-    );
-  }
-
-  // Metodo helper per costruire un singolo pulsante di azione
-  Widget _buildActionButton({
-    required String label,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        width: 200,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(10),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x11000000),
-              blurRadius: 10,
-              offset: Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, color: Colors.white, size: 28),
-            const SizedBox(width: 10),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // Mostra il dialogo di conferma per la cancellazione
-  void _showConfirmationDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: const Color(0xFFE1EDFF),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          title: const Text(
-            'Are you sure?',
-            style: TextStyle(
-              color: Color(0xFF111416),
-              fontSize: 20,
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          content: const Text(
-            'This action will permanently delete the user and their associated scans.',
-            style: TextStyle(
-              color: Color(0xFF6B7582),
-              fontSize: 16,
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                // Azione per il tasto "NO"
-                Navigator.of(context).pop(); // Chiude il popup
-              },
-              child: const Text(
-                'NO',
-                style: TextStyle(
-                  color: Color(0xFF002C58),
-                  fontSize: 16,
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            TextButton(
-              onPressed: () {
-                // Azione per il tasto "YES"
-                // TODO: Implementare la logica
-                Navigator.of(context).pop(); // Chiude il popup
-              },
-              child: const Text(
-                'YES',
-                style: TextStyle(
-                  color: Color(0xFFD32F2F),
-                  fontSize: 16,
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        );
-      },
     );
   }
 }

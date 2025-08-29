@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'main_page.dart';
+import '../shared_utils.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -30,20 +31,80 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     // Scaffold fornisce la struttura di base della pagina
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.white,
       body: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth > 800) {
             // Layout per schermi ampi (desktop)
             return Center(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(maxWidth: 500),
-                child: _buildLoginContent(context),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    'Welcome to CADmatch web',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 40,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+
+                  // Sottotitolo
+                  Text(
+                    'Please sign in.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  SizedBox(height: 35),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: 500),
+                    child: _buildLoginContent(context),
+                  ),
+                ],
               ),
             );
           } else {
             // Layout per schermi stretti (mobile)
-            return SingleChildScrollView(child: _buildLoginContent(context));
+            return SingleChildScrollView(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(height: 80),
+                  Text(
+                    'Welcome to CADmatch web',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 40,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  SizedBox(height: 12),
+
+                  // Sottotitolo
+                  Text(
+                    'Please sign in.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  SizedBox(height: 48),
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxWidth: 500),
+                    child: _buildLoginContent(context),
+                  ),
+                ],
+              ),
+            );
           }
         },
       ),
@@ -56,36 +117,12 @@ class _LoginPageState extends State<LoginPage> {
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 48.0),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Welcome Back to CADmatch web',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: const Color(0xFF111416),
-              fontSize: 40,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          SizedBox(height: 12),
-
-          // Sottotitolo
-          Text(
-            'Please sign in.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: const Color(0xFF111416),
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
-            ),
-          ),
-          SizedBox(height: 48),
-
           // Contenitore del modulo di login
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
             decoration: BoxDecoration(
-              color: const Color(0xFFE1EDFF),
+              color: AppColors.lightBlue,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Column(
@@ -95,11 +132,11 @@ class _LoginPageState extends State<LoginPage> {
                   controller: _emailController,
                   decoration: InputDecoration(
                     hintText: 'Email',
-                    fillColor: Colors.white,
+                    fillColor: AppColors.white,
                     filled: true,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Color(0xFFDBE0E5)),
+                      borderSide: const BorderSide(color: AppColors.textHint),
                     ),
                   ),
                 ),
@@ -111,11 +148,11 @@ class _LoginPageState extends State<LoginPage> {
                   controller: _passwordController,
                   decoration: InputDecoration(
                     hintText: 'Password',
-                    fillColor: Colors.white,
+                    fillColor: AppColors.white,
                     filled: true,
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Color(0xFFDBE0E5)),
+                      borderSide: const BorderSide(color: AppColors.textHint),
                     ),
                   ),
                 ),
@@ -131,7 +168,7 @@ class _LoginPageState extends State<LoginPage> {
                       _signIn();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0C7FF2),
+                      backgroundColor: AppColors.primaryBlue,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -139,8 +176,8 @@ class _LoginPageState extends State<LoginPage> {
                     child: Text(
                       'Sign In',
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
+                        color: AppColors.white,
+                        fontSize: 18,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
