@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import '../shared_utils.dart';
-import 'statistics.dart';
 
-class SingleScan extends StatelessWidget {
-  const SingleScan({super.key});
+class Statistics extends StatelessWidget {
+  const Statistics({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +14,7 @@ class SingleScan extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              buildTopBar(context, title: 'SCAN INFO'),
+              buildTopBar(context, title: 'SCAN STATISTICS'),
               const SizedBox(height: 24),
               LayoutBuilder(
                 builder: (context, constraints) {
@@ -28,21 +27,21 @@ class SingleScan extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               buildInfoField(
-                                label: 'Name',
-                                value: 'Scan 1',
-                                icon: Icons.abc,
+                                label: 'Accuracy',
+                                value: '95%',
+                                icon: Icons.check_circle,
                               ),
                               const SizedBox(height: 24),
                               buildInfoField(
-                                label: 'Date',
-                                value: '2024-01-15',
-                                icon: Icons.calendar_today,
+                                label: 'Average Deviation',
+                                value: '2.5%',
+                                icon: Icons.stacked_line_chart,
                               ),
                               const SizedBox(height: 24),
                               buildInfoField(
-                                label: 'User',
-                                value: 'john.doe@example.com',
-                                icon: Icons.person,
+                                label: 'Maximum Deviation',
+                                value: '5%',
+                                icon: Icons.arrow_circle_up,
                               ),
                             ],
                           ),
@@ -53,22 +52,21 @@ class SingleScan extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               buildInfoField(
-                                label: 'Status',
-                                value: 'Completed',
-                                icon: Icons.check_circle,
+                                label: 'Minimum Deviation',
+                                value: '1.5%',
+                                icon: Icons.arrow_circle_down,
                               ),
                               const SizedBox(height: 24),
                               buildInfoField(
-                                label:
-                                    'Step', // TODO valutare se mettere il nome step o il link allo step
-                                value: '123456789',
-                                icon: Icons.tag,
+                                label: 'Standard Deviation',
+                                value: '2.0%',
+                                icon: Icons.analytics,
                               ),
                               const SizedBox(height: 24),
                               buildInfoField(
-                                label: 'Progress',
-                                value: '100%',
-                                icon: Icons.data_usage,
+                                label: 'Percentage of Points within Tolerance',
+                                value: '88%',
+                                icon: Icons.percent,
                               ),
                             ],
                           ),
@@ -80,39 +78,39 @@ class SingleScan extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         buildInfoField(
-                          label: 'Name',
-                          value: 'Scan 1',
-                          icon: Icons.abc,
-                        ),
-                        const SizedBox(height: 24),
-                        buildInfoField(
-                          label: 'Date',
-                          value: '2024-01-15',
-                          icon: Icons.calendar_today,
-                        ),
-                        const SizedBox(height: 24),
-                        buildInfoField(
-                          label: 'User',
-                          value: 'john.doe@example.com',
-                          icon: Icons.person,
-                        ),
-                        const SizedBox(height: 24),
-                        buildInfoField(
-                          label: 'Status',
-                          value: 'Completed',
+                          label: 'Accuracy',
+                          value: '95%',
                           icon: Icons.check_circle,
                         ),
                         const SizedBox(height: 24),
                         buildInfoField(
-                          label: 'Step',
-                          value: '123456789',
-                          icon: Icons.tag,
+                          label: 'Average Deviation',
+                          value: '2.5%',
+                          icon: Icons.stacked_line_chart,
                         ),
                         const SizedBox(height: 24),
                         buildInfoField(
-                          label: 'Progress',
-                          value: '100%',
-                          icon: Icons.data_usage,
+                          label: 'Maximum Deviation',
+                          value: '5%',
+                          icon: Icons.arrow_circle_up,
+                        ),
+                        const SizedBox(height: 24),
+                        buildInfoField(
+                          label: 'Minimum Deviation',
+                          value: '1.5%',
+                          icon: Icons.arrow_circle_down,
+                        ),
+                        const SizedBox(height: 24),
+                        buildInfoField(
+                          label: 'Standard Deviation',
+                          value: '2.0%',
+                          icon: Icons.analytics,
+                        ),
+                        const SizedBox(height: 24),
+                        buildInfoField(
+                          label: 'Percentage of Points within Tolerance',
+                          value: '88%',
+                          icon: Icons.percent,
                         ),
                       ],
                     );
@@ -123,38 +121,13 @@ class SingleScan extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  buildButton(
-                    label: 'Open Statistics',
-                    icon: Icons.bar_chart,
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const Statistics(),
-                        ),
-                      );
-                    },
-                  ),
                   const SizedBox(width: 12),
                   buildButton(
-                    label: 'Download Scan File',
+                    label: 'Download Compared File',
                     icon: Icons.download,
                     onTap: () {
-                      // TODO: Logica per scaricare la scansione
+                      // TODO: Logica per scaricare il file confrontato
                     },
-                  ),
-                  const SizedBox(width: 12),
-                  buildButton(
-                    label: 'Delete Scan',
-                    onTap: () => showConfirmationDialog(
-                      context: context,
-                      message: 'This action will permanently delete the scan.',
-                      onConfirm: () {
-                        // TODO: Logica per eliminare la scansione
-                      },
-                    ),
-                    backgroundColor: AppColors.red,
-                    icon: Icons.delete,
                   ),
                 ],
               ),

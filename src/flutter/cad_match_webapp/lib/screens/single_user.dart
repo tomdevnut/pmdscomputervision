@@ -6,13 +6,11 @@ class SingleUserPage extends StatelessWidget {
   final bool isUserEnabled;
   final bool
   showControls; // se provengo dalla pagina settings non mostro i controlli, TODO: se l'utente ha livello 2 non posso cancellarlo/disabilitarlo
-  final int mainPageIndex;
 
   const SingleUserPage({
     super.key,
     this.isUserEnabled = true,
     this.showControls = true,
-    this.mainPageIndex = 3,
   });
 
   @override
@@ -26,7 +24,7 @@ class SingleUserPage extends StatelessWidget {
           child: Column(
             children: [
               // Top bar con il pulsante "back"
-              buildTopBar(context, title: 'USER INFO', mainPageIndex: mainPageIndex),
+              buildTopBar(context, title: 'USER INFO'),
               const SizedBox(height: 40),
               // Sezione centrale con l'icona e le informazioni dell'utente
               _buildUserInfoSection(isUserEnabled, 2),
@@ -167,7 +165,7 @@ class SingleUserPage extends StatelessWidget {
         const SizedBox(width: 30),
         // Pulsante per modificare la password
         buildButton(
-          label: 'Edit user\'s password',
+          label: 'Change user\'s password',
           icon: Icons.lock,
           onTap: () {
             Navigator.push(
@@ -175,7 +173,6 @@ class SingleUserPage extends StatelessWidget {
               MaterialPageRoute(
                 builder: (context) => const ChangePassword(
                   requireOldPassword: false,
-                  previousPage: 3,
                 ),
               ),
             );

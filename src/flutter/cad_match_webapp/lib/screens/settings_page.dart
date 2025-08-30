@@ -38,7 +38,7 @@ class SettingsPage extends StatelessWidget {
               context,
               MaterialPageRoute(
                 builder: (context) =>
-                    const SingleUserPage(showControls: false, mainPageIndex: 2),
+                    const SingleUserPage(showControls: false),
               ),
             );
           },
@@ -52,7 +52,7 @@ class SettingsPage extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const ChangePassword(previousPage: 2),
+                builder: (context) => const ChangePassword(),
               ),
             );
           },

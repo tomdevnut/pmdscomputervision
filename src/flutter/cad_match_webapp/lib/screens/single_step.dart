@@ -14,7 +14,7 @@ class SingleStep extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              buildTopBar(context, title: 'STEP INFO', mainPageIndex: 1),
+              buildTopBar(context, title: 'STEP INFO'),
               const SizedBox(height: 24),  
               LayoutBuilder(
                 builder: (BuildContext context, BoxConstraints constraints) {
@@ -89,6 +89,14 @@ class SingleStep extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children:[
+                  buildButton(
+                    label: 'Download Step File',
+                    icon: Icons.download,
+                    onTap: () {
+                      // TODO: Logica per scaricare il file dello step
+                    },
+                  ),
+                  const SizedBox(width: 12),
                   buildButton(
                     label: 'Delete Step',
                     icon: Icons.delete,

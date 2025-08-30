@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'screens/main_page.dart';
 
 // Definizione dei colori
 class AppColors {
@@ -20,22 +19,13 @@ class AppColors {
 Widget buildTopBar(
   BuildContext context, {
   required String title,
-  int? mainPageIndex,
 }) {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 16.0),
     child: InkWell(
       onTap: () {
-        if (mainPageIndex != null) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => MainPage(initialPageIndex: mainPageIndex),
-            ),
-          );
-        } else {
+        
           Navigator.pop(context);
-        }
       },
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,

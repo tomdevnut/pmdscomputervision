@@ -69,7 +69,6 @@ class _StepUploadState extends State<StepUpload> {
               buildTopBar(
                 context,
                 title: 'UPLOAD A NEW STEP',
-                mainPageIndex: 1,
               ),
               const SizedBox(height: 24),
               Center(

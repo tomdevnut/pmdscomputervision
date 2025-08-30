@@ -5,11 +5,9 @@ class ChangePassword extends StatefulWidget {
   const ChangePassword({
     super.key,
     this.requireOldPassword = true,
-    this.previousPage = 0,
   });
   final bool
   requireOldPassword; // Se provengo dalla schermata degli utenti posso modificare la password senza sapere la vecchia password (funzioni manager), se provengo dalle mie impostazioni devo sapere anche quella vecchia
-  final int previousPage;
   @override
   State<ChangePassword> createState() => _ChangePasswordState();
 }
