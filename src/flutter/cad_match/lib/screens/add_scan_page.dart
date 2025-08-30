@@ -1,7 +1,8 @@
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import '../utils.dart';
 
-// Creo la schermata di aggiunta scan come statefulwidget per gestire lo stato (campi, caricamento)
+// Definizione della pagina come StatefulWidget per gestire lo stato del form
 class AddScanPage extends StatefulWidget {
   const AddScanPage({super.key});
 
@@ -9,236 +10,40 @@ class AddScanPage extends StatefulWidget {
   State<AddScanPage> createState() => _AddScanPageState();
 }
 
+// Stato della pagina
 class _AddScanPageState extends State<AddScanPage> {
-   // creo una chiave globale per validare il form dello scan
+  // Chiave globale per validare il form
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  // definisco un controller per ciascun campo del form per modificarlo
-  final TextEditingController _scanIdCtrl = TextEditingController();
-  final TextEditingController _stepIdCtrl = TextEditingController();
-  final TextEditingController _objectTypeCtrl = TextEditingController();
+  // Controller per il campo 'name'
   final TextEditingController _nameCtrl = TextEditingController();
-  final TextEditingController _descriptionCtrl = TextEditingController();
 
-    // variabile che tiene traccia dello stato di caricamento - fase salvataggio o caricamento avvenuto
+  // Variabili per lo step
+  String? _selectedStepId;
+  String? _selectedStepName;
+  Stream<QuerySnapshot>? _stepsStream;
   bool _saving = false;
 
-  // libero la memoria dei controller quando la pagina viene chiusa con next
+  @override
+  void initState() {
+    super.initState();
+    // Inizializza il listener per recuperare gli step da Firestore
+    _stepsStream = FirebaseFirestore.instance.collection('steps').snapshots();
+  }
+
+  // Libera la memoria dei controller
   @override
   void dispose() {
-    _scanIdCtrl.dispose();
-    _stepIdCtrl.dispose();
-    _objectTypeCtrl.dispose();
     _nameCtrl.dispose();
-    _descriptionCtrl.dispose();
     super.dispose();
   }
 
-  // creo la funzione _onNext
-  Future<void> _onNext() async {
-    // validazione form
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-
-    setState(() => _saving = true);
-
-    // payload con i dati inseriti dall'utente
-    try {
-      final payload = {
-        'scanId': _scanIdCtrl.text.trim(),
-        'stepId': _stepIdCtrl.text.trim(),
-        'objectType': _objectTypeCtrl.text.trim(),
-        'name': _nameCtrl.text.trim(),
-        'description': _descriptionCtrl.text.trim(),
-        'createdAt': DateTime.now().toIso8601String(),
-        'status': 'ready',
-      };
-
-      if (!mounted) return;
-
-      // messaggio di conferma 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Scan data saved')),
-      );
-
-      // permette di tornare alla pagina precedente passando i dati inseriti
-      Navigator.of(context).pop(payload);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar( // restituisce i dati a chi ha aperto la pagina
-        SnackBar(content: Text('Errore: $e')), // in caso di errore mostra una snackbar rossa
-      );
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    const bg = Color(0xFF0F0F0F);
-    const card = Color(0xFF161616);
-    const field = Color(0xFF2A2421);
-    const pill = Color(0xFFF3E1D6);
-
-    return Scaffold( // dà la struttura base della pagina
-      backgroundColor: bg,
-
-      // definisco i campi di appBar
-      appBar: AppBar(
-        backgroundColor: bg,
-        centerTitle: true,
-        elevation: 0.5,
-        leading: IconButton(
-          // icona fotocamera a sx per effettuare la scansione con il lidar
-          icon: const Icon(Icons.camera_alt_outlined),
-          onPressed: () {},
-        ),
-        actions: [
-          IconButton(
-            // icona immagine a dx per accedere alla galleria e scegliere un file già esistenteo
-            icon: const Icon(Icons.image_outlined),
-            onPressed: () {},
-          ),
-        ],
-        title: const Text('New Scan'),
-      ),
-
-      // creazione card + form (ogni campo ha una propria validazione)
-      body: SafeArea(
-        child: ListView( // listview con padding per creare una pagina scrollabile
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          children: [
-            Container( 
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: card,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Color(0x22FFFFFF)),
-              ),
-
-              // definisco il contenuto della card
-              child: Form(
-                key: _formKey, // collegamento del form a formkey per la validazione
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Model',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 18,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    const Text(
-                      'Enter details about your object',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 12,
-                      ),
-                    ),
-
-                    // ogni campo ha: etichetta, spazietura, textformfield con validazione required
-                    const SizedBox(height: 20),
-                    _label('Scan ID'),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _scanIdCtrl,
-                      decoration: _decoration('Value', field),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Required' : null,
-                    ),
-                    const SizedBox(height: 14),
-                    _label('Step ID'),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _stepIdCtrl,
-                      decoration: _decoration('Value', field),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Required' : null,
-                    ),
-                    const SizedBox(height: 14),
-                    _label('Object Type'),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _objectTypeCtrl,
-                      decoration: _decoration('Value', field),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Required' : null,
-                    ),
-                    const SizedBox(height: 14),
-                    _label('Name'),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _nameCtrl,
-                      decoration: _decoration('Value', field),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Required' : null,
-                    ),
-                    const SizedBox(height: 14),
-                    _label('Description'),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _descriptionCtrl,
-                      maxLines: 6, // è un campo multilinea
-                      decoration: _decoration('', field),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Required' : null,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            // bottone next
-            const SizedBox(height: 24),
-            SizedBox(
-              height: 56,
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: pill,
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(28),
-                  ),
-                  textStyle: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-
-                // se _saving è true viene disabilitato il tap
-                onPressed: _saving ? null : _onNext,
-                child: _saving
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Next'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  // gestione di etichette
-  Widget _label(String text) => Text(
-        text, // testo usato sopra ogni campo
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
-        ),
-      );
-
-  // stile uniforme per tutti i TextFormField
-  InputDecoration _decoration(String hint, Color fill) {
+  // Helper per lo stile del campo di testo
+  InputDecoration _decoration(String hint) {
     return InputDecoration(
-      hintText: hint.isEmpty ? null : hint,
+      hintText: hint,
       filled: true,
-      fillColor: fill,
+      fillColor: AppColors.cardBackground,
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -251,6 +56,224 @@ class _AddScanPageState extends State<AddScanPage> {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: Color(0x66FFFFFF)),
+      ),
+      hintStyle: const TextStyle(color: AppColors.textSecondary),
+    );
+  }
+
+  // Funzione per mostrare un messaggio di stato
+  Widget _buildMessage(String message) {
+    return Center(
+      child: Text(
+        message,
+        style: const TextStyle(color: AppColors.textPrimary),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  // Funzione per gestire il salvataggio dei dati e navigare
+  Future<void> _onStartScanning() async {
+    if (!(_formKey.currentState?.validate() ?? false) ||
+        _selectedStepId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select a step and fill the name field.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+
+    try {
+      final payload = {
+        'name': _nameCtrl.text.trim(),
+        'stepId': _selectedStepId,
+        'stepName': _selectedStepName,
+      };
+
+      if (!mounted) return;
+
+      // Navigare alla prossima pagina passando il payload
+      //Navigator.of(context).push(
+        //MaterialPageRoute(
+        //  builder: (context) => NextPage(payload: payload),
+        //),
+      //);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
+      appBar: AppBar(
+        backgroundColor: AppColors.backgroundColor,
+        shadowColor: AppColors.cardBackground,
+        foregroundColor: AppColors.textPrimary,
+        centerTitle: true,
+        elevation: 0.5,
+        title: const Text('New Scan'),
+      ),
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.cardBackground,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.white),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Insert scan details',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 20,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // Campo per il nome
+                    Text(
+                      'Name',
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextFormField(
+                      controller: _nameCtrl,
+                      style: const TextStyle(color: AppColors.textPrimary),
+                      decoration: _decoration('Enter name'),
+                      validator: (v) =>
+                          (v == null || v.trim().isEmpty) ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Campo a discesa per lo step
+                    Text(
+                      'Step',
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    StreamBuilder<QuerySnapshot>(
+                      stream: _stepsStream,
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        }
+                        if (snapshot.hasError) {
+                          return _buildMessage('Error loading steps');
+                        }
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return _buildMessage('No steps available');
+                        }
+
+                        final steps = snapshot.data!.docs;
+
+                        return DropdownButtonFormField<String>(
+                          initialValue: _selectedStepId,
+                          style: const TextStyle(color: AppColors.textPrimary),
+                          dropdownColor: AppColors.cardBackground,
+                          decoration: _decoration('Select a step'),
+                          icon: const Icon(
+                            Icons.arrow_drop_down,
+                            color: AppColors.textPrimary,
+                          ),
+                          items: steps.map((doc) {
+                            final data = doc.data() as Map<String, dynamic>;
+                            final stepName =
+                                (data['name'] as String?)?.isNotEmpty == true
+                                ? data['name'] as String
+                                : 'No name';
+                            return DropdownMenuItem(
+                              value: doc.id,
+                              child: Text(
+                                stepName,
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              _selectedStepId = value;
+                              _selectedStepName =
+                                  steps
+                                          .firstWhere((doc) => doc.id == value)
+                                          .get('name')
+                                      as String;
+                            });
+                          },
+                          validator: (value) =>
+                              value == null ? 'Required' : null,
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 56,
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.black,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                  onPressed: _saving ? null : _onStartScanning,
+                  child: _saving
+                      ? const SizedBox(
+                          width: 22,
+                          height: 22,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.camera_alt_outlined),
+                            SizedBox(width: 8),
+                            Text('Start Scanning'),
+                          ],
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

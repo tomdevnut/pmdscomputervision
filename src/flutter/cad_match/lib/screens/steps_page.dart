@@ -5,6 +5,66 @@ import 'dart:async';
 import '../utils.dart';
 import 'step_detail_page.dart';
 
+// Funzione per recuperare dati utente
+Future<String> getUsername(String userId) async {
+  if (userId.isEmpty) {
+    return 'Unknown User';
+  }
+  try {
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .get();
+    if (userDoc.exists) {
+      final userData = userDoc.data();
+      return '${userData?['name'] ?? 'Unknown User'} ${userData?['surname'] ?? 'Unknown User'}';
+    }
+  } catch (e) {
+    // Si potrebbe loggare l'errore per il debug
+  }
+  return 'Unknown User';
+}
+
+// funzione per costruire la card di un singolo step in modo coerente
+Widget _buildStepCard(String title, String subtitle, {VoidCallback? onTap}) {
+  return Card(
+    color: AppColors.tileBackground,
+    margin: const EdgeInsets.symmetric(vertical: 6),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    child: ListTile(
+      leading: const Icon(Icons.file_copy, color: AppColors.primary),
+      title: Text(
+        title,
+        style: const TextStyle(
+          color: AppColors.white,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: const TextStyle(color: AppColors.textSecondary),
+      ),
+      trailing: const Icon(
+        Icons.arrow_forward_ios,
+        color: AppColors.white,
+        size: 16,
+      ),
+      onTap: onTap,
+    ),
+  );
+}
+
+// funzione per mostrare un messaggio di stato
+Widget _buildMessage(String message) {
+  return Center(
+    child: Text(
+      message,
+      style: const TextStyle(color: AppColors.textPrimary),
+      textAlign: TextAlign.center,
+    ),
+  );
+}
+
 class StepsPage extends StatefulWidget {
   const StepsPage({super.key});
 
@@ -58,13 +118,10 @@ class _StepsPageState extends State<StepsPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               buildHeader('Steps'),
-              const Text (
-                    'To load steps, please use the web app.',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
-                    ),
-                  ),
+              const Text(
+                'To load steps, please use the web app.',
+                style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
+              ),
               const SizedBox(height: 10),
               Expanded(child: _buildBody()),
             ],
@@ -82,9 +139,11 @@ class _StepsPageState extends State<StepsPage> {
       stream: _stepsStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary)
-          ));
+          return const Center(
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+            ),
+          );
         }
         if (snapshot.hasError) {
           return _buildMessage('Error: ${snapshot.error}');
@@ -105,80 +164,38 @@ class _StepsPageState extends State<StepsPage> {
         final data = doc.data() as Map<String, dynamic>;
 
         // titoli/sottotitoli per la tile
-        final title = (data['name'] as String?)?.trim().isNotEmpty == true
+        final title = (data['name'] as String?)?.isNotEmpty == true
             ? data['name'] as String
             : (data['stepId'] as String?) ?? 'No Title';
-        final subtitle = (data['description'] as String?)?.trim().isNotEmpty == true
+        final description = (data['description'] as String?)?.isNotEmpty == true
             ? data['description'] as String
             : (data['status'] as String?) ?? 'No Description';
 
         // conversioni/estrazioni per la pagina di dettaglio
-        final createdAt = (data['createdAt'] is Timestamp)
-            ? (data['createdAt'] as Timestamp).toDate()
-            : data['createdAt']; // può rimanere String ISO o DateTime
-        final completed = (data['completed'] is bool) ? data['completed'] as bool : false;
-        final accuracy = data['accuracy'];        // int/double/null
-        final thumbnail = data['thumbnail'];      // url/path/null
+        final user = data['user'] as String? ?? 'No User';
 
         return _buildStepCard(
           title,
-          subtitle,
-          index + 1,
-          onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => StepDetailPage(
-                  step: {
-                    'stepId': doc.id,       // usa l'ID del documento come identificativo
-                    'createdAt': createdAt, // DateTime o String
-                    'completed': completed, // bool
-                    'accuracy': accuracy,   // num
-                    'thumbnail': thumbnail, // opzionale
-                  },
+          description,
+          onTap: () async {
+            final username = await getUsername(user);
+            if (context.mounted) {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => StepDetailPage(
+                    step: {
+                      'stepId': doc.id,
+                      'name': title,
+                      'user': username,
+                      'description': description,
+                    },
+                  ),
                 ),
-              ),
-            );
+              );
+            }
           },
         );
       },
-    );
-  }
-
-  Widget _buildStepCard(String title, String subtitle, int stepNumber, {VoidCallback? onTap}) {
-    return Card(
-      color: AppColors.tileBackground,
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: ListTile(
-        leading: Icon(Icons.file_copy, color: AppColors.primary),
-        title: Text(
-          title,
-          style: const TextStyle(
-            color: AppColors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        subtitle: Text(
-          subtitle,
-          style: const TextStyle(color: AppColors.textSecondary),
-        ),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          color: AppColors.white,
-          size: 16,
-        ),
-        onTap: onTap,
-      ),
-    );
-  }
-
-  Widget _buildMessage(String message) {
-    return Center(
-      child: Text(
-        message,
-        style: const TextStyle(color: AppColors.textPrimary),
-        textAlign: TextAlign.center,
-      ),
     );
   }
 }

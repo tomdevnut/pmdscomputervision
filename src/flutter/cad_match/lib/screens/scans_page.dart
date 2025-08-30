@@ -3,228 +3,50 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
-import '../utils.dart';
+import '../utils.dart'; // Assicurati che questo file contenga AppColors e buildHeader
 import 'add_scan_page.dart';
 import 'scan_detail_page.dart';
 
-class ScansPage extends StatefulWidget {
-  const ScansPage({super.key});
-
-  @override
-  State<ScansPage> createState() => _ScansPageState();
-}
-
-class _ScansPageState extends State<ScansPage> {
-  Stream<QuerySnapshot>? _scansStream;
-  StreamSubscription<User?>? _authSub;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeScansStream();
+// Funzioni per recuperare dati utente e step in modo asincrono
+Future<String> getUsername(String userId) async {
+  if (userId.isEmpty) {
+    return 'Unknown User';
   }
-
-  @override
-  void dispose() {
-    _authSub?.cancel();
-    super.dispose();
-  }
-
-  void _initializeScansStream() {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      _setScansStream(user.uid);
-    } else {
-      _authSub = FirebaseAuth.instance.authStateChanges().listen((u) {
-        if (u != null && mounted) {
-          _setScansStream(u.uid);
-        }
-      });
-    }
-  }
-
-  Future<void> _setScansStream(String uid) async {
+  try {
     final userDoc = await FirebaseFirestore.instance
         .collection('users')
-        .doc(uid)
+        .doc(userId)
         .get();
-    final userData = userDoc.data();
-    final userLevel = userData?['level'] as int? ?? 1;
-
-    if (mounted) {
-      setState(() {
-        if (userLevel >= 2) {
-          _scansStream = FirebaseFirestore.instance
-              .collection('scans')
-              .snapshots();
-        } else {
-          _scansStream = FirebaseFirestore.instance
-              .collection('scans')
-              .where('user', isEqualTo: uid)
-              .snapshots();
-        }
-      });
+    if (userDoc.exists) {
+      final userData = userDoc.data();
+      return '${userData?['name'] ?? 'Unknown User'} ${userData?['surname'] ?? 'Unknown User'}';
     }
+  } catch (e) {
+    // Si potrebbe loggare l'errore per il debug
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              buildHeader('Your Scans'),
-              const SizedBox(height: 10),
-              _buildBanner(),
-              const SizedBox(height: 20),
-              _buildScansList(),
-            ],
-          ),
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          // apri la schermata per aggiungere uno scan
-          final result = await Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const AddScanPage()),
-          );
-
-          if (result != null && result is Map) {
-            final uid = FirebaseAuth.instance.currentUser?.uid;
-
-            if (uid == null) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Please sign in to add a scan')),
-              );
-              return;
-            }
-
-            final doc = {
-              'scanId'     : result['scanId'],
-              'stepId'     : result['stepId'],
-              'objectType' : result['objectType'],
-              'name'       : result['name'],
-              'description': result['description'],
-              'user'       : uid,
-              'status'     : 0,                           // ricevuto
-              'timestamp'  : FieldValue.serverTimestamp(),// per ordinamento
-              'createdAt'  : result['createdAt'],         // ISO dal form
-            };
-
-            try {
-              await FirebaseFirestore.instance.collection('scans').add(doc);
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Scan added')),
-                );
-              }
-            } catch (e) {
-              if (context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Error while saving: $e')),
-                );
-              }
-            }
-          }
-        },
-        backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: AppColors.white),
-      ),
-    );
-  }
-
-
-  Widget _buildBanner() {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(12),
-      child: Image.asset(
-        'assets/banner.png',
-        width: double.infinity,
-        height: 160,
-        fit: BoxFit.cover,
-      ),
-    );
-  }
-
-    Widget _buildScansList() {
-    if (_scansStream == null) {
-      return const Expanded(
-        child: Center(
-          child: Text(
-            'Please sign in to view scans',
-            style: TextStyle(color: AppColors.textPrimary),
-          ),
-        ),
-      );
-    }
-
-    return Expanded(
-      child: StreamBuilder<QuerySnapshot>(
-        stream: _scansStream,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(
-              child: Text(
-                'Error: ${snapshot.error}',
-                style: const TextStyle(color: AppColors.red),
-              ),
-            );
-          }
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-            return const Center(
-              child: Text(
-                'No scans found. Press + to add one!',
-                style: TextStyle(color: AppColors.textPrimary),
-                textAlign: TextAlign.center,
-              ),
-            );
-          }
-          return ListView.builder(
-            itemCount: snapshot.data!.docs.length,
-            itemBuilder: (context, index) {
-              final scan = snapshot.data!.docs[index];
-              final data = scan.data() as Map<String, dynamic>;
-              final title = data['name'] as String? ?? 'No Title';
-              final date = (data['timestamp'] as Timestamp?)?.toDate();
-              final status = data['status'] as int? ?? 0;
-
-              // 👇 aggiunto collegamento alla pagina dei dettagli
-              return ScanItem(
-                title: title,
-                date: date,
-                status: status,
-                onTap: () {
-                  final scanData = {
-                    'scanId'     : data['scanId'] ?? scan.id,
-                    'stepId'     : data['stepId'] ?? '',
-                    'objectType' : data['objectType'] ?? '',
-                    'name'       : data['name'] ?? '',
-                    'description': data['description'] ?? '',
-                  };
-
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => ScanDetailPage(scan: scanData),
-                    ),
-                  );
-                },
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
+  return 'Unknown User';
 }
 
+Future<String> getStepName(String stepId) async {
+  if (stepId.isEmpty) {
+    return 'Unknown or Deleted Step';
+  }
+  try {
+    final stepDoc = await FirebaseFirestore.instance
+        .collection('steps')
+        .doc(stepId)
+        .get();
+    if (stepDoc.exists) {
+      final stepData = stepDoc.data();
+      return stepData?['name'] ?? 'Unknown Step';
+    }
+  } catch (e) {
+    // Si potrebbe loggare l'errore per il debug
+  }
+  return 'Unknown or Deleted Step';
+}
 
+// Widget separato per l'item della lista, per rendere il codice più pulito
 class ScanItem extends StatelessWidget {
   final String title;
   final DateTime? date;
@@ -278,5 +100,186 @@ class ScanItem extends StatelessWidget {
       default: // Errore (-1)
         return const Icon(Icons.warning, color: AppColors.red);
     }
+  }
+}
+
+class ScansPage extends StatefulWidget {
+  const ScansPage({super.key});
+
+  @override
+  State<ScansPage> createState() => _ScansPageState();
+}
+
+class _ScansPageState extends State<ScansPage> {
+  Stream<QuerySnapshot>? _scansStream;
+  StreamSubscription<User?>? _authSub;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeScansStream();
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
+  }
+
+  void _initializeScansStream() {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      _setScansStream(user.uid);
+    } else {
+      _authSub = FirebaseAuth.instance.authStateChanges().listen((u) {
+        if (u != null && mounted) {
+          _setScansStream(u.uid);
+        }
+      });
+    }
+  }
+
+  Future<void> _setScansStream(String uid) async {
+    final userDoc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .get();
+    final userData = userDoc.data();
+    final userLevel = userData?['level'] as int? ?? 1;
+
+    if (mounted) {
+      setState(() {
+        if (userLevel >= 1) {
+          _scansStream = FirebaseFirestore.instance
+              .collection('scans')
+              .snapshots();
+        } else {
+          _scansStream = FirebaseFirestore.instance
+              .collection('scans')
+              .where('user', isEqualTo: uid)
+              .snapshots();
+        }
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              buildHeader('Your Scans'),
+              const SizedBox(height: 10),
+              _buildScansList(),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          final uid = FirebaseAuth.instance.currentUser?.uid;
+          if (uid == null) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Please sign in to add a scan')),
+              );
+            }
+            return;
+          }
+          Navigator.of(
+            context,
+          ).push(MaterialPageRoute(builder: (_) => const AddScanPage()));
+        },
+        backgroundColor: AppColors.primary,
+        child: const Icon(Icons.add, color: AppColors.white),
+      ),
+    );
+  }
+
+  Widget _buildScansList() {
+    if (_scansStream == null) {
+      return const Expanded(
+        child: Center(
+          child: Text(
+            'Please sign in to view scans',
+            style: TextStyle(color: AppColors.textPrimary),
+          ),
+        ),
+      );
+    }
+    return Expanded(
+      child: StreamBuilder<QuerySnapshot>(
+        stream: _scansStream,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Error: ${snapshot.error}',
+                style: const TextStyle(color: AppColors.red),
+              ),
+            );
+          }
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return const Center(
+              child: Text(
+                'No scans found. Press + to add one!',
+                style: TextStyle(color: AppColors.textPrimary),
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+          return ListView.builder(
+            itemCount: snapshot.data!.docs.length,
+            itemBuilder: (context, index) {
+              final scan = snapshot.data!.docs[index];
+              final data = scan.data() as Map<String, dynamic>;
+              final title = data['name'] as String? ?? 'No Title';
+              final date = (data['timestamp'] as Timestamp?)?.toDate();
+              final status = data['status'] as int? ?? 0;
+              final userId = data['user'] as String? ?? '';
+
+              return ScanItem(
+                title: title,
+                date: date,
+                status: status,
+                onTap: () async {
+                  final localContext = context;
+                  final username = await getUsername(userId);
+                  final stepName = await getStepName(data['step'] ?? '');
+
+                  final scanData = {
+                    'scanId': data['scanId'] ?? scan.id,
+                    'step': stepName,
+                    'name': data['name'] ?? '',
+                    'progress': data['progress'] ?? 0,
+                    'timestamp': data['timestamp'] ?? '',
+                    'user': username,
+                    'status': data['status'] ?? -1,
+                    'createdAt': data['createdAt'] ?? '',
+                    'description': data['description'] ?? '',
+                  };
+
+                  if (localContext.mounted) {
+                    Navigator.of(localContext).push(
+                      MaterialPageRoute(
+                        builder: (_) => ScanDetailPage(scan: scanData),
+                      ),
+                    );
+                  }
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
   }
 }

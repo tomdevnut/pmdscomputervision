@@ -11,16 +11,20 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
   Future<void> _signIn() async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      // Navigate to the main page on successful login
       if (mounted) {
         Navigator.pushReplacement(
           context,
@@ -28,11 +32,10 @@ class _LoginPageState extends State<LoginPage> {
         );
       }
     } on FirebaseAuthException catch (e) {
-      // Show an error message if login fails
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? 'Login failed')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.message ?? 'Login failed')));
       }
     }
   }
@@ -48,111 +51,108 @@ class _LoginPageState extends State<LoginPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-
-      body: SafeArea( 
-        child: Padding( 
-          padding: const EdgeInsets.symmetric(horizontal:40),
-          child: Column( 
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              // image e title
-              const SizedBox(height: 50), // spaziatura verticale
-
-              ClipRRect(
-                borderRadius: BorderRadius.circular(12), 
-                child: Image.asset( // carica l'immagine da file
-                  'assets/logo.png',
-                  height: 150,  
-                ),
-              ),
-
-              const SizedBox(height: 20),
-              
-              const Text( // mostra il messaggio di benvenuto
-                'Welcome to CADmatch',
-                style: TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-
-              const Text(
-                'Please log in',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 16,
-                ),
-              ),
-
-              const SizedBox(height: 40),
-
-              // Campo di testo: Username
-              TextField(
-                controller: _emailController, 
-                keyboardType: TextInputType.emailAddress,
-                decoration: InputDecoration(
-                  hintText: 'Email', 
-                  filled: true,
-                  fillColor: AppColors.textFieldBackground,
-                  hintStyle: const TextStyle(color: AppColors.textHint),
-                  border: OutlineInputBorder(
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40),
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  const SizedBox(height: 50),
+                  ClipRRect(
                     borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+                    child: Image.asset('assets/logo.png', height: 150),
                   ),
-                ),
-                style: const TextStyle(color: Colors.white),
-              ),
-
-              const SizedBox(height: 16),
-
-              // campo di testo: Password
-              TextField(
-                controller: _passwordController, // Add this controller
-                obscureText: true, // per nascondere i caratteri
-                decoration: InputDecoration(
-                  hintText: 'Password',
-                  filled: true,
-                  fillColor: AppColors.textFieldBackground,
-                  hintStyle: const TextStyle(color: AppColors.textHint),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
-                ),
-                style: const TextStyle(color: Colors.white), // colore del testo inserito
-              ),
-
-              // pulsante 'LOGIN'
-              const SizedBox(height: 32),
-
-              SizedBox(
-                width: double.infinity,
-                height:50,
-                child: ElevatedButton(
-                  onPressed: _signIn, // Call the signIn method
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text( // scritta button
-                    'LOGIN',
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Welcome to CADmatch',
                     style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                ),
+                  const Text(
+                    'Please log in',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Email',
+                      filled: true,
+                      fillColor: AppColors.textFieldBackground,
+                      hintStyle: const TextStyle(color: AppColors.textHint),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Password',
+                      filled: true,
+                      fillColor: AppColors.textFieldBackground,
+                      hintStyle: const TextStyle(color: AppColors.textHint),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your password';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 32),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: _signIn,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'LOGIN',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-
-            ]
-          )
-        )
+            ),
+          ),
+        ),
       ),
     );
   }
-
 }

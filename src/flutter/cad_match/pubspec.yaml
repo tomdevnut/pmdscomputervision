@@ -20,12 +20,13 @@ dependencies:
   cloud_firestore: ^6.0.0
   firebase_auth: ^6.0.1
   camera: ^0.11.2
-  arkit_plugin: ^1.1.2
+  arkit_plugin: ^1.2.0
 
   cupertino_icons: ^1.0.8
   path_provider: ^2.1.5
 
   intl: ^0.17.0
+  firebase_storage: ^13.0.0
 
 dev_dependencies:
   flutter_test:
@@ -39,4 +40,3 @@ flutter:
 
   assets:
     - assets/logo.png
-    - assets/banner.png

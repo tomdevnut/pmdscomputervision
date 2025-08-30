@@ -51,10 +51,6 @@ class _ProfilePageState extends State<ProfilePage> {
     // Implement change password functionality
   }
 
-  Future<void> _sendLoginInfoEmail() async {
-    // Implement send login info email functionality
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -77,17 +73,12 @@ class _ProfilePageState extends State<ProfilePage> {
                     Column(
                       children: [
                         const SizedBox(height: 32),
-                        _buildButton(
+                        buildButton(
                           'CHANGE PASSWORD',
-                          () => _changePassword(context),
+                          onPressed: () => _changePassword(context),
                         ),
                         const SizedBox(height: 16),
-                        _buildButton(
-                          'RESEND LOGIN INFO EMAIL',
-                          _sendLoginInfoEmail,
-                        ),
-                        const SizedBox(height: 16),
-                        _buildButton('LOGOUT', _signOut),
+                        buildButton('LOGOUT', onPressed: _signOut),
                       ],
                     ),
                   ],
@@ -168,24 +159,5 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildButton(String title, VoidCallback onPressed) {
-    return SizedBox(
-      width: 300,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: Text(
-          title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-      ),
-    );
-  }
+
 }

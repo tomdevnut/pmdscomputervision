@@ -1,27 +1,34 @@
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import '../utils.dart';
 
-// creo uno statelesswidget (stateless dato che mostra dati passati), che riceve una mappa scan
+// Widget stateless per la pagina dei dettagli
 class ScanDetailPage extends StatelessWidget {
   final Map<String, dynamic> scan;
 
   const ScanDetailPage({super.key, required this.scan});
 
-  // per normalizzare i valori in stringhe (- per indicare dato mancante)
-  String _v(dynamic v) =>
-      (v == null || (v is String && v.trim().isEmpty)) ? '—' : v.toString();
+  // Funzione helper per normalizzare i valori
+  String _v(dynamic value) {
+    return (value == null || (value is String && value.trim().isEmpty))
+        ? '—'
+        : value.toString();
+  }
 
-  // definisco il contenuto con scaffold e listview
   @override
   Widget build(BuildContext context) {
-    const bg = Color(0xFF0F0F0F);
-    const card = Color(0xFF161616);
-    const labelColor = Colors.white70;
+    const bg = AppColors.backgroundColor;
+    const cardColor = AppColors.cardBackground;
+    final int status = scan['status'] as int? ?? -1;
 
     return Scaffold(
       backgroundColor: bg,
       appBar: AppBar(
         backgroundColor: bg,
+        shadowColor: cardColor,
+        foregroundColor: AppColors.textPrimary,
         centerTitle: true,
         elevation: 0.5,
         title: const Text('Scan Details'),
@@ -30,84 +37,102 @@ class ScanDetailPage extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           children: [
-            // card contentente i dettagli dello scan
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: card,
+                color: cardColor,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0x22FFFFFF)),
+                border: Border.all(color: AppColors.white),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Model',
-                    style: TextStyle(
-                      color: Colors.white,
+                  Text(
+                    _v(scan['name']),
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
                       fontWeight: FontWeight.w700,
                       fontSize: 18,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Details of your object',
-                    style: TextStyle(
-                      color: Colors.white70,
+                  const SizedBox(height: 4),
+                  Text(
+                    'ID: ${_v(scan['scanId'])}',
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
                       fontSize: 12,
                     ),
                   ),
                   const SizedBox(height: 20),
-
-                  // uso la funzione helper _field (costruisce un blocco con label e value) per mostrare i 5 campi
-                  _field('Scan ID', _v(scan['scanId'])),
+                  cardField('Step Name', _v(scan['stepName'])),
                   const SizedBox(height: 14),
-                  _field('Step ID', _v(scan['stepId'])),
+                  cardField('User', _v(scan['user'])),
                   const SizedBox(height: 14),
-                  _field('Object Type', _v(scan['objectType'])),
+                  cardField(
+                    'Timestamp',
+                    _v(
+                      (scan['timestamp'] is Timestamp)
+                          ? DateFormat(
+                              'yyyy-MM-dd HH:mm:ss',
+                            ).format((scan['timestamp'] as Timestamp).toDate())
+                          : '—',
+                    ),
+                  ),
                   const SizedBox(height: 14),
-                  _field('Name', _v(scan['name'])),
+                  cardField('Status', getStatusString(status)),
                   const SizedBox(height: 14),
-                  _field('Description', _v(scan['description']), multiline: true),
+                  cardField('Progress', _v('${scan['progress']}%')),
                 ],
               ),
+            ),
+            const SizedBox(height: 20),
+            buildButton(
+              'VIEW STATISTICS',
+              color: status == 2 ? AppColors.primary : AppColors.textSecondary,
+              onPressed: () {
+                if (status == 2) {
+                  // TODO: Naviga alla pagina delle statistiche
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Statistics are not available yet.'),
+                    ),
+                  );
+                }
+              },
+            ),
+            const SizedBox(height: 20),
+            buildButton(
+              'DELETE SCAN',
+              color: status == 2 || status == -1
+                  ? AppColors.red
+                  : AppColors.textSecondary,
+              onPressed: () {
+                if (status == 2 || status == -1) {
+                  // Passa il contesto a una funzione asincrona
+                  showDeleteConfirmationDialog(
+                    context,
+                    'Are you sure you want to delete this scan?',
+                    () async {
+                        await FirebaseStorage.instance
+                            .ref('scans/${scan['scanId']}')
+                            .delete();
+                      }
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Scan cannot be deleted until it is completed or has failed.',
+                      ),
+                    ),
+                  );
+                }
+              },
             ),
           ],
         ),
       ),
-    );
-  }
-
-  // funzione per mostrare un singolo campo dei dettagli dello scan
-  Widget _field(String label, String value, {bool multiline = false}) { // riceve tre parametri: label, value, multiline
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white70,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 6),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: const Color(0xFF2A2421),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0x33FFFFFF)),
-          ),
-          child: Text(
-            value,
-            style: const TextStyle(color: Colors.white),
-            maxLines: multiline ? null : 2,
-            overflow: multiline ? TextOverflow.visible : TextOverflow.ellipsis,
-          ),
-        ),
-      ],
     );
   }
 }
