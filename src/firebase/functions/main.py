@@ -25,6 +25,8 @@ from enable_user import enable_user
 from disable_user import disable_user
 from delete_user import delete_user
 from save_fcm_token import save_fcm_token
+from bulk_create_users import bulk_create_users
+from change_password import change_password
 
 # Lista di funzioni che verranno esportate (non necessaria per il funzionamento, ma utile per la documentazione)
 __all__ = [
@@ -38,5 +40,7 @@ __all__ = [
     "delete_user",
     "new_stats",
     "save_fcm_token",
-    "delete_scan"
+    "delete_scan",
+    "bulk_create_users",
+    "change_password"
 ]

@@ -1,6 +1,7 @@
 from firebase_functions import https_fn
 from firebase_admin import firestore, auth
 from config import MANAGE_USERS_MIN_LEVEL
+from _user_utils import create_user_in_firebase
 
 @https_fn.on_request()
 def new_user(request: https_fn.Request) -> https_fn.Response:
@@ -73,35 +74,15 @@ def new_user(request: https_fn.Request) -> https_fn.Response:
         print(f"Errore nel parsing della richiesta JSON: {e}")
         return https_fn.Response('Bad Request: Formato JSON non valido.', status=400)
 
-    # Creazione del nuovo utente in Firebase Authentication
+    # Creazione del nuovo utente usando la funzione helper
     try:
-        user_record = auth.create_user(
-            email=email,
-            password=password,
-            email_verified=True
-        )
+        user_record = create_user_in_firebase(db, email, password, level, name, surname)
         new_user_uid = user_record.uid
     except auth.EmailAlreadyExistsError:
         print(f"Errore: L'email {email} esiste già.")
         return https_fn.Response('Conflict: Email già registrata.', status=409)
     except Exception as e:
-        print(f"Errore nella creazione dell'utente Firebase Auth: {e}")
-        return https_fn.Response(f'Internal Server Error: Errore nella creazione utente Auth: {e}', status=500)
-
-    # Salvataggio dei Dettagli Utente e Livello di Autorizzazione in Firestore
-    try:
-        user_profile_data = {
-            "name": name,
-            "surname": surname,
-            "level": level,
-            "enabled": True,
-            "fcm_token": None  # Inizialmente impostato a None, verrà aggiornato una volta che l'utente fa il login dal suo dispositivo
-        }
-        # Salva il profilo utente nella collezione user_profiles
-        USERS_PROFILES_COLLECTION_REF.document(new_user_uid).set(user_profile_data)
-    except Exception as e:
-        print(f"Errore nel salvataggio dei dettagli utente/ruolo in Firestore: {e}")
-        auth.delete_user(new_user_uid)
-        return https_fn.Response(f'Internal Server Error: Errore nel salvataggio Firestore: {e}', status=500)
+        print(f"Errore nella creazione dell'utente: {e}")
+        return https_fn.Response(f'Internal Server Error: {e}', status=500)
 
     return https_fn.Response(f'Utente {email} (UID: {new_user_uid}) creato e dettagli salvati con successo!', status=200)
