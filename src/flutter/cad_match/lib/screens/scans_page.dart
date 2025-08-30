@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:intl/intl.dart';
 import '../utils.dart';
+import 'add_scan_page.dart';
+import 'scan_detail_page.dart';
 
 class ScansPage extends StatefulWidget {
   const ScansPage({super.key});
@@ -85,14 +87,56 @@ class _ScansPageState extends State<ScansPage> {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // Add your logic to handle the add button press
+        onPressed: () async {
+          // apri la schermata per aggiungere uno scan
+          final result = await Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const AddScanPage()),
+          );
+
+          if (result != null && result is Map) {
+            final uid = FirebaseAuth.instance.currentUser?.uid;
+
+            if (uid == null) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Please sign in to add a scan')),
+              );
+              return;
+            }
+
+            final doc = {
+              'scanId'     : result['scanId'],
+              'stepId'     : result['stepId'],
+              'objectType' : result['objectType'],
+              'name'       : result['name'],
+              'description': result['description'],
+              'user'       : uid,
+              'status'     : 0,                           // ricevuto
+              'timestamp'  : FieldValue.serverTimestamp(),// per ordinamento
+              'createdAt'  : result['createdAt'],         // ISO dal form
+            };
+
+            try {
+              await FirebaseFirestore.instance.collection('scans').add(doc);
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Scan added')),
+                );
+              }
+            } catch (e) {
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Error while saving: $e')),
+                );
+              }
+            }
+          }
         },
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.add, color: AppColors.white),
       ),
     );
   }
+
 
   Widget _buildBanner() {
     return ClipRRect(
@@ -106,7 +150,7 @@ class _ScansPageState extends State<ScansPage> {
     );
   }
 
-  Widget _buildScansList() {
+    Widget _buildScansList() {
     if (_scansStream == null) {
       return const Expanded(
         child: Center(
@@ -151,7 +195,27 @@ class _ScansPageState extends State<ScansPage> {
               final date = (data['timestamp'] as Timestamp?)?.toDate();
               final status = data['status'] as int? ?? 0;
 
-              return ScanItem(title: title, date: date, status: status);
+              // 👇 aggiunto collegamento alla pagina dei dettagli
+              return ScanItem(
+                title: title,
+                date: date,
+                status: status,
+                onTap: () {
+                  final scanData = {
+                    'scanId'     : data['scanId'] ?? scan.id,
+                    'stepId'     : data['stepId'] ?? '',
+                    'objectType' : data['objectType'] ?? '',
+                    'name'       : data['name'] ?? '',
+                    'description': data['description'] ?? '',
+                  };
+
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ScanDetailPage(scan: scanData),
+                    ),
+                  );
+                },
+              );
             },
           );
         },
@@ -160,16 +224,19 @@ class _ScansPageState extends State<ScansPage> {
   }
 }
 
+
 class ScanItem extends StatelessWidget {
   final String title;
   final DateTime? date;
   final int status;
+  final VoidCallback? onTap;
 
   const ScanItem({
     super.key,
     required this.title,
     required this.date,
     required this.status,
+    this.onTap,
   });
 
   @override
@@ -195,9 +262,7 @@ class ScanItem extends StatelessWidget {
           size: 16,
         ),
         leading: _buildStatusIcon(status),
-        onTap: () {
-          // Handle scan item tap
-        },
+        onTap: onTap,
       ),
     );
   }

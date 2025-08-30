@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../utils.dart';
+import 'step_detail_page.dart';
 
 class StepsPage extends StatefulWidget {
   const StepsPage({super.key});
@@ -100,18 +101,50 @@ class _StepsPageState extends State<StepsPage> {
     return ListView.builder(
       itemCount: steps.length,
       itemBuilder: (context, index) {
-        final step = steps[index];
-        final data = step.data() as Map<String, dynamic>;
-        final title = data['name'] as String? ?? 'No Title';
-        final subtitle = data['description'] as String? ?? 'No Description';
-        final stepNumber = index + 1;
+        final doc = steps[index];
+        final data = doc.data() as Map<String, dynamic>;
 
-        return _buildStepCard(title, subtitle, stepNumber);
+        // titoli/sottotitoli per la tile
+        final title = (data['name'] as String?)?.trim().isNotEmpty == true
+            ? data['name'] as String
+            : (data['stepId'] as String?) ?? 'No Title';
+        final subtitle = (data['description'] as String?)?.trim().isNotEmpty == true
+            ? data['description'] as String
+            : (data['status'] as String?) ?? 'No Description';
+
+        // conversioni/estrazioni per la pagina di dettaglio
+        final createdAt = (data['createdAt'] is Timestamp)
+            ? (data['createdAt'] as Timestamp).toDate()
+            : data['createdAt']; // può rimanere String ISO o DateTime
+        final completed = (data['completed'] is bool) ? data['completed'] as bool : false;
+        final accuracy = data['accuracy'];        // int/double/null
+        final thumbnail = data['thumbnail'];      // url/path/null
+
+        return _buildStepCard(
+          title,
+          subtitle,
+          index + 1,
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => StepDetailPage(
+                  step: {
+                    'stepId': doc.id,       // usa l'ID del documento come identificativo
+                    'createdAt': createdAt, // DateTime o String
+                    'completed': completed, // bool
+                    'accuracy': accuracy,   // num
+                    'thumbnail': thumbnail, // opzionale
+                  },
+                ),
+              ),
+            );
+          },
+        );
       },
     );
   }
 
-  Widget _buildStepCard(String title, String subtitle, int stepNumber) {
+  Widget _buildStepCard(String title, String subtitle, int stepNumber, {VoidCallback? onTap}) {
     return Card(
       color: AppColors.tileBackground,
       margin: const EdgeInsets.symmetric(vertical: 6),
@@ -134,9 +167,7 @@ class _StepsPageState extends State<StepsPage> {
           color: AppColors.white,
           size: 16,
         ),
-        onTap: () {
-          // Handle step item tap
-        },
+        onTap: onTap,
       ),
     );
   }
