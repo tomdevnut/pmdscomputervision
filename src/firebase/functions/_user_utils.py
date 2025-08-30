@@ -6,6 +6,17 @@ def create_user_in_firebase(db: firestore.Client, email: str, password: str, lev
     """
     USERS_PROFILES_COLLECTION_REF = db.collection('users')
 
+    # Controllo che l'utente non esista già, che il livello sia compreso tra 0 e SUPERUSER e che nome/cognome/password siano validi
+    if not (0 <= level <= 2):
+        raise ValueError("Invalid user level")
+
+    if not all([name, surname, password]):
+        raise ValueError("Name, surname and password are required")
+
+    # Controllo che l'email non sia già in uso
+    if USERS_PROFILES_COLLECTION_REF.where("email", "==", email).get().exists:
+        raise ValueError("Email already in use")
+
     # Creazione del nuovo utente in Firebase Authentication
     try:
         user_record = auth.create_user(
