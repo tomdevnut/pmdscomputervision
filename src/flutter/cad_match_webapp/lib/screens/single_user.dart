@@ -171,10 +171,8 @@ class SingleUserPage extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => const ChangePassword(
-                  requireOldPassword: false,
-                ),
-              ),
+                builder: (context) => const ChangePassword(),
+              )
             );
           },
         ),

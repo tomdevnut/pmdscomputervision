@@ -4,17 +4,13 @@ import '../shared_utils.dart';
 class ChangePassword extends StatefulWidget {
   const ChangePassword({
     super.key,
-    this.requireOldPassword = true,
   });
-  final bool
-  requireOldPassword; // Se provengo dalla schermata degli utenti posso modificare la password senza sapere la vecchia password (funzioni manager), se provengo dalle mie impostazioni devo sapere anche quella vecchia
   @override
   State<ChangePassword> createState() => _ChangePasswordState();
 }
 
 class _ChangePasswordState extends State<ChangePassword> {
   bool _obscurePassword = true;
-  final TextEditingController _oldPasswordController = TextEditingController();
   final TextEditingController _newPasswordController = TextEditingController();
 
   @override
@@ -44,13 +40,6 @@ class _ChangePasswordState extends State<ChangePassword> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      if (widget.requireOldPassword)
-                        _buildPasswordInputField(
-                          _oldPasswordController,
-                          'Current Password',
-                          'Enter current password',
-                        ),
-                      const SizedBox(height: 24),
                       _buildPasswordInputField(
                         _newPasswordController,
                         'New Password',
