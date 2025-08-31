@@ -3,6 +3,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import '../utils.dart';
+import 'statistic_detail.dart';
 
 // Widget stateless per la pagina dei dettagli
 class ScanDetailPage extends StatelessWidget {
@@ -15,6 +16,12 @@ class ScanDetailPage extends StatelessWidget {
     return (value == null || (value is String && value.trim().isEmpty))
         ? '—'
         : value.toString();
+  }
+  // funzione per mostrare un messaggio di stato
+  void showSnackBarMessage(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppColors.primary),
+    );
   }
 
   @override
@@ -89,14 +96,54 @@ class ScanDetailPage extends StatelessWidget {
             buildButton(
               'VIEW STATISTICS',
               color: status == 2 ? AppColors.primary : AppColors.textSecondary,
-              onPressed: () {
+              onPressed: () async {
                 if (status == 2) {
-                  // TODO: Naviga alla pagina delle statistiche
+                  try {
+                    // Fetch dei dati dal database delle statistiche
+                    final docId = scan['scanId'] as String;
+                    final docSnapshot = await FirebaseFirestore.instance
+                        .collection('stats')
+                        .doc(docId)
+                        .get();
+
+                    if (docSnapshot.exists && docSnapshot.data() != null) {
+                      final statsData = docSnapshot.data()!;
+                      final accuracy = statsData['accuracy'] as double? ?? 0.0;
+                      final statsMap = {
+                        'name': scan['name'],
+                        'scanId': scan['scanId'],
+                        'accuracy': accuracy,
+                      };
+
+                      if (context.mounted) {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                StatisticDetailPage(stats: statsMap),
+                          ),
+                        );
+                      }
+                    } else {
+                      if (context.mounted) {
+                        showSnackBarMessage(
+                          context,
+                          'No statistics available.',
+                        );
+                      }
+                    }
+                  } catch (e) {
+                    debugPrint('Error fetching stats: $e');
+                    if (context.mounted) {
+                      showSnackBarMessage(
+                        context,
+                        'An error occurred while fetching statistics.',
+                      );
+                    }
+                  }
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('Statistics are not available yet.'),
-                    ),
+                  showSnackBarMessage(
+                    context,
+                    'Statistics are not available yet.',
                   );
                 }
               },
@@ -109,23 +156,20 @@ class ScanDetailPage extends StatelessWidget {
                   : AppColors.textSecondary,
               onPressed: () {
                 if (status == 2 || status == -1) {
-                  // Passa il contesto a una funzione asincrona
                   showConfirmationDialog(
                     context,
                     'Are you sure you want to delete this scan?',
                     () async {
-                        await FirebaseStorage.instance
-                            .ref('scans/${scan['scanId']}')
-                            .delete();
-                      }
+                      await FirebaseStorage.instance
+                          .ref('scans/${scan['scanId']}')
+                          .delete();
+                      // Potrebbe essere necessario eliminare anche il documento da Firestore
+                    },
                   );
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Scan cannot be deleted until it is completed or has failed.',
-                      ),
-                    ),
+                  showSnackBarMessage(
+                    context,
+                    'Scan cannot be deleted until it is completed or has failed.',
                   );
                 }
               },
