@@ -26,12 +26,7 @@ class _LoginPageState extends State<LoginPage> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainPage()),
-        );
-      }
+    // La navigazione è gestita dallo StreamBuilder in main.dart
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
