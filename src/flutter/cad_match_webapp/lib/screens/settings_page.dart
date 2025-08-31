@@ -5,7 +5,9 @@ import 'change_password.dart';
 import '../shared_utils.dart';
 
 class SettingsPage extends StatelessWidget {
-  const SettingsPage({super.key});
+  final int level;
+
+  const SettingsPage({super.key, required this.level});
 
   @override
   Widget build(BuildContext context) {

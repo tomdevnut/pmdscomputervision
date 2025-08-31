@@ -380,3 +380,19 @@ void showConfirmationDialog({
     },
   );
 }
+
+// Restituisce la stringa verbale corrispondente all'integer dello stato
+String getStatusText(int status) {
+  switch (status) {
+    case 0:
+      return 'Pending';
+    case 1:
+      return 'Sent to Server';
+    case 2:
+      return 'Completed';
+    case -1:
+      return 'Error';
+    default:
+      return 'Unknown';
+  }
+}

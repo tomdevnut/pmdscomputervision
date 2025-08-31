@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'scans_page.dart';
 import 'users_page.dart';
 import 'settings_page.dart';
 import 'steps_page.dart';
 import '../shared_utils.dart';
 
+// La MainPage ora accetta l'oggetto User, come discusso in precedenza.
 class MainPage extends StatefulWidget {
-  final int initialPageIndex;
+  final User user;
 
-  const MainPage({super.key, this.initialPageIndex = 0});
+  const MainPage({super.key, required this.user});
 
   @override
   State<MainPage> createState() => _MainPageState();
@@ -16,24 +19,77 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   late int _selectedPageIndex;
-
-  // TODO: mostrare solo le pagine autorizzate in base al ruolo dell'utente
-
-  final List<Widget> _pages = const [
-    ScansPage(),
-    StepsPage(),
-    SettingsPage(),
-    UsersPage(), // solo utenti livello 2
-  ];
+  // Variabile per memorizzare il livello dell'utente.
+  int? _userLevel;
 
   @override
   void initState() {
     super.initState();
-    _selectedPageIndex = widget.initialPageIndex;
+    _selectedPageIndex = 0; // Imposta la pagina iniziale su Scans.
+    // Lancia la funzione asincrona per recuperare il livello utente.
+    _fetchUserLevel();
+  }
+
+  // Metodo asincrono per recuperare il livello utente da Firestore.
+  Future<void> _fetchUserLevel() async {
+    try {
+      // Ottieni il documento dell'utente dalla collezione 'users'.
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.user.uid)
+          .get();
+
+      // Controlla se il documento esiste e ha il campo 'level'.
+      if (userDoc.exists && userDoc.data()!.containsKey('level')) {
+        final level = userDoc.data()!['level'];
+        setState(() {
+          _userLevel = level;
+        });
+      } else {
+        // Se il documento non esiste o non ha il campo 'level',
+        // imposta un livello predefinito (es. 1).
+        setState(() {
+          _userLevel = 1;
+        });
+      }
+    } catch (e) {
+      // In caso di errore, imposta un livello predefinito e stampa un log.
+      print("Errore nel recupero del livello utente: $e");
+      setState(() {
+        _userLevel = 1;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Se il livello utente non è ancora stato caricato, mostra un indicatore di caricamento.
+    if (_userLevel == null) {
+      return const Scaffold(
+        body: Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
+
+    // Costruisci le liste di pagine e di menu in base al livello utente.
+    final List<Widget> pages = [
+      ScansPage(level: _userLevel!),
+      StepsPage(level: _userLevel!),
+      SettingsPage(level: _userLevel!),
+    ];
+    final List<String> pageTitles = [
+      'Scans',
+      'Steps',
+      'Settings',
+    ];
+
+    // Se il livello è 2, aggiungi la pagina e il menu per la gestione degli utenti.
+    if (_userLevel == 2) {
+      pages.add(const UsersPage());
+      pageTitles.add('Users');
+    }
+
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       body: Row(
@@ -64,13 +120,15 @@ class _MainPageState extends State<MainPage> {
                     ),
                   ),
                   const SizedBox(height: 40),
-                  _buildMenuItem(context, 'Scans', 0),
-                  const SizedBox(height: 16),
-                  _buildMenuItem(context, 'Steps', 1),
-                  const SizedBox(height: 16),
-                  _buildMenuItem(context, 'Settings', 2),
-                  const SizedBox(height: 16),
-                  _buildMenuItem(context, 'Users', 3),
+                  // Mappa i titoli dinamici per costruire gli elementi del menu.
+                  ...pageTitles.asMap().entries.map((entry) {
+                    int index = entry.key;
+                    String title = entry.value;
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16),
+                      child: _buildMenuItem(context, title, index),
+                    );
+                  }),
                 ],
               ),
             ),
@@ -79,7 +137,7 @@ class _MainPageState extends State<MainPage> {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
-              child: _pages[_selectedPageIndex],
+              child: pages[_selectedPageIndex],
             ),
           ),
         ],

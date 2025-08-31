@@ -4,7 +4,9 @@ import 'single_step.dart';
 import '../shared_utils.dart';
 
 class StepsPage extends StatelessWidget {
-  const StepsPage({super.key});
+  final int level;
+
+  const StepsPage({super.key, required this.level});
 
   @override
   Widget build(BuildContext context) {
