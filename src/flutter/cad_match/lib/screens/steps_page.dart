@@ -119,7 +119,7 @@ class _StepsPageState extends State<StepsPage> {
             children: [
               buildHeader('Steps'),
               const Text(
-                'To load steps, please use the web app.',
+                'To load and manage steps, please use the web app.',
                 style: TextStyle(color: AppColors.textSecondary, fontSize: 14),
               ),
               const SizedBox(height: 10),

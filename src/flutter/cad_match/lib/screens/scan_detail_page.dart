@@ -110,7 +110,7 @@ class ScanDetailPage extends StatelessWidget {
               onPressed: () {
                 if (status == 2 || status == -1) {
                   // Passa il contesto a una funzione asincrona
-                  showDeleteConfirmationDialog(
+                  showConfirmationDialog(
                     context,
                     'Are you sure you want to delete this scan?',
                     () async {

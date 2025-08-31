@@ -95,18 +95,23 @@ String getStatusString(int status) {
 }
 
 // Dialogo di conferma per l'eliminazione
-Future<void> showDeleteConfirmationDialog(
+Future<void> showConfirmationDialog(
   BuildContext context,
   String message,
   Function onConfirm,
+  {
+    String title = 'Confirm Deletion',
+    String confirmText = 'Delete',
+    String cancelText = 'Cancel',
+  }
 ) {
   return showDialog<void>(
     context: context,
     barrierDismissible: false, // L'utente deve premere un bottone
     builder: (BuildContext dialogContext) {
       return AlertDialog(
-        title: const Text(
-          'Confirm Deletion',
+        title: Text(
+          title,
           style: TextStyle(color: AppColors.textPrimary),
         ),
         content: Text(message, style: TextStyle(color: AppColors.textHint)),
@@ -117,11 +122,11 @@ Future<void> showDeleteConfirmationDialog(
               Navigator.of(dialogContext).pop();
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.textPrimary),
-            child: const Text('Cancel'),
+            child: Text(cancelText),
           ),
           TextButton(
             style: TextButton.styleFrom(foregroundColor: AppColors.red),
-            child: const Text('Delete'),
+            child: Text(confirmText),
             onPressed: () async {
               try {
                 await onConfirm();

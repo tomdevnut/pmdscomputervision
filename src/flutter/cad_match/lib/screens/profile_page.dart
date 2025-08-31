@@ -47,8 +47,21 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _changePassword(BuildContext context) async {
-    // Implement change password functionality
+  Future<void> _resetPassword(BuildContext context) async {
+    // Create a popup asking if the user is sure about resetting the password: a reset link will be sent via email
+    showConfirmationDialog(
+      context,
+      'Are you sure you want to reset your password? A reset link will be sent to your email.',
+      () async {
+        Navigator.of(context).pop();
+        await FirebaseAuth.instance.sendPasswordResetEmail(
+          email: _user?.email ?? '',
+        );
+      },
+      title: 'Reset Password',
+      confirmText: 'Reset',
+      cancelText: 'Cancel',
+    );
   }
 
   @override
@@ -74,8 +87,8 @@ class _ProfilePageState extends State<ProfilePage> {
                       children: [
                         const SizedBox(height: 32),
                         buildButton(
-                          'CHANGE PASSWORD',
-                          onPressed: () => _changePassword(context),
+                          'RESET PASSWORD',
+                          onPressed: () => _resetPassword(context),
                         ),
                         const SizedBox(height: 16),
                         buildButton('LOGOUT', onPressed: _signOut),
