@@ -13,9 +13,9 @@ def test_bulk_create_users_success(create_user_in_emulator, get_firebase_id_toke
     
     # Create a CSV in memory
     csv_content = "email,password,level,name,surname\n"
-    csv_content += "user1@test.com,pass1,1,Name1,Surname1\n"
-    csv_content += "user2@test.com,pass2,1,Name2,Surname2\n"
-    
+    csv_content += "user1@test.com,password1,1,Name1,Surname1\n"
+    csv_content += "user2@test.com,password2,1,Name2,Surname2\n"
+
     # Usa bytes per allinearti a file.read().decode('utf-8') lato server
     files = {'file': ('users.csv', csv_content.encode('utf-8'), 'text/csv')}
     

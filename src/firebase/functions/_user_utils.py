@@ -14,7 +14,8 @@ def create_user_in_firebase(db: firestore.Client, email: str, password: str, lev
         raise ValueError("Name, surname and password are required")
 
     # Controllo che l'email non sia già in uso
-    if USERS_PROFILES_COLLECTION_REF.where("email", "==", email).get().exists:
+    query_results = USERS_PROFILES_COLLECTION_REF.where(field_path = "email", op_string = "==", value = email).get()
+    if len(query_results) > 0:
         raise ValueError("Email already in use")
 
     # Creazione del nuovo utente in Firebase Authentication

@@ -96,7 +96,7 @@ def get_firebase_id_token():
             response.raise_for_status()
             return response.json()["idToken"]
         except requests.exceptions.RequestException as e:
-            pytest.fail(f"Failed to get ID token for {email}: {e.response.text if e.response else e}")
+            raise e
 
     return _get_token
 

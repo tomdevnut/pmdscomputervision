@@ -1,3 +1,4 @@
+import json
 from firebase_admin import auth, firestore
 from firebase_functions import https_fn
 from config import SUPERUSER_ROLE_LEVEL
@@ -5,7 +6,7 @@ from _user_utils import create_user_in_firebase
 import csv
 import io
 
-@https_fn.on_request(cors=True)
+@https_fn.on_request()
 def bulk_create_users(req: https_fn.Request) -> https_fn.Response:
     """
     Crea utenti in blocco da un file CSV caricato.
@@ -60,10 +61,14 @@ def bulk_create_users(req: https_fn.Request) -> https_fn.Response:
         except Exception as e:
             failed_users.append({'email': row.get('email', 'N/A'), 'error': str(e)})
 
-    return https_fn.Response({
-        "message": "Processo di creazione utenti completato.",
-        "success_count": len(created_users),
-        "failure_count": len(failed_users),
-        "created": created_users,
-        "failed": failed_users
-    }, status=200, mimetype="application/json")
+    return https_fn.Response(
+        json.dumps({
+            "message": "Processo di creazione utenti completato.",
+            "success_count": len(created_users),
+            "failure_count": len(failed_users),
+            "created": created_users,
+            "failed": failed_users
+        }),
+        status=200,
+        mimetype="application/json"
+    )
