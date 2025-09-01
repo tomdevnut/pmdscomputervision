@@ -85,7 +85,7 @@ class ScansPage extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const SingleScan(),
+                            builder: (context) => SingleScan(scanid: scans[index].id),
                           ),
                         );
                       },

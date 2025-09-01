@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../shared_utils.dart';
+import 'forgot_password.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -146,18 +147,11 @@ Future<void> _signIn() async {
               ),
               child: Column(
                 children: [
-                  TextFormField(
+                  buildInputField(
+                    label: 'Email',
+                    hintText: 'Please enter your email',
+                    icon: Icons.email,
                     controller: _emailController,
-                    decoration: InputDecoration(
-                      hintText: 'Email',
-                      fillColor: AppColors.white,
-                      focusColor: AppColors.primary,
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppColors.textHint),
-                      ),
-                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your email';
@@ -170,22 +164,18 @@ Future<void> _signIn() async {
                     },
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
+                  buildInputField(
+                    label: 'Password',
+                    hintText: 'Please enter your password',
+                    icon: Icons.lock,
                     obscureText: true,
                     controller: _passwordController,
-                    decoration: InputDecoration(
-                      hintText: 'Password',
-                      fillColor: AppColors.white,
-                      focusColor: AppColors.primary,
-                      filled: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: const BorderSide(color: AppColors.textHint),
-                      ),
-                    ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your password';
+                      }
+                      if (value.length < 6) {
+                        return 'Password must be at least 6 characters long';
                       }
                       return null;
                     },
@@ -195,11 +185,10 @@ Future<void> _signIn() async {
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Forgot password feature is not yet implemented.',
-                            ),
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const ForgotPasswordPage(),
                           ),
                         );
                       },

@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
 import 'single_user.dart';
 import 'login_page.dart';
-import 'change_password.dart';
 import '../shared_utils.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
-class SettingsPage extends StatelessWidget {
+class SettingsPage extends StatefulWidget {
   final int level;
 
   const SettingsPage({super.key, required this.level});
 
+  @override
+  State<SettingsPage> createState() => _SettingsPageState();
+}
+
+class _SettingsPageState extends State<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -39,53 +45,90 @@ class SettingsPage extends StatelessWidget {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) =>
-                    const SingleUserPage(showControls: false),
+                builder: (context) => const SingleUserPage(showControls: false),
               ),
             );
           },
         ),
         const SizedBox(height: 12),
         buildListItem(
-          title: 'Change password',
-          icon: Icons.lock,
-          hasArrow: true,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const ChangePassword(),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        buildListItem(
-          title: 'Resend password',
-          icon: Icons.email,
+          title: 'Reset password',
+          icon: Icons.password,
           hasArrow: false,
-          onTap: () {
-            // TODO: Implementare la logica di invio della password
-          },
-        ),
-        const SizedBox(height: 12),
-        buildListItem(
-          title: 'Clean all scans',
-          icon: Icons.delete_forever,
-          hasArrow: false,
-          iconColor: AppColors.red,
           onTap: () {
             showConfirmationDialog(
               context: context,
               onConfirm: () {
-                // TODO: Implementare la logica di eliminazione
+                // invio della richiesta di password reset con authentication
+                FirebaseAuth.instance.sendPasswordResetEmail(
+                  email: FirebaseAuth.instance.currentUser?.email ?? '',
+                );
               },
               message:
-                  'This action will permanently delete all the scans on the server. This operation cannot be undone.',
+                  'A password reset link will be sent to your registered email address. Do you want to proceed?',
             );
           },
         ),
         const SizedBox(height: 12),
+        if (widget.level > 0)
+          buildListItem(
+            title: 'Clean all scans',
+            icon: Icons.delete_forever,
+            hasArrow: false,
+            iconColor: AppColors.red,
+            onTap: () async {
+              try {
+                // Call the cloud function and await its result TODO: check after function improvement
+                final HttpsCallableResult result = await FirebaseFunctions
+                    .instance
+                    .httpsCallable('clean_scans')
+                    .call();
+                if (mounted) {
+                  // Check the result from the cloud function
+                  if (result.data != null &&
+                      result.data['status'] == 'success') {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'All scans have been successfully deleted.',
+                        ),
+                        backgroundColor: AppColors.green,
+                      ),
+                    );
+                  } else {
+                    // Handle a failure response from the function
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          'Error: ${result.data['message'] ?? 'An unknown error occurred.'}',
+                        ),
+                        backgroundColor: AppColors.red,
+                      ),
+                    );
+                  }
+                }
+              } on FirebaseFunctionsException catch (e) {
+                // Handle specific Firebase function errors
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Function error: ${e.message}'),
+                    backgroundColor: AppColors.red,
+                  ),
+                );
+              } catch (e) {
+                // Handle any other unexpected errors
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('An unexpected error occurred: $e'),
+                    backgroundColor: AppColors.red,
+                  ),
+                );
+              }
+            },
+          ),
+
+        if (widget.level > 0) const SizedBox(height: 12),
+
         buildListItem(
           title: 'Logout',
           hasArrow: false,

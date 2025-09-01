@@ -161,7 +161,7 @@ class ScanDetailPage extends StatelessWidget {
                     'Are you sure you want to delete this scan?',
                     () async {
                       await FirebaseStorage.instance
-                          .ref('scans/${scan['scanId']}')
+                          .ref('scans/${scan['scanId']}.ply')
                           .delete();
                       // Potrebbe essere necessario eliminare anche il documento da Firestore
                     },

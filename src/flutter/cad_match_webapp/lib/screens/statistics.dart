@@ -1,8 +1,73 @@
 import 'package:flutter/material.dart';
 import '../shared_utils.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:js_interop';
 
-class Statistics extends StatelessWidget {
-  const Statistics({super.key});
+@JS('window.open')
+external void openUrl(String url, String target);
+
+class Statistics extends StatefulWidget {
+  final String scanid;
+  const Statistics({super.key, required this.scanid});
+
+  @override
+  State<Statistics> createState() => _StatisticsState();
+}
+
+class _StatisticsState extends State<Statistics> {
+
+    Future<void> downloadFile() async {
+    try {
+      // Get the download URL of the file from Firebase Storage
+      final ref = FirebaseStorage.instance.ref().child(
+        'scans/${widget.scanid}.ply',
+      );
+      final url = await ref.getDownloadURL();
+
+      // Use the dart:js package to open the URL in a new window/tab, triggering the download.
+      openUrl(url, '_blank');
+
+      // Show a success message
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('File download started successfully.'),
+            backgroundColor: AppColors.green,
+          ),
+        );
+      }
+    } on FirebaseException catch (e) {
+      // Handle the case where the file does not exist
+      if (e.code == 'object-not-found') {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('The file was not found.'),
+              backgroundColor: AppColors.red,
+            ),
+          );
+        }
+      } else {
+        // Handle other Firebase errors
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'An error occurred while downloading the file: ${e.message}',
+              ),
+              backgroundColor: AppColors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Handle any other unexpected errors
+      if (mounted) {
+        showResultDialog(context, 'Error', 'An unexpected error occurred: $e');
+      }
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +191,7 @@ class Statistics extends StatelessWidget {
                     label: 'Download Compared File',
                     icon: Icons.download,
                     onTap: () {
-                      // TODO: Logica per scaricare il file confrontato
+                      downloadFile();
                     },
                   ),
                 ],

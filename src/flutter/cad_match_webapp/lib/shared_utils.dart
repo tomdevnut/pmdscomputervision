@@ -16,16 +16,12 @@ class AppColors {
 }
 
 // Funzione ausiliaria per la barra superiore con il pulsante "BACK"
-Widget buildTopBar(
-  BuildContext context, {
-  required String title,
-}) {
+Widget buildTopBar(BuildContext context, {required String title}) {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 16.0),
     child: InkWell(
       onTap: () {
-        
-          Navigator.pop(context);
+        Navigator.pop(context);
       },
       child: Row(
         mainAxisAlignment: MainAxisAlignment.start,
@@ -68,6 +64,7 @@ Widget buildInputField({
   required IconData icon,
   TextEditingController? controller,
   bool obscureText = false,
+  String? Function(String?)? validator,
 }) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -98,28 +95,43 @@ Widget buildInputField({
         ],
       ),
       const SizedBox(height: 8),
-      Container(
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderGray),
-        ),
-        child: TextFormField(
-          controller: controller,
-          obscureText: obscureText,
-          decoration: InputDecoration(
-            hintText: hintText,
-            hintStyle: const TextStyle(
-              color: AppColors.textHint,
-              fontSize: 16,
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w400,
-            ),
-            contentPadding: const EdgeInsets.all(15),
-            border: InputBorder.none,
+      TextFormField(
+        controller: controller,
+        obscureText: obscureText,
+        validator: validator,
+        decoration: InputDecoration(
+          hintText: hintText,
+          hintStyle: const TextStyle(
+            color: AppColors.textHint,
+            fontSize: 16,
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w400,
           ),
-          style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
+          contentPadding: const EdgeInsets.all(15),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.borderGray),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.borderGray),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.secondary),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.red),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: AppColors.red),
+          ),
+          fillColor: AppColors.white,
+          filled: true,
         ),
+        style: const TextStyle(color: AppColors.textPrimary, fontSize: 16),
       ),
     ],
   );
@@ -395,4 +407,46 @@ String getStatusText(int status) {
     default:
       return 'Unknown';
   }
+}
+
+void showResultDialog(BuildContext context, String title, String message) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        backgroundColor: AppColors.white,
+        surfaceTintColor: AppColors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        title: Text(title),
+        titleTextStyle: const TextStyle(
+          color: AppColors.primary,
+          fontSize: 20,
+          fontFamily: 'Inter',
+          fontWeight: FontWeight.w500,
+        ),
+        contentTextStyle: const TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: 16,
+          fontFamily: 'Inter',
+          fontWeight: FontWeight.w400,
+        ),        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              textStyle: const TextStyle(
+                fontSize: 16,
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            child: const Text('OK'),
+          ),
+        ],
+      );
+    },
+  );
 }
