@@ -2,12 +2,7 @@ import json
 from firebase_functions import https_fn, options
 from firebase_admin import firestore, auth
 
-@https_fn.on_request(
-    cors=options.CorsOptions(
-        cors_origins=[r"firebase\.com$", r"https://flutter\.com"],
-        cors_methods=["get", "post"],
-    )
-)
+@https_fn.on_request(cors=True)
 def save_fcm_token(request: https_fn.Request) -> https_fn.Response:
     """
     HTTP Cloud Function to save or update a user's FCM token.

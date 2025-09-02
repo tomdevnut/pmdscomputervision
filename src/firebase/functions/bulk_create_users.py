@@ -6,12 +6,7 @@ from _user_utils import create_user_in_firebase
 import csv
 import io
 
-@https_fn.on_request(
-    cors=options.CorsOptions(
-        cors_origins=[r"firebase\.com$", r"https://flutter\.com"],
-        cors_methods=["get", "post"],
-    )
-)
+@https_fn.on_request(cors=True)
 def bulk_create_users(req: https_fn.Request) -> https_fn.Response:
     """
     Creates users in bulk from a CSV file uploaded via an HTTP request.
