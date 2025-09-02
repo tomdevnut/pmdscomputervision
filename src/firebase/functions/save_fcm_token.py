@@ -14,7 +14,9 @@ def save_fcm_token(request: https_fn.Request) -> https_fn.Response:
     The user must be authenticated to call this function.
     """
     db = firestore.client()
-
+    if request.method == 'OPTIONS':
+        return https_fn.Response(status=204)
+  
     # Reference to the Firestore collection for user profiles
     USERS_COLLECTION_REF = db.collection('users')
 

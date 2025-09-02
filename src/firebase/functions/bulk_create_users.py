@@ -17,6 +17,9 @@ def bulk_create_users(req: https_fn.Request) -> https_fn.Response:
     Creates users in bulk from a CSV file uploaded via an HTTP request.
     The CSV must contain the columns: email, password, level, name, surname.
     """
+    if req.method == 'OPTIONS':
+        return https_fn.Response(status=204)
+    
     db = firestore.client()
 
     # Authentication and Authorization Check

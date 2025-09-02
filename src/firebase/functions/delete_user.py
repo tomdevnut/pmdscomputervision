@@ -13,7 +13,9 @@ def delete_user(request: https_fn.Request) -> https_fn.Response:
     Args:
         request (flask.Request): The HTTP request containing the data of the user to be deleted.
     """
-
+    if request.method == 'OPTIONS':
+        return https_fn.Response(status=204)
+  
     db = firestore.client()
 
     # Firestore collection references

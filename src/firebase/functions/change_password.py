@@ -14,6 +14,9 @@ def change_password(request: https_fn.Request) -> https_fn.Response:
     Changes a user's password, revokes sessions, and sends a notification.
     This is invoked only by administrators to modify the password of other users.
     """
+    if request.method == 'OPTIONS':
+        return https_fn.Response(status=204)
+        
     db = firestore.client()
     USERS_COLLECTION_REF = db.collection('users')
 

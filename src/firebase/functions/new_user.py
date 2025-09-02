@@ -18,7 +18,9 @@ def new_user(request: https_fn.Request) -> https_fn.Response:
     Args:
         request (flask.Request): The HTTP request containing the new user's data.
     """
-
+    if request.method == 'OPTIONS':
+        return https_fn.Response(status=204)
+  
     db = firestore.client()
 
     # Firestore collection reference

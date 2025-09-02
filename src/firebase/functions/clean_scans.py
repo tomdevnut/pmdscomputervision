@@ -15,7 +15,9 @@ def clean_scans(request: https_fn.Request) -> https_fn.Response:
     and their corresponding entries from Firestore (scans and stats).
     Requires authentication of a user with a sufficient authorization level.
     """
-    
+    if request.method == 'OPTIONS':
+        return https_fn.Response(status=204)
+        
     db = firestore.client()
     SCANS_COLLECTION_REF = db.collection('scans')
     STATS_COLLECTION_REF = db.collection('stats')
