@@ -7,7 +7,6 @@ from config import BUCKET_NAME, SUPERUSER_ROLE_LEVEL
     cors=options.CorsOptions(
         cors_origins=[r"*"],
         cors_methods=["get", "post"],
-        cors_headers=["Content-Type", "Authorization"]
     )
 )
 def clean_scans(request: https_fn.Request) -> https_fn.Response:

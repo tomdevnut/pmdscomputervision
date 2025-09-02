@@ -7,7 +7,6 @@ from config import MANAGE_USERS_MIN_LEVEL
     cors=options.CorsOptions(
         cors_origins=[r"*"],
         cors_methods=["get", "post"],
-        cors_headers=["Content-Type", "Authorization"]
     )
 )
 def change_password(request: https_fn.Request) -> https_fn.Response:

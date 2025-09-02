@@ -10,7 +10,6 @@ import io
     cors=options.CorsOptions(
         cors_origins=[r"*"],
         cors_methods=["get", "post"],
-        cors_headers=["Content-Type", "Authorization"]
     )
 )
 def bulk_create_users(req: https_fn.Request) -> https_fn.Response:

@@ -8,7 +8,6 @@ from _user_utils import create_user_in_firebase
     cors=options.CorsOptions(
         cors_origins=[r"*"],
         cors_methods=["get", "post"],
-        cors_headers=["Content-Type", "Authorization"]
     )
 )
 def new_user(request: https_fn.Request) -> https_fn.Response:
