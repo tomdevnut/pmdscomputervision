@@ -6,7 +6,7 @@ from _user_utils import create_user_in_firebase
 import csv
 import io
 
-@https_fn.on_request(cors=True)
+@https_fn.on_request(cors_enabled=True)
 def bulk_create_users(req: https_fn.Request) -> https_fn.Response:
     """
     Creates users in bulk from a CSV file uploaded via an HTTP request.

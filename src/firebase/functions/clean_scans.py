@@ -3,7 +3,7 @@ from firebase_functions import https_fn, options
 from firebase_admin import firestore, storage, auth
 from config import BUCKET_NAME, SUPERUSER_ROLE_LEVEL
 
-@https_fn.on_request(cors=True)
+@https_fn.on_request(cors_enabled=True)
 def clean_scans(request: https_fn.Request) -> https_fn.Response:
     """
     HTTP Cloud Function to clean all scan files from Cloud Storage
