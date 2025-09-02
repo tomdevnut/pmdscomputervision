@@ -1,10 +1,15 @@
 import json
-from firebase_functions import https_fn
+from firebase_functions import https_fn, options
 from firebase_admin import firestore, auth
 from config import MANAGE_USERS_MIN_LEVEL
 from _user_utils import create_user_in_firebase
 
-@https_fn.on_request()
+@https_fn.on_request(
+    cors=options.CorsOptions(
+        cors_origins=[r"firebase\.com$", r"https://flutter\.com"],
+        cors_methods=["get", "post"],
+    )
+)
 def new_user(request: https_fn.Request) -> https_fn.Response:
     """
     HTTP Cloud Function to create new users in Firebase Authentication

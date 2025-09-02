@@ -1,9 +1,14 @@
 import json
 from firebase_admin import auth, firestore, messaging
-from firebase_functions import https_fn
+from firebase_functions import https_fn, options
 from config import MANAGE_USERS_MIN_LEVEL
 
-@https_fn.on_request()
+@https_fn.on_request(
+    cors=options.CorsOptions(
+        cors_origins=[r"firebase\.com$", r"https://flutter\.com"],
+        cors_methods=["get", "post"],
+    )
+)
 def change_password(request: https_fn.Request) -> https_fn.Response:
     """
     Changes a user's password, revokes sessions, and sends a notification.

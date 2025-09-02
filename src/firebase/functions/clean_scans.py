@@ -1,9 +1,14 @@
 import json
-from firebase_functions import https_fn
+from firebase_functions import https_fn, options
 from firebase_admin import firestore, storage, auth
 from config import BUCKET_NAME, SUPERUSER_ROLE_LEVEL
 
-@https_fn.on_request()
+@https_fn.on_request(
+    cors=options.CorsOptions(
+        cors_origins=[r"firebase\.com$", r"https://flutter\.com"],
+        cors_methods=["get", "post"],
+    )
+)
 def clean_scans(request: https_fn.Request) -> https_fn.Response:
     """
     HTTP Cloud Function to clean all scan files from Cloud Storage

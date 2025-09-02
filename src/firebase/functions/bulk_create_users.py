@@ -1,12 +1,17 @@
 import json
 from firebase_admin import auth, firestore
-from firebase_functions import https_fn
+from firebase_functions import https_fn, options
 from config import SUPERUSER_ROLE_LEVEL
 from _user_utils import create_user_in_firebase
 import csv
 import io
 
-@https_fn.on_request()
+@https_fn.on_request(
+    cors=options.CorsOptions(
+        cors_origins=[r"firebase\.com$", r"https://flutter\.com"],
+        cors_methods=["get", "post"],
+    )
+)
 def bulk_create_users(req: https_fn.Request) -> https_fn.Response:
     """
     Creates users in bulk from a CSV file uploaded via an HTTP request.
