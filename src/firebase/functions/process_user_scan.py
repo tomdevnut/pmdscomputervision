@@ -1,16 +1,18 @@
-from firebase_functions import storage_fn
-from firebase_admin import firestore
-import requests
 import os
+import json
+import requests
 from datetime import timedelta
 from google.cloud import secretmanager, storage as google_cloud_storage
+from firebase_functions import storage_fn
+from firebase_admin import firestore
 from config import BUCKET_NAME, BACKEND_API_KEY_SECRET_NAME, BACKEND_SERVER_URL, SERVICE_ACCOUNT, PROJECT_ID
-import json
 
-# Funzione per recuperare il segreto
+
+# Function to retrieve a secret from Secret Manager
 def get_secret(secret_name):
+    """Retrieves a secret from Google Cloud Secret Manager."""
     if not PROJECT_ID:
-        print("Errore: ID progetto GCP non trovato.")
+        print("Error: GCP Project ID not found.")
         return None
     try:
         secret_client = secretmanager.SecretManagerServiceClient()
@@ -18,25 +20,34 @@ def get_secret(secret_name):
         response = secret_client.access_secret_version(request={"name": name})
         return response.payload.data.decode("UTF-8")
     except Exception as e:
-        print(f"Errore nel recupero del segreto '{secret_name}': {e}")
+        print(f"Error retrieving secret '{secret_name}': {e}")
         return None
 
-# Funzione per generare URL firmati usando una chiave privata
+
+# Function to generate signed URLs using a private key
 def generate_signed_url_with_key(bucket_name, file_path, private_key_secret, expiration_time):
-    # Recupera la chiave privata dal Secret Manager
+    """
+    Generates a V4 signed URL for a file in a GCS bucket using a service account private key.
+    
+    Args:
+        bucket_name (str): The name of the GCS bucket.
+        file_path (str): The path to the file in the bucket.
+        private_key_secret (str): The name of the secret in Secret Manager containing the private key.
+        expiration_time (timedelta): The expiration time for the signed URL.
+        
+    Returns:
+        str: The generated signed URL.
+    """
     private_key_json = get_secret(private_key_secret)
     if not private_key_json:
-        raise ValueError("Chiave privata per la firma dell'URL non trovata.")
+        raise ValueError("Private key for URL signing not found.")
 
-    # Converti la chiave da JSON a un dizionario Python
     credentials_info = json.loads(private_key_json)
     
-    # Crea un client di Storage con le credenziali del servizio
     storage_client = google_cloud_storage.Client.from_service_account_info(credentials_info)
     bucket = storage_client.bucket(bucket_name)
     blob = bucket.blob(file_path)
 
-    # Genera l'URL firmato
     signed_url = blob.generate_signed_url(
         version="v4",
         expiration=expiration_time,
@@ -44,8 +55,14 @@ def generate_signed_url_with_key(bucket_name, file_path, private_key_secret, exp
     )
     return signed_url
 
+
 @storage_fn.on_object_finalized(bucket=BUCKET_NAME)
 def process_user_scan(event: storage_fn.CloudEvent) -> None:
+    """
+    Triggered when a new object is uploaded to the bucket.
+    This function processes user scans by registering them in Firestore
+    and notifying a backend server for processing.
+    """
     db = firestore.client()
     scans_collection_ref = db.collection('scans')
 
@@ -55,22 +72,23 @@ def process_user_scan(event: storage_fn.CloudEvent) -> None:
     file_path = event.data.name
     metadata = event.data.metadata or {}
     
-    # URL del file di scansione
+    # Check if the file is a scan
     if not file_path.startswith("scans/"):
-        print(f"Il file {file_path} non è una scansione. Ignorato.")
+        print(f"File {file_path} is not a scan. Ignoring.")
         return
     
-    scan_id = file_path.split("/")[-1].split(".")[0]
+    # Extract data from file path and metadata
+    scan_id = os.path.splitext(os.path.basename(file_path))[0]
     user_id = metadata.get("user")
-    step = metadata.get("step")
-    name = metadata.get("scan_name")
+    step_id = metadata.get("step")
+    scan_name = metadata.get("scan_name")
     timestamp = event.data.time_created
 
-    if not user_id or not step or not name or not timestamp:
-        print("Errore: metadati essenziali mancanti.")
+    if not all([user_id, step_id, scan_name, timestamp]):
+        print("Error: Essential metadata is missing. Cannot process scan.")
         return
     
-    # Genera gli URL firmati usando la funzione helper
+    # Generate signed URLs for the scan and step files
     try:
         scan_signed_url = generate_signed_url_with_key(
             bucket_name,
@@ -80,30 +98,31 @@ def process_user_scan(event: storage_fn.CloudEvent) -> None:
         )
         step_signed_url = generate_signed_url_with_key(
             bucket_name,
-            f"steps/{step}",
+            f"steps/{step_id}",
             SERVICE_ACCOUNT,
             timedelta(minutes=15)
         )
     except Exception as e:
-        print(f"Errore nella generazione dell'URL firmato: {e}")
+        print(f"Error generating signed URL: {e}")
         return
 
-    # Registrzione dell'associazione utente-scansione nel database Firestore
+    # Register the user-scan association in the Firestore database
     try:
         scan_data = {
             "user": user_id,
             "status": 0,
-            "step": step,
+            "step": step_id,
             "progress": 0,
-            "name": name,
+            "name": scan_name,
             "timestamp": timestamp
         }
         scans_collection_ref.document(scan_id).set(scan_data)
+        print(f"Successfully registered scan {scan_id} in Firestore.")
     except Exception as e:
-        print(f"Errore durante la scrittura su Firestore: {e}")
+        print(f"Error writing to Firestore: {e}")
         return
     
-    # Notifica il server di backend
+    # Notify the backend server
     if BACKEND_SERVER_URL:
         try:
             payload = {
@@ -118,5 +137,6 @@ def process_user_scan(event: storage_fn.CloudEvent) -> None:
 
             response = requests.post(BACKEND_SERVER_URL, json=payload, headers=headers)
             response.raise_for_status()
+            print(f"Successfully notified backend server for scan {scan_id}.")
         except requests.exceptions.RequestException as e:
-            print(f"Errore durante la notifica al server di backend: {e}")
+            print(f"Error notifying backend server: {e}")

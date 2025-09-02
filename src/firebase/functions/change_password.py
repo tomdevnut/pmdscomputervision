@@ -1,72 +1,83 @@
-from firebase_functions import https_fn
+import json
 from firebase_admin import auth, firestore, messaging
+from firebase_functions import https_fn
 from config import MANAGE_USERS_MIN_LEVEL
 
 @https_fn.on_request()
 def change_password(request: https_fn.Request) -> https_fn.Response:
     """
-    Modifica la password di un utente, revoca le sessioni e notifica.
-    Viene invocata solamente dagli amministratori per modificare la password di altri utenti
+    Changes a user's password, revokes sessions, and sends a notification.
+    This is invoked only by administrators to modify the password of other users.
     """
     db = firestore.client()
     USERS_COLLECTION_REF = db.collection('users')
 
-    # Autenticazione del chiamante
+    # Authentication of the caller
     try:
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
-            return https_fn.Response('Unauthorized', status=401)
+            response_data = {'status': 'error', 'message': 'Unauthorized'}
+            return https_fn.Response(json.dumps(response_data), status=401, mimetype='application/json')
+            
         id_token = auth_header.split('Bearer ')[1]
         decoded_token = auth.verify_id_token(id_token)
         caller_uid = decoded_token['uid']
-    except Exception:
-        return https_fn.Response('Unauthorized', status=401)
+    except Exception as e:
+        response_data = {'status': 'error', 'message': f'Unauthorized: {e}'}
+        return https_fn.Response(json.dumps(response_data), status=401, mimetype='application/json')
 
-    # Parsing dei dati
+    # Data parsing
     try:
         data = request.get_json()
         new_password = data.get('new_password')
         target_user_uid = data.get('uid')
-    except Exception as e:
-        return https_fn.Response(f'Bad Request: {e}', status=400)
 
-    # Logica di modifica
+        if not new_password or not target_user_uid:
+            response_data = {'status': 'error', 'message': 'Bad Request: Missing new_password or uid.'}
+            return https_fn.Response(json.dumps(response_data), status=400, mimetype='application/json')
+    except Exception as e:
+        response_data = {'status': 'error', 'message': f'Bad Request: Invalid JSON. {e}'}
+        return https_fn.Response(json.dumps(response_data), status=400, mimetype='application/json')
+
+    # Logic to change the password
     try:
-        # Admin modifica la password di un altro utente
+        # Check caller's permission level
         caller_doc = USERS_COLLECTION_REF.document(caller_uid).get()
         if not caller_doc.exists or caller_doc.to_dict().get('level') < MANAGE_USERS_MIN_LEVEL:
-            return https_fn.Response('Forbidden: Non hai i permessi per modificare la password di altri utenti.', status=403)
-        
+            response_data = {'status': 'error', 'message': 'Forbidden: You do not have permission to change other users\' passwords.'}
+            return https_fn.Response(json.dumps(response_data), status=403, mimetype='application/json')
+
         try:
-            # Aggiorna la password in Firebase Auth
+            # Update password in Firebase Auth
             auth.update_user(target_user_uid, password=new_password)
         except auth.UserNotFoundError:
-            return https_fn.Response(f"Utente con UID '{target_user_uid}' non trovato.", status=404)
+            response_data = {'status': 'error', 'message': f"User with UID '{target_user_uid}' not found."}
+            return https_fn.Response(json.dumps(response_data), status=404, mimetype='application/json')
 
-
-
-        # Revoca i token di aggiornamento per forzare il logout su tutti i dispositivi
+        # Revoke refresh tokens to force logout on all devices
         auth.revoke_refresh_tokens(target_user_uid)
 
-        # Invia notifica PUSH per notificare il logout forzato all'utente a cui è stata cambiata la password
+        # Send PUSH notification to the user whose password was changed
         target_doc = USERS_COLLECTION_REF.document(target_user_uid).get()
         if target_doc.exists:
             fcm_token = target_doc.to_dict().get("fcm_token")
-            message = messaging.Message(
-                notification=messaging.Notification(
-                    title="Session ended",
-                    body=f"Your password has been changed by an administrator. Please log in again."
-                ),
-                token=fcm_token
-            )
-            try:
-                messaging.send(message)
-            except Exception as e:
-                print(f"Errore durante l'invio della notifica FCM a {target_user_uid}: {e}")
+            if fcm_token:
+                message = messaging.Message(
+                    notification=messaging.Notification(
+                        title="Session ended",
+                        body="Your password has been changed by an administrator. Please log in again."
+                    ),
+                    token=fcm_token
+                )
+                try:
+                    messaging.send(message)
+                except Exception as e:
+                    print(f"Error sending FCM notification to {target_user_uid}: {e}")
 
-
-        return https_fn.Response('Password aggiornata e sessioni revocate con successo.', status=200)
+        response_data = {'status': 'success', 'message': 'Password updated and sessions revoked successfully.'}
+        return https_fn.Response(json.dumps(response_data), status=200, mimetype='application/json')
 
     except Exception as e:
-        print(f"Errore durante la modifica della password: {e}")
-        return https_fn.Response(f'Internal Server Error: {e}', status=500)
+        print(f"Error during password change: {e}")
+        response_data = {'status': 'error', 'message': f'Internal Server Error: {e}'}
+        return https_fn.Response(json.dumps(response_data), status=500, mimetype='application/json')

@@ -6,39 +6,40 @@ from config import BUCKET_NAME
 @storage_fn.on_object_finalized(bucket=BUCKET_NAME)
 def upload_step(event: storage_fn.CloudEvent) -> None:
     """
-    Cloud Event Function che si attiva quando un nuovo file "step" viene caricato su Cloud Storage.
-    Crea un documento nella collezione 'steps' di Firestore associando l'utente (tramite UID)
-    al percorso del file caricato.
-    L'UID dell'utente deve essere fornito nei metadati del file caricato.
+    Cloud Event Function that triggers when a new "step" file is uploaded to Cloud Storage.
+    It creates a document in the 'steps' Firestore collection, associating the user
+    (via UID) with the uploaded file's path.
+    The user's UID must be provided in the uploaded file's metadata.
     Args:
-        event (storage_fn.CloudEvent): L'evento che contiene i dati del file.
+        event (storage_fn.CloudEvent): The event containing the file data.
     """
     db = firestore.client()
 
-    # Riferimento alla collezzione Firestore per gli step
+    # Reference to the Firestore collection for steps
     STEPS_COLLECTION_REF = db.collection('steps')
 
     file_path = event.data.name
     metadata = event.data.metadata or {}
 
     if not file_path.startswith("steps/"):
-        print(f"Il file {file_path} non è un file 'step'. Ignorato.")
+        print(f"File {file_path} is not a 'step' file. Ignoring.")
         return
     
     user_id = metadata.get("user")
     step_name = metadata.get("step_name")
     description = metadata.get("description")
 
+    # Validate essential metadata fields
     if not user_id:
-        print(f"Errore: user mancante nei metadati del file {file_path}.")
+        print(f"Error: 'user' is missing from the metadata of file {file_path}.")
         return
     
     if not step_name:
-        print(f"Errore: step_name mancante nei metadati del file {file_path}.")
+        print(f"Error: 'step_name' is missing from the metadata of file {file_path}.")
         return
 
     if not description:
-        print(f"Errore: description mancante nei metadati del file {file_path}.")
+        print(f"Error: 'description' is missing from the metadata of file {file_path}.")
         return
 
     try:
@@ -48,16 +49,14 @@ def upload_step(event: storage_fn.CloudEvent) -> None:
             "description": description
         }
 
-        # Estraggo l'UUID del file dal percorso
+        # Extract the file's UUID from the path
         file_id = os.path.basename(file_path)
         custom_doc_id = os.path.splitext(file_id)[0]
 
-        # Aggiungo il file con l'ID personalizzato
+        # Add the document with the custom ID
         doc_ref = STEPS_COLLECTION_REF.document(custom_doc_id)
         doc_ref.set(step_data)
+        print(f"Successfully created Firestore document for step {custom_doc_id}.")
     except Exception as e:
-        print(f"Errore durante la scrittura su Firestore: {e}")
+        print(f"Error writing to Firestore: {e}")
         return
-
-
-    

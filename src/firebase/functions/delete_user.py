@@ -1,22 +1,22 @@
+import json
 from firebase_functions import https_fn
 from firebase_admin import firestore, auth, storage
 from config import BUCKET_NAME, MANAGE_USERS_MIN_LEVEL
 
-
 @https_fn.on_request()
 def delete_user(request: https_fn.Request) -> https_fn.Response:
     """
-    HTTP Cloud Function per eliminare un utente esistente da Firebase Authentication
-    e tutti i suoi dati associati (scansioni, statistiche, profili, steps) da Cloud Storage e Firestore.
-    Richiede che l'utente che invoca la funzione abbia un livello di autorizzazione di 2.
-    Un utente di livello 2 non può essere eliminato.
+    HTTP Cloud Function to delete an existing user from Firebase Authentication
+    and all their associated data (scans, stats, profiles, steps) from Cloud Storage and Firestore.
+    Requires the invoking user to have an authorization level of 2.
+    A level 2 user cannot be deleted.
     Args:
-        request (flask.Request): La richiesta HTTP contenente i dati dell'utente da eliminare.
+        request (flask.Request): The HTTP request containing the data of the user to be deleted.
     """
 
     db = firestore.client()
 
-    # Riferimenti alle collezioni Firestore
+    # Firestore collection references
     USERS_COLLECTION_REF = db.collection('users')
     SCANS_COLLECTION_REF = db.collection('scans')
     STATS_COLLECTION_REF = db.collection('stats')
@@ -24,141 +24,154 @@ def delete_user(request: https_fn.Request) -> https_fn.Response:
 
     bucket = storage.bucket(BUCKET_NAME)
 
-
-    # Autenticazione e Controllo Autorizzazione del Chiamante
+    # --- Authentication and Caller Authorization Check ---
     auth_header = request.headers.get('Authorization')
     if not auth_header or not auth_header.startswith('Bearer '):
-        return https_fn.Response('Unauthorized', status=401)
+        response_data = {'status': 'error', 'message': 'Unauthorized'}
+        return https_fn.Response(json.dumps(response_data), status=401, mimetype='application/json')
 
     id_token = auth_header.split('Bearer ')[1]
     try:
-        # Verifica il token ID Firebase del chiamante
         decoded_token = auth.verify_id_token(id_token)
         caller_uid = decoded_token['uid']
     except Exception as e:
-        return https_fn.Response('Unauthorized', status=401)
+        response_data = {'status': 'error', 'message': 'Unauthorized: Invalid token'}
+        return https_fn.Response(json.dumps(response_data), status=401, mimetype='application/json')
 
-    # Recupera il livello di autorizzazione del chiamante da Firestore
-    caller_auth_level = -1 # Valore predefinito per utenti non trovati o non autorizzati
+    caller_auth_level = -1
     try:
         caller_role_doc = USERS_COLLECTION_REF.document(caller_uid).get()
-        if caller_role_doc.exists:
-            caller_role_data = caller_role_doc.to_dict()
-            caller_auth_level = caller_role_data.get('level', -1)
-        else:
-            return https_fn.Response('Forbidden', status=403)
+        if not caller_role_doc.exists:
+            response_data = {'status': 'error', 'message': 'Forbidden: Caller user not found.'}
+            return https_fn.Response(json.dumps(response_data), status=403, mimetype='application/json')
+        
+        caller_auth_level = caller_role_doc.to_dict().get('level', -1)
     except Exception as e:
-        return https_fn.Response('Internal Server Error', status=500)
+        response_data = {'status': 'error', 'message': 'Internal Server Error: Failed to retrieve caller role.'}
+        return https_fn.Response(json.dumps(response_data), status=500, mimetype='application/json')
 
     if caller_auth_level < MANAGE_USERS_MIN_LEVEL:
-        return https_fn.Response('Forbidden', status=403)
+        response_data = {'status': 'error', 'message': 'Forbidden: Insufficient privileges.'}
+        return https_fn.Response(json.dumps(response_data), status=403, mimetype='application/json')
 
-    # Parsing dei Dati della Richiesta per l'Utente Target
+    # --- Parse Request Data for Target User ---
     try:
         request_json = request.get_json(silent=True)
         if not request_json:
-            raise ValueError("Corpo della richiesta JSON mancante o non valido.")
-
+            raise ValueError("Missing or invalid JSON request body.")
+        
         target_uid = request_json.get('uid')
-
-        # Validazione input
         if not target_uid:
-            raise ValueError("Il campo 'uid' dell'utente da eliminare è obbligatorio.")
-
+            raise ValueError("The 'uid' field for the user to be deleted is required.")
     except ValueError as e:
-        print(f"Errore di validazione input: {e}")
-        return https_fn.Response(f'Bad Request: {e}', status=400)
+        print(f"Input validation error: {e}")
+        response_data = {'status': 'error', 'message': f'Bad Request: {e}'}
+        return https_fn.Response(json.dumps(response_data), status=400, mimetype='application/json')
     except Exception as e:
-        print(f"Errore nel parsing della richiesta JSON: {e}")
-        return https_fn.Response('Bad Request: Formato JSON non valido.', status=400)
+        print(f"Error parsing JSON request: {e}")
+        response_data = {'status': 'error', 'message': 'Bad Request: Invalid JSON format.'}
+        return https_fn.Response(json.dumps(response_data), status=400, mimetype='application/json')
 
-    # Controllo Autorizzazione Utente Target (non può essere di livello 2 e non può eliminare se stesso)
+    # --- Target User Authorization Check ---
     if target_uid == caller_uid:
-        print(f"Tentativo di eliminare l'utente stesso ({target_uid}). Operazione non consentita.")
-        return https_fn.Response('Forbidden: Non è possibile eliminare se stessi.', status=403)
+        print(f"Attempt to delete self ({target_uid}). Operation not allowed.")
+        response_data = {'status': 'error', 'message': 'Forbidden: Cannot delete yourself.'}
+        return https_fn.Response(json.dumps(response_data), status=403, mimetype='application/json')
 
     target_user_auth_level = -1
     try:
         target_role_doc = USERS_COLLECTION_REF.document(target_uid).get()
-        if target_role_doc.exists:
-            target_role_data = target_role_doc.to_dict()
-            target_user_auth_level = target_role_data.get('level', -1)
-        else:
-            return https_fn.Response('Not Found: Utente non trovato.', status=404)
+        if not target_role_doc.exists:
+            response_data = {'status': 'error', 'message': 'Not Found: User not found.'}
+            return https_fn.Response(json.dumps(response_data), status=404, mimetype='application/json')
+            
+        target_user_auth_level = target_role_doc.to_dict().get('level', -1)
     except Exception as e:
-        return https_fn.Response('Internal Server Error', status=500)
+        response_data = {'status': 'error', 'message': 'Internal Server Error: Failed to retrieve target user role.'}
+        return https_fn.Response(json.dumps(response_data), status=500, mimetype='application/json')
 
-    if target_user_auth_level == MANAGE_USERS_MIN_LEVEL:
-        return https_fn.Response('Forbidden: Non è possibile eliminare un utente di livello 2.', status=403)
+    if target_user_auth_level >= MANAGE_USERS_MIN_LEVEL:
+        response_data = {'status': 'error', 'message': f'Forbidden: Cannot delete a level {MANAGE_USERS_MIN_LEVEL} user.'}
+        return https_fn.Response(json.dumps(response_data), status=403, mimetype='application/json')
 
-    # Eliminazione dell'Utente da Firebase Authentication
+    # --- Main Deletion Logic ---
     try:
-        auth.delete_user(target_uid)
-    except auth.UserNotFoundError:
-        print(f"Utente {target_uid} non trovato in Firebase Authentication. Potrebbe essere già stato eliminato.")
-        # Non è un errore critico se l'utente non esiste già in Authentication, ma i dati associati potrebbero esistere
-    except Exception as e:
-        return https_fn.Response(f'Internal Server Error: Errore nell\'eliminazione utente Auth: {e}', status=500)
+        # Delete user from Firebase Authentication
+        try:
+            auth.delete_user(target_uid)
+        except auth.UserNotFoundError:
+            print(f"User {target_uid} not found in Firebase Authentication. It may have already been deleted.")
+        except Exception as e:
+            raise Exception(f"Failed to delete user from Auth: {e}")
 
-    # Pulizia dei Dati Associati (Cloud Storage e Firestore)
-    
-    # Eliminazione dei file di scansione da Cloud Storage
-    try:
-        docs_to_delete_scans = SCANS_COLLECTION_REF.where(field_path='user', op_string='==', value=target_uid).stream()
+        # Delete associated data from Cloud Storage and Firestore
+        deleted_scans_count = 0
+        deleted_steps_count = 0
 
-        for doc in docs_to_delete_scans:
-            scan_data = doc.to_dict()
+        # Delete scans and related data
+        scans_to_delete = SCANS_COLLECTION_REF.where(field_path='user', op_string='==', value=target_uid).stream()
+        for doc in scans_to_delete:
             scan_id = doc.id
             
-            # Cancella i file su Cloud Storage
+            # Delete scan file from Cloud Storage
             try:
                 blob = bucket.blob(f'scans/{scan_id}.ply')
                 if blob.exists():
                     blob.delete()
             except Exception as e:
-                print(f"Errore durante l'eliminazione del file {scan_id} da Cloud Storage: {e}")
-
-            # Cancella le statistiche associate a questa scansione da Cloud Storage
+                print(f"Error deleting file {scan_id} from Cloud Storage: {e}")
+                
+            # Delete associated stats file from Cloud Storage
             try:
                 blob = bucket.blob(f'comparisons/{scan_id}.ply')
                 if blob.exists():
                     blob.delete()
             except Exception as e:
-                print(f"Errore durante l'eliminazione delle statistiche per la scansione {scan_id}: {e}")
+                print(f"Error deleting stats for scan {scan_id}: {e}")
 
-            # Cancella le statistiche associate a questa scansione da Firestore
+            # Delete associated stats from Firestore
             try:
-                stat_docs = STATS_COLLECTION_REF.where(field_path='scan', op_string='==', value=scan_id).stream()
-                # dovrebbe esserci una sola statistica per scansione, ma per precauzione uso un for
-                for stat_doc in stat_docs: 
+                stats_docs_to_delete = STATS_COLLECTION_REF.where(field_path='scan', op_string='==', value=scan_id).stream()
+                for stat_doc in stats_docs_to_delete:
                     stat_doc.reference.delete()
             except Exception as e:
-                print(f"Errore durante l'eliminazione delle statistiche per la scansione {scan_id}: {e}")
+                print(f"Error deleting stats for scan {scan_id} from Firestore: {e}")
 
-            # Cancella la scansione stessa da Firestore
+            # Delete the scan document itself from Firestore
             doc.reference.delete()
+            deleted_scans_count += 1
+        
+        # Delete 'steps' collection data if the user is a level 1 admin
+        if target_user_auth_level == 1:
+            steps_to_delete = STEPS_COLLECTION_REF.where(field_path='user', op_string='==', value=target_uid).stream()
+            for step_doc in steps_to_delete:
+                # Delete associated file from Storage
+                try:
+                    blob = bucket.blob(f'steps/{step_doc.id}.step')
+                    if blob.exists():
+                        blob.delete()
+                except Exception as e:
+                    print(f"Error deleting step file {step_doc.id} from Cloud Storage: {e}")
+                
+                # Delete the step document itself from Firestore
+                step_doc.reference.delete()
+                deleted_steps_count += 1
+
+        # Delete the user's profile document from Firestore
+        USERS_COLLECTION_REF.document(target_uid).delete()
+        
+        # --- Final Success Response ---
+        response_data = {
+            'status': 'success',
+            'message': f'User {target_uid} and all associated data successfully deleted.',
+            'data': {
+                'deleted_scans_count': deleted_scans_count,
+                'deleted_steps_count': deleted_steps_count
+            }
+        }
+        return https_fn.Response(json.dumps(response_data), status=200, mimetype='application/json')
         
     except Exception as e:
-        return https_fn.Response(f"Errore durante la pulizia di Cloud Storage: {e}", status=500)
-
-    # Pulizia della collezione 'steps' in Firestore (solo se l'utente è di livello 1)
-    try:
-        if target_user_auth_level == 1:
-            steps_docs_to_delete = STEPS_COLLECTION_REF.where(field_path='user', op_string='==', value=target_uid).stream()
-            for step_doc in steps_docs_to_delete:
-                # Cancella i file associati a questo step
-                blob = bucket.blob(f'steps/{step_doc.id}.step')
-                if blob.exists():
-                    blob.delete()
-                step_doc.reference.delete()
-    except Exception as e:
-        return https_fn.Response(f"Errore durante la pulizia della collezione 'steps': {e}", status=500)
-
-    # Pulizia del documento del profilo utente in Firestore
-    try:
-        USERS_COLLECTION_REF.document(target_uid).delete()
-    except Exception as e:
-        return https_fn.Response(f'Internal Server Error: Errore nell\'eliminazione del profilo utente in Firestore: {e}', status=500)
-
-    # Aggiungi questa riga per restituire una risposta di successo
-    return https_fn.Response(f"Utente {target_uid} eliminato con successo.", status=200)
+        print(f"Critical error during cleanup: {e}")
+        response_data = {'status': 'error', 'message': f'Internal Server Error: Failed to delete user and associated data: {e}'}
+        return https_fn.Response(json.dumps(response_data), status=500, mimetype='application/json')

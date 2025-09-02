@@ -1,3 +1,4 @@
+import json
 from firebase_functions import https_fn
 from firebase_admin import firestore, storage, auth
 from config import BUCKET_NAME, SUPERUSER_ROLE_LEVEL
@@ -5,103 +6,99 @@ from config import BUCKET_NAME, SUPERUSER_ROLE_LEVEL
 @https_fn.on_request()
 def clean_scans(request: https_fn.Request) -> https_fn.Response:
     """
-    HTTP Cloud Function per pulire tutti i file di scansione da Cloud Storage
-    e le relative entry da Firestore (scans e stats).
-    La funzione pulisce tutte le scansioni e tutte le statistiche
-    Richiede l'autenticazione di un utente con un livello di autorizzazione sufficiente.
-    Args:
-        request (flask.Request): La richiesta HTTP per avviare la pulizia.
+    HTTP Cloud Function to clean all scan files from Cloud Storage
+    and their corresponding entries from Firestore (scans and stats).
+    Requires authentication of a user with a sufficient authorization level.
     """
     
     db = firestore.client()
-
-    # Riferimenti alle collezioni Firestore
-    # Collezione che associa scansioni agli utenti
     SCANS_COLLECTION_REF = db.collection('scans')
-    # Collezione per le statistiche delle scansioni
     STATS_COLLECTION_REF = db.collection('stats')
-    # Collezione per i ruoli degli utenti
     USERS_COLLECTION_REF = db.collection('users')
 
-    # Autenticazione e Controllo Autorizzazione
     auth_header = request.headers.get('Authorization')
     if not auth_header or not auth_header.startswith('Bearer '):
-        print("Richiesta non autorizzata.")
-        return https_fn.Response('Unauthorized', status=401)
+        response_data = {'status': 'error', 'message': 'Unauthorized'}
+        return https_fn.Response(json.dumps(response_data), status=401, mimetype='application/json')
 
     id_token = auth_header.split('Bearer ')[1]
     try:
-        # Verifica il token ID Firebase
         decoded_token = auth.verify_id_token(id_token)
         uid = decoded_token['uid']
-        print(f"Utente {uid} ha richiesto la pulizia.")
+        print(f"User {uid} requested cleanup.")
     except Exception as e:
-        print(f"Token ID non valido o scaduto: {e}")
-        return https_fn.Response('Unauthorized', status=401)
+        response_data = {'status': 'error', 'message': f'Unauthorized: {e}'}
+        return https_fn.Response(json.dumps(response_data), status=401, mimetype='application/json')
 
-    # Controllo del ruolo dell'utente
-    user_is_authorized = False
     try:
         user_role_doc = USERS_COLLECTION_REF.document(uid).get()
-        if user_role_doc.exists:
-            user_role_data = user_role_doc.to_dict()
-            if user_role_data.get('level', 0) >= SUPERUSER_ROLE_LEVEL and user_role_data.get('enabled', False):
-                user_is_authorized = True
-        else:
-            return https_fn.Response('Forbidden', status=403)
-
+        if not user_role_doc.exists:
+            response_data = {'status': 'error', 'message': 'Forbidden: User not found'}
+            return https_fn.Response(json.dumps(response_data), status=403, mimetype='application/json')
+            
+        user_role_data = user_role_doc.to_dict()
+        if not (user_role_data.get('level', 0) >= SUPERUSER_ROLE_LEVEL and user_role_data.get('enabled', False)):
+            response_data = {'status': 'error', 'message': 'Forbidden: Insufficient privileges'}
+            return https_fn.Response(json.dumps(response_data), status=403, mimetype='application/json')
     except Exception as e:
-        print(f"Errore durante il recupero del ruolo utente: {e}")
-        return https_fn.Response('Internal Server Error', status=500)
+        print(f"Error while retrieving user role: {e}")
+        response_data = {'status': 'error', 'message': 'Internal Server Error: Failed to retrieve user role'}
+        return https_fn.Response(json.dumps(response_data), status=500, mimetype='application/json')
 
-    if not user_is_authorized:
-        return https_fn.Response('Forbidden', status=403)
+    print(f"User {uid} is authorized. Starting cleanup process.")
 
-    print(f"Utente {uid} autorizzato. Inizio la procedura di pulizia.")
+    deleted_files_count = 0
+    deleted_scans_docs_count = 0
+    deleted_stats_docs_count = 0
 
-    # Eliminazione dei file da Cloud Storage
+    # Deleting files from Cloud Storage
     try:
         bucket = storage.bucket(BUCKET_NAME)
-        deleted_files_count = 0
-
-        # Pulisce la cartella "comparisons/"
-        blobs_comparisons = bucket.list_blobs(prefix="comparisons/")
-        for blob in blobs_comparisons:
-            blob.delete()
-            deleted_files_count += 1
-
-        # Pulisce la cartella "scans/"
-        blobs_scans = bucket.list_blobs(prefix="scans/")
-        for blob in blobs_scans:
-            blob.delete()
-            deleted_files_count += 1
-        print(f"Eliminati {deleted_files_count} file da Cloud Storage.")
+        prefixes = ["comparisons/", "scans/"]
+        for prefix in prefixes:
+            blobs = bucket.list_blobs(prefix=prefix)
+            for blob in blobs:
+                # Avoid deleting the root folder itself if it's not empty
+                if blob.name != prefix:
+                    blob.delete()
+                    deleted_files_count += 1
+        print(f"Deleted {deleted_files_count} files from Cloud Storage.")
     except Exception as e:
-        print(f"Errore durante l'eliminazione dei file da Cloud Storage: {e}")
-        return https_fn.Response(f"Errore durante la pulizia di Cloud Storage: {e}", status=500)
+        print(f"Error while deleting files from Cloud Storage: {e}")
+        response_data = {'status': 'error', 'message': f"Internal Server Error: Failed to clean Cloud Storage: {e}"}
+        return https_fn.Response(json.dumps(response_data), status=500, mimetype='application/json')
 
-    # Pulizia della collezione 'scans' in Firestore
+    # Cleaning the 'scans' collection in Firestore
     try:
         docs = SCANS_COLLECTION_REF.stream()
-        deleted_user_scans_count = 0
         for doc in docs:
             doc.reference.delete()
-            deleted_user_scans_count += 1
-        print(f"Eliminate {deleted_user_scans_count} entry dalla collezione 'scans'.")
+            deleted_scans_docs_count += 1
+        print(f"Deleted {deleted_scans_docs_count} entries from the 'scans' collection.")
     except Exception as e:
-        print(f"Errore durante la pulizia di 'scans' in Firestore: {e}")
-        return https_fn.Response(f"Errore durante la pulizia di Firestore (scans): {e}", status=500)
+        print(f"Error while cleaning 'scans' in Firestore: {e}")
+        response_data = {'status': 'error', 'message': f"Internal Server Error: Failed to clean Firestore (scans): {e}"}
+        return https_fn.Response(json.dumps(response_data), status=500, mimetype='application/json')
 
-    # Pulizia della collezione 'stats' in Firestore
+    # Cleaning the 'stats' collection in Firestore
     try:
         docs = STATS_COLLECTION_REF.stream()
-        deleted_stats_count = 0
         for doc in docs:
             doc.reference.delete()
-            deleted_stats_count += 1
-        print(f"Eliminate {deleted_stats_count} entry dalla collezione 'stats'.")
+            deleted_stats_docs_count += 1
+        print(f"Deleted {deleted_stats_docs_count} entries from the 'stats' collection.")
     except Exception as e:
-        print(f"Errore durante la pulizia di 'stats' in Firestore: {e}")
-        return https_fn.Response(f"Errore durante la pulizia di Firestore (stats): {e}", status=500)
+        print(f"Error while cleaning 'stats' in Firestore: {e}")
+        response_data = {'status': 'error', 'message': f"Internal Server Error: Failed to clean Firestore (stats): {e}"}
+        return https_fn.Response(json.dumps(response_data), status=500, mimetype='application/json')
 
-    return https_fn.Response('Pulizia completata con successo!', status=200)
+    response_data = {
+        'status': 'success',
+        'message': 'Successfully deleted all data!',
+        'data': {
+            'deleted_files': deleted_files_count,
+            'deleted_scans_docs': deleted_scans_docs_count,
+            'deleted_stats_docs': deleted_stats_docs_count
+        }
+    }
+    return https_fn.Response(json.dumps(response_data), status=200, mimetype='application/json')
