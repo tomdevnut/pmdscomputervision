@@ -3,7 +3,13 @@ from firebase_functions import https_fn, options
 from firebase_admin import firestore, auth
 from config import MANAGE_USERS_MIN_LEVEL
 
-@https_fn.on_request(cors_enabled=True)
+@https_fn.on_request(
+    cors=options.CorsOptions(
+        cors_origins=[r"*"],
+        cors_methods=["get", "post"],
+        cors_headers=["Content-Type", "Authorization"]
+    )
+)
 def disable_user(request: https_fn.Request) -> https_fn.Response:
     """
     HTTP Cloud Function to disable an existing user in Firebase Authentication

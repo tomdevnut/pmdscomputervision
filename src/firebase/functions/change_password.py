@@ -3,7 +3,13 @@ from firebase_admin import auth, firestore, messaging
 from firebase_functions import https_fn, options
 from config import MANAGE_USERS_MIN_LEVEL
 
-@https_fn.on_request(cors_enabled=True)
+@https_fn.on_request(
+    cors=options.CorsOptions(
+        cors_origins=[r"*"],
+        cors_methods=["get", "post"],
+        cors_headers=["Content-Type", "Authorization"]
+    )
+)
 def change_password(request: https_fn.Request) -> https_fn.Response:
     """
     Changes a user's password, revokes sessions, and sends a notification.

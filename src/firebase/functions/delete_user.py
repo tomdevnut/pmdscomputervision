@@ -1,9 +1,15 @@
 import json
-from firebase_functions import https_fn
+from firebase_functions import https_fn, options
 from firebase_admin import firestore, auth, storage
 from config import BUCKET_NAME, MANAGE_USERS_MIN_LEVEL
 
-@https_fn.on_request(cors_enabled=True)
+@https_fn.on_request(
+    cors=options.CorsOptions(
+        cors_origins=[r"*"],
+        cors_methods=["get", "post"],
+        cors_headers=["Content-Type", "Authorization"]
+    )
+)
 def delete_user(request: https_fn.Request) -> https_fn.Response:
     """
     HTTP Cloud Function to delete an existing user from Firebase Authentication
