@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 import 'single_user.dart';
 import 'new_user.dart';
 import '../shared_utils.dart';
+import 'bulk_upload.dart';
 
-class UsersPage extends StatelessWidget {
+class UsersPage extends StatefulWidget {
   const UsersPage({super.key});
 
+  @override
+  State<UsersPage> createState() => _UsersPageState();
+}
+
+class _UsersPageState extends State<UsersPage> {
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -23,17 +29,61 @@ class UsersPage extends StatelessWidget {
                 fontWeight: FontWeight.w500,
               ),
             ),
-            // TODO: mostrare il pulsante + solo se utente di livello >= 1
-            buildAddButton(context, () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NewUser()),
-              );
-            }),
+            PopupMenuButton<String>(
+              color: AppColors.white,
+              child: InkWell(
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: ShapeDecoration(
+                    color: AppColors.secondary,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Icon(Icons.add, color: Colors.white, size: 20),
+                ),
+              ),
+              onSelected: (String result) {
+                if (result == 'single_user') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const NewUser()),
+                  );
+                } else if (result == 'bulk_upload') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const BulkUpload()),
+                  );
+                }
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                const PopupMenuItem<String>(
+                  value: 'single_user',
+                  child: Row(
+                    children: [
+                      Icon(Icons.person_add, color: AppColors.primary),
+                      SizedBox(width: 8),
+                      Text('Create single user'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem<String>(
+                  value: 'bulk_upload',
+                  child: Row(
+                    children: [
+                      Icon(Icons.groups, color: AppColors.primary),
+                      SizedBox(width: 8),
+                      Text('Bulk upload (CSV)'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
         const SizedBox(height: 20),
-        // Lista di utenti
+        // Esempi di elementi della lista di utenti
         buildListItem(
           title: 'John Doe',
           subtitle: 'Level 2 - Enabled',
