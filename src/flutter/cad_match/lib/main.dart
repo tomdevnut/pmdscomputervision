@@ -85,7 +85,7 @@ class MyApp extends StatelessWidget {
           if (snapshot.hasData) {
             // Se l'utente è loggato, chiama la funzione per gestire le notifiche
             setupFirebaseMessaging();
-            return MainPage();
+            return MainPage(key: ValueKey(snapshot.data!.uid));
           }
           return LoginPage();
         },
