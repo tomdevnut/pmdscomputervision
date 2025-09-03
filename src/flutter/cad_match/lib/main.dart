@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'screens/login_page.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'screens/main_page.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:cloud_functions/cloud_functions.dart';
+
+const String kSaveFcmTokenUrl =
+    'https://save-fcm-token-5ja5umnfkq-ey.a.run.app';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,28 +19,45 @@ void main() async {
 
 // Funzione per richiedere i permessi e inviare il token FCM alla Cloud Function
 Future<void> setupFirebaseMessaging() async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    debugPrint('[FCM] User not logged in, cannot save token.');
+    return;
+  }
+
   // Richiedi i permessi di notifica
   NotificationSettings settings = await FirebaseMessaging.instance
       .requestPermission();
 
   if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-
     // Ottieni il token FCM
     final fcmToken = await FirebaseMessaging.instance.getToken();
     debugPrint('[FCM] Token: $fcmToken');
 
-    // Invia il token alla Cloud Function
+    // Invia il token alla Cloud Function tramite una richiesta HTTP
     if (fcmToken != null) {
       try {
-        final callable = FirebaseFunctions.instance.httpsCallable(
-          'save_fcm_token',
+        final idToken = await user.getIdToken();
+        final response = await http.post(
+          Uri.parse(kSaveFcmTokenUrl),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization':
+                'Bearer $idToken', // Invia il token di autenticazione per l'autorizzazione
+          },
+          body: jsonEncode({'fcm_token': fcmToken}),
         );
-        await callable.call(<String, dynamic>{'fcm_token': fcmToken});
-        debugPrint('[FCM] Token salvato con successo tramite Cloud Function');
-      } on FirebaseFunctionsException catch (e) {
-        debugPrint(
-          '[FCM] Errore nel salvare il token: ${e.code} - ${e.message}',
-        );
+
+        if (response.statusCode == 200) {
+          debugPrint('[FCM] Token salvato con successo tramite Cloud Function');
+        } else {
+          final Map<String, dynamic> responseData = json.decode(response.body);
+          debugPrint(
+            '[FCM] Errore nel salvare il token: ${response.statusCode} - ${responseData['message']}',
+          );
+        }
+      } catch (e) {
+        debugPrint('[FCM] Errore imprevisto nel salvare il token: $e');
       }
     }
   } else {
