@@ -19,129 +19,108 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   late int _selectedPageIndex;
-  // Variabile per memorizzare il livello dell'utente.
-  int? _userLevel;
 
   @override
   void initState() {
     super.initState();
     _selectedPageIndex = 0; // Imposta la pagina iniziale su Scans.
-    // Lancia la funzione asincrona per recuperare il livello utente.
-    _fetchUserLevel();
-  }
-
-  // Metodo asincrono per recuperare il livello utente da Firestore.
-  Future<void> _fetchUserLevel() async {
-    try {
-      // Ottieni il documento dell'utente dalla collezione 'users'.
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(widget.user.uid)
-          .get();
-
-      // Controlla se il documento esiste e ha il campo 'level'.
-      if (userDoc.exists && userDoc.data()!.containsKey('level')) {
-        final level = userDoc.data()!['level'];
-        setState(() {
-          _userLevel = level;
-        });
-      } else {
-        // Se il documento non esiste o non ha il campo 'level',
-        // imposta un livello predefinito (es. 1).
-        setState(() {
-          _userLevel = 1;
-        });
-      }
-    } catch (e) {
-      // In caso di errore, imposta un livello predefinito e stampa un log.
-      print("Errore nel recupero del livello utente: $e");
-      setState(() {
-        _userLevel = 1;
-      });
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    // Se il livello utente non è ancora stato caricato, mostra un indicatore di caricamento.
-    if (_userLevel == null) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
+    // Usa uno StreamBuilder per ascoltare i cambiamenti nel documento dell'utente in tempo reale
+    return StreamBuilder<DocumentSnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('users')
+          .doc(widget.user.uid)
+          .snapshots(),
+      builder: (context, snapshot) {
+        // Se la connessione è in attesa, mostra un indicatore di caricamento.
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    // Costruisci le liste di pagine e di menu in base al livello utente.
-    final List<Widget> pages = [
-      ScansPage(level: _userLevel!),
-      StepsPage(level: _userLevel!),
-      SettingsPage(level: _userLevel!),
-    ];
-    final List<String> pageTitles = [
-      'Scans',
-      'Steps',
-      'Settings',
-    ];
+        int userLevel = 1; // Livello predefinito
+        if (snapshot.hasData && snapshot.data!.exists) {
+          final data = snapshot.data!.data() as Map<String, dynamic>?;
+          if (data != null && data.containsKey('level')) {
+            userLevel = data['level'] as int? ?? 1;
+          }
+        }
 
-    // Se il livello è 2, aggiungi la pagina e il menu per la gestione degli utenti.
-    if (_userLevel == 2) {
-      pages.add(const UsersPage());
-      pageTitles.add('Users');
-    }
+        // Costruisci le liste di pagine e di menu in base al livello utente.
+        final List<Widget> pages = [
+          ScansPage(level: userLevel),
+          StepsPage(level: userLevel),
+          SettingsPage(level: userLevel),
+        ];
+        final List<String> pageTitles = ['Scans', 'Steps', 'Settings'];
 
-    return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      body: Row(
-        children: [
-          // Menu a sinistra.
-          Container(
-            height: double.infinity,
-            decoration: const ShapeDecoration(
-              color: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  topRight: Radius.circular(10),
-                  bottomRight: Radius.circular(10),
-                ),
-              ),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Column(
-                children: [
-                  const Text(
-                    'CADmatch',
-                    style: TextStyle(
-                      color: AppColors.secondary,
-                      fontSize: 24,
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w700,
+        // Se il livello è 2, aggiungi la pagina e il menu per la gestione degli utenti.
+        if (userLevel == 2) {
+          pages.add(const UsersPage());
+          pageTitles.add('Users');
+        }
+
+        return Scaffold(
+          backgroundColor: AppColors.backgroundColor,
+          body: Row(
+            children: [
+              // Menu a sinistra.
+              Container(
+                height: double.infinity,
+                decoration: const ShapeDecoration(
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.only(
+                      topRight: Radius.circular(10),
+                      bottomRight: Radius.circular(10),
                     ),
                   ),
-                  const SizedBox(height: 40),
-                  // Mappa i titoli dinamici per costruire gli elementi del menu.
-                  ...pageTitles.asMap().entries.map((entry) {
-                    int index = entry.key;
-                    String title = entry.value;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: _buildMenuItem(context, title, index),
-                    );
-                  }),
-                ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 20),
+                  child: Column(
+                    children: [
+                      const Text(
+                        'CADmatch',
+                        style: TextStyle(
+                          color: AppColors.secondary,
+                          fontSize: 24,
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                      // Mappa i titoli dinamici per costruire gli elementi del menu.
+                      ...pageTitles.asMap().entries.map((entry) {
+                        int index = entry.key;
+                        String title = entry.value;
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _buildMenuItem(context, title, index),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
               ),
-            ),
+              // Contenuto principale a destra.
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 40,
+                    vertical: 60,
+                  ),
+                  child: pages[_selectedPageIndex],
+                ),
+              ),
+            ],
           ),
-          // Contenuto principale a destra.
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
-              child: pages[_selectedPageIndex],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'single_user.dart';
-import 'login_page.dart';
 import '../shared_utils.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
@@ -138,12 +137,6 @@ class _SettingsPageState extends State<SettingsPage> {
               context: context,
               onConfirm: () async {
                 await FirebaseAuth.instance.signOut();
-                if (mounted) {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => const LoginPage()),
-                  );
-                }
               },
               message: 'Are you sure you want to logout?',
             );

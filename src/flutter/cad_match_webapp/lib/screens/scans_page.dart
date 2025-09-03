@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'single_scan.dart';
 import '../shared_utils.dart';
 import 'package:intl/intl.dart';
@@ -11,6 +12,26 @@ class ScansPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Determina il flusso di dati basato sul livello dell'utente
+    final Stream<QuerySnapshot> scansStream;
+
+    // Se il livello è 0, mostra solo le scansioni dell'utente corrente
+    if (level == 0) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        scansStream = FirebaseFirestore.instance
+            .collection('scans')
+            .where('user', isEqualTo: user.uid)
+            .snapshots();
+      } else {
+        // Gestisci il caso in cui l'utente non è autenticato ma il livello è 0
+        scansStream = const Stream.empty();
+      }
+    } else {
+      // Per i livelli 1 e 2, mostra tutte le scansioni
+      scansStream = FirebaseFirestore.instance.collection('scans').snapshots();
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -30,12 +51,9 @@ class ScansPage extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 20),
-        // Utilizziamo un Expanded per consentire alla lista di scansioni di occupare lo spazio disponibile
-        // e per rendere l'area scorrevole.
         Expanded(
           child: StreamBuilder(
-            // Utilizza StreamBuilder per ascoltare i cambiamenti nella collezione 'scans' di Firestore.
-            stream: FirebaseFirestore.instance.collection('scans').snapshots(),
+            stream: scansStream,
             builder: (context, snapshot) {
               // Se la connessione non è attiva, mostra un indicatore di caricamento.
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -57,10 +75,15 @@ class ScansPage extends StatelessWidget {
               return ListView.builder(
                 itemCount: scans.length,
                 itemBuilder: (context, index) {
-                  final scanData = scans[index].data();
-                  final title = scanData['name'] ?? 'No Name';
+                  final scanData = scans[index].data() as Map<String, dynamic>?;
+
+                  if (scanData == null) {
+                    return const SizedBox.shrink();
+                  }
+
+                  final title = scanData['name'] as String? ?? 'No Name';
                   final timestamp = scanData['timestamp'] as Timestamp?;
-                  final status = scanData['status'] as int;
+                  final status = scanData['status'] as int? ?? -1;
                   final statusText = getStatusText(status);
 
                   String subtitle;
@@ -85,7 +108,8 @@ class ScansPage extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => SingleScan(scanid: scans[index].id),
+                            builder: (context) =>
+                                SingleScan(scanid: scans[index].id),
                           ),
                         );
                       },

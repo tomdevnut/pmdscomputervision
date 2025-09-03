@@ -85,9 +85,7 @@ class _SingleStepState extends State<SingleStep> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text(
-                  'The requested step was not found.',
-                ),
+                content: Text('The requested step was not found.'),
                 backgroundColor: AppColors.red,
               ),
             );
@@ -172,7 +170,6 @@ class _SingleStepState extends State<SingleStep> {
     final authorId = data['user'];
     final authorName = (authorId != null) ? await getUsername(authorId) : 'N/A';
 
-    // Aggiungiamo il nome dell'autore ai dati per renderlo disponibile
     data['user'] = authorName;
 
     return data;
@@ -268,35 +265,21 @@ class _SingleStepState extends State<SingleStep> {
                       _downloadStepFile();
                     },
                   ),
-                  const SizedBox(width: 12),
-                  buildButton(
-                    label: 'Delete Step',
-                    icon: Icons.delete,
-                    backgroundColor: widget.userlevel >= 1
-                        ? AppColors.red
-                        : AppColors.disabledButton,
-                    onTap: () => widget.userlevel >= 1
-                        ? showConfirmationDialog(
-                            context: context,
-                            message:
-                                'This action will permanently delete the step. All associated scans will not be affected.',
-                            onConfirm: () {
-                              _deleteStep();
-                            },
-                          )
-                        : ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(
-                                'You do not have permission to delete this step.',
-                                style: TextStyle(color: AppColors.white),
-                              ),
-                              backgroundColor: AppColors.red,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                            ),
-                          ),
-                  ),
+                  if (widget.userlevel >= 1) const SizedBox(width: 12),
+                  if (widget.userlevel >= 1)
+                    buildButton(
+                      label: 'Delete Step',
+                      icon: Icons.delete,
+                      backgroundColor: AppColors.red,
+                      onTap: () => showConfirmationDialog(
+                        context: context,
+                        message:
+                            'This action will permanently delete the step. All associated scans will not be affected.',
+                        onConfirm: () {
+                          _deleteStep();
+                        },
+                      ),
+                    ),
                 ],
               ),
             ],
