@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'login_page.dart';
 import '../utils.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -38,13 +37,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> _signOut() async {
     await FirebaseAuth.instance.signOut();
-    if (mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-        (route) => false,
-      );
-    }
   }
 
   Future<void> _resetPassword(BuildContext context) async {
