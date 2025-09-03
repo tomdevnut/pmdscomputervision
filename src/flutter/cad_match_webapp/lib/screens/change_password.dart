@@ -1,17 +1,93 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../shared_utils.dart';
 
+const String kChangePasswordUrl ='https://change-password-5ja5umnfkq-ey.a.run.app';
+
 class ChangePassword extends StatefulWidget {
-  const ChangePassword({
-    super.key,
-  });
+  final String userId;
+
+  const ChangePassword({super.key, required this.userId});
+
   @override
   State<ChangePassword> createState() => _ChangePasswordState();
 }
 
 class _ChangePasswordState extends State<ChangePassword> {
-  bool _obscurePassword = true;
   final TextEditingController _newPasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    _newPasswordController.dispose();
+    super.dispose();
+  }
+
+  void _showSnackbar({required String message, bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: AppColors.white)),
+        backgroundColor: isError ? AppColors.red : AppColors.green,
+      ),
+    );
+  }
+
+  Future<void> _changePassword() async {
+    final newPassword = _newPasswordController.text.trim();
+    if (newPassword.isEmpty) {
+      _showSnackbar(message: 'Please enter a new password.', isError: true);
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      final idToken = await user?.getIdToken();
+
+      if (idToken == null) {
+        throw Exception('User is not authenticated.');
+      }
+
+      final response = await http.post(
+        Uri.parse(kChangePasswordUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+        },
+        body: jsonEncode({'new_password': newPassword, 'uid': widget.userId}),
+      );
+
+      final Map<String, dynamic> responseData = json.decode(response.body);
+      if (response.statusCode == 200) {
+        _showSnackbar(
+          message: responseData['message'] ?? 'Password updated successfully.',
+        );
+        if (mounted) {
+          Navigator.of(context).pop();
+        }
+      } else {
+        _showSnackbar(
+          message: responseData['message'] ?? 'An unknown error occurred.',
+          isError: true,
+        );
+      }
+    } catch (e) {
+      _showSnackbar(message: 'Error changing password: $e', isError: true);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,15 +100,6 @@ class _ChangePasswordState extends State<ChangePassword> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               buildTopBar(context, title: 'CHANGE PASSWORD'),
-              const Text(
-                'A confirmation email will be sent to the user after the change.',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 18,
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
               const SizedBox(height: 40),
               Center(
                 child: SizedBox(
@@ -57,11 +124,9 @@ class _ChangePasswordState extends State<ChangePassword> {
                     Align(
                       alignment: Alignment.center,
                       child: buildButton(
-                        label: 'Change Password',
-                        icon: Icons.check,
-                        onTap: () {
-                          // TODO
-                        },
+                        label: _isLoading ? 'Changing...' : 'Change Password',
+                        icon: _isLoading ? Icons.hourglass_full : Icons.check,
+                        onTap: _isLoading ? () {} : _changePassword,
                       ),
                     ),
                   ],
@@ -87,7 +152,6 @@ class _ChangePasswordState extends State<ChangePassword> {
           children: [
             Row(
               children: [
-                // Container for the icon
                 Container(
                   width: 30,
                   height: 30,
@@ -95,10 +159,13 @@ class _ChangePasswordState extends State<ChangePassword> {
                     color: AppColors.primary,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.password, color: AppColors.white, size: 20),
+                  child: const Icon(
+                    Icons.password,
+                    color: AppColors.white,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
-                // Label text
                 Text(
                   title,
                   style: const TextStyle(

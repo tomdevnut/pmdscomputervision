@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
-import '../shared_utils.dart'; // Importa il file di utility condiviso
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../shared_utils.dart';
+
+const String kNewUserUrl = 'https://new-user-5ja5umnfkq-ey.a.run.app';
 
 class NewUser extends StatefulWidget {
   const NewUser({super.key});
@@ -16,6 +21,7 @@ class _NewUserState extends State<NewUser> {
   final _passwordController = TextEditingController();
   String? _selectedLevel;
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -26,7 +32,16 @@ class _NewUserState extends State<NewUser> {
     super.dispose();
   }
 
-  // Genera una password casuale
+  void _showSnackbar({required String message, bool isError = false}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, style: const TextStyle(color: AppColors.white)),
+        backgroundColor: isError ? Colors.red : AppColors.green,
+      ),
+    );
+  }
+
   String _generateRandomPassword() {
     const chars =
         'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#\$%^&*()_-+=';
@@ -37,6 +52,88 @@ class _NewUserState extends State<NewUser> {
         (_) => chars.codeUnitAt(random.nextInt(chars.length)),
       ),
     );
+  }
+
+  Future<void> _createUser() async {
+    final email = _emailController.text.trim();
+    final name = _nameController.text.trim();
+    final surname = _surnameController.text.trim();
+    final password = _passwordController.text;
+    final level = _selectedLevel;
+
+    if (email.isEmpty ||
+        name.isEmpty ||
+        surname.isEmpty ||
+        password.isEmpty ||
+        level == null) {
+      _showSnackbar(
+        message: 'Please fill all fields and select a level.',
+        isError: true,
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      final idToken = await user?.getIdToken();
+
+      if (idToken == null) {
+        throw Exception('User not authenticated.');
+      }
+
+      final data = {
+        'email': email,
+        'password': password,
+        'level': int.parse(level),
+        'name': name,
+        'surname': surname,
+      };
+
+      final response = await http.post(
+        Uri.parse(kNewUserUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+        },
+        body: jsonEncode(data),
+      );
+
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        _showSnackbar(
+          message: responseData['message'] ?? 'User created successfully!',
+        );
+        Navigator.of(context).pop();
+      } else {
+        final responseData = json.decode(response.body);
+        final errorMessage =
+            responseData['message'] ?? 'An unknown error occurred.';
+        _showSnackbar(
+          message: 'Failed to create user: $errorMessage',
+          isError: true,
+        );
+      }
+    } catch (e) {
+      _showSnackbar(message: 'Error creating user: $e', isError: true);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  // Funzione che gestisce l'onTap e lo rende compatibile con il tipo 'dynamic Function()'
+  void _onButtonTap() {
+    if (!_isLoading) {
+      _createUser();
+    }
   }
 
   @override
@@ -66,7 +163,6 @@ class _NewUserState extends State<NewUser> {
                     return Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Prima colonna per Email, Name, e Level
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,7 +186,6 @@ class _NewUserState extends State<NewUser> {
                           ),
                         ),
                         const SizedBox(width: 24),
-                        // Seconda colonna per Surname e Password
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -146,11 +241,11 @@ class _NewUserState extends State<NewUser> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   buildButton(
-                    label: 'Create user',
-                    icon: Icons.check_circle,
-                    onTap: () {
-                      // TODO: Implementare la logica di salvataggio
-                    },
+                    label: _isLoading ? 'Creating...' : 'Create user',
+                    icon: _isLoading
+                        ? Icons.hourglass_full
+                        : Icons.check_circle,
+                    onTap: _onButtonTap, // Passiamo la nuova funzione sincrona
                   ),
                 ],
               ),
@@ -161,7 +256,6 @@ class _NewUserState extends State<NewUser> {
     );
   }
 
-  // Costruisce il campo di input per la password con il pulsante "Generate" e l'icona di visibilità
   Widget _buildPasswordInputField() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,7 +265,6 @@ class _NewUserState extends State<NewUser> {
           children: [
             Row(
               children: [
-                // Container for the icon
                 Container(
                   width: 30,
                   height: 30,
@@ -179,13 +272,16 @@ class _NewUserState extends State<NewUser> {
                     color: AppColors.primary,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(Icons.password, color: AppColors.white, size: 20),
+                  child: const Icon(
+                    Icons.password,
+                    color: AppColors.white,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 12),
-                // Label text
-                Text(
+                const Text(
                   'Password',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 20,
                     fontFamily: 'Inter',
@@ -253,7 +349,6 @@ class _NewUserState extends State<NewUser> {
     );
   }
 
-  // Costruisce il selettore del livello
   Widget _buildLevelSelector() {
     final levels = ['0', '1', '2'];
     return Column(
@@ -261,7 +356,6 @@ class _NewUserState extends State<NewUser> {
       children: [
         Row(
           children: [
-            // Container for the icon
             Container(
               width: 30,
               height: 30,
@@ -269,13 +363,16 @@ class _NewUserState extends State<NewUser> {
                 color: AppColors.primary,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Icon(Icons.onetwothree, color: AppColors.white, size: 20),
+              child: const Icon(
+                Icons.onetwothree,
+                color: AppColors.white,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 12),
-            // Label text
-            Text(
+            const Text(
               'Level',
-              style: const TextStyle(
+              style: TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 20,
                 fontFamily: 'Inter',
@@ -333,7 +430,7 @@ class _NewUserState extends State<NewUser> {
                   color: AppColors.textSecondary,
                 ),
               ),
-              dropdownColor: AppColors.white, // Sfondo del menu a tendina
+              dropdownColor: AppColors.white,
             ),
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'single_user.dart';
 import 'new_user.dart';
 import '../shared_utils.dart';
@@ -12,6 +13,10 @@ class UsersPage extends StatefulWidget {
 }
 
 class _UsersPageState extends State<UsersPage> {
+  // Riferimento alla collezione "users"
+  final CollectionReference _usersCollection = FirebaseFirestore.instance
+      .collection('users');
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -83,35 +88,67 @@ class _UsersPageState extends State<UsersPage> {
           ],
         ),
         const SizedBox(height: 20),
-        // Esempi di elementi della lista di utenti
-        buildListItem(
-          title: 'John Doe',
-          subtitle: 'Level 2 - Enabled',
-          icon: Icons.person,
-          hasArrow: true,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const SingleUserPage()),
-            );
-          },
-        ),
-        const SizedBox(height: 12),
-        buildListItem(
-          title: 'Jane Smith',
-          subtitle: 'Level 1 - Disabled',
-          icon: Icons.person,
-          hasArrow: true,
-          iconColor: AppColors.disabledButton,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    const SingleUserPage(isUserEnabled: false),
-              ),
-            );
-          },
+
+        Expanded(
+          child: StreamBuilder<QuerySnapshot>(
+            stream: _usersCollection.snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasError) {
+                return Center(child: Text('Error: ${snapshot.error}'));
+              }
+
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return const Center(child: Text('No users found.'));
+              }
+
+              // Se i dati sono disponibili, costruisci la lista di utenti
+              final users = snapshot.data!.docs;
+              return ListView.builder(
+                itemCount: users.length,
+                itemBuilder: (context, index) {
+                  final userDoc = users[index];
+                  final userData = userDoc.data() as Map<String, dynamic>;
+                  final isUserEnabled = userData['is_enabled'] ?? true;
+                  final userLevel = userData['level'] ?? 0;
+                  final userName = userData['name'] ?? 'No name';
+                  final userSurname = userData['surname'] ?? 'No surname';
+
+                  final title = '$userName $userSurname';
+                  final subtitle =
+                      'Level $userLevel - ${isUserEnabled ? 'Enabled' : 'Disabled'}';
+                  final iconColor = isUserEnabled
+                      ? AppColors.primary
+                      : AppColors.disabledButton;
+
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12.0),
+                    child: buildListItem(
+                      title: title,
+                      subtitle: subtitle,
+                      icon: Icons.person,
+                      iconColor: iconColor,
+                      hasArrow: true,
+                      onTap: () {
+                        // Passa l'ID del documento e i dati alla schermata SingleUserPage
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SingleUserPage(
+                              userId: userDoc.id,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                },
+              );
+            },
+          ),
         ),
       ],
     );

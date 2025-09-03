@@ -3,7 +3,10 @@ import 'single_user.dart';
 import 'login_page.dart';
 import '../shared_utils.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_functions/cloud_functions.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+const String kCleanScansUrl ='https://clean-scans-5ja5umnfkq-ey.a.run.app';
 
 class SettingsPage extends StatefulWidget {
   final int level;
@@ -15,6 +18,50 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  Future<void> _cleanScans() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('User is not authenticated.');
+      }
+      final idToken = await user.getIdToken();
+
+      final response = await http.post(
+        Uri.parse(kCleanScansUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+        },
+      );
+      if (!mounted) return;
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('All scans have been successfully deleted.'),
+            backgroundColor: AppColors.green,
+          ),
+        );
+      } else {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        final errorMessage =
+            responseData['message'] ?? 'An unknown error occurred.';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error: $errorMessage'),
+            backgroundColor: AppColors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('An unexpected error occurred: $e'),
+          backgroundColor: AppColors.red,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -42,12 +89,16 @@ class _SettingsPageState extends State<SettingsPage> {
           icon: Icons.person,
           hasArrow: true,
           onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const SingleUserPage(showControls: false),
-              ),
-            );
+            final user = FirebaseAuth.instance.currentUser;
+            if (user != null) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>
+                      SingleUserPage(showControls: false, userId: user.uid),
+                ),
+              );
+            }
           },
         ),
         const SizedBox(height: 12),
@@ -59,7 +110,6 @@ class _SettingsPageState extends State<SettingsPage> {
             showConfirmationDialog(
               context: context,
               onConfirm: () {
-                // invio della richiesta di password reset con authentication
                 FirebaseAuth.instance.sendPasswordResetEmail(
                   email: FirebaseAuth.instance.currentUser?.email ?? '',
                 );
@@ -76,59 +126,9 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: Icons.delete_forever,
             hasArrow: false,
             iconColor: AppColors.red,
-            onTap: () async {
-              try {
-                // Call the cloud function and await its result TODO: check after function improvement
-                final HttpsCallableResult result = await FirebaseFunctions
-                    .instance
-                    .httpsCallable('clean_scans')
-                    .call();
-                if (mounted) {
-                  // Check the result from the cloud function
-                  if (result.data != null &&
-                      result.data['status'] == 'success') {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'All scans have been successfully deleted.',
-                        ),
-                        backgroundColor: AppColors.green,
-                      ),
-                    );
-                  } else {
-                    // Handle a failure response from the function
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Error: ${result.data['message'] ?? 'An unknown error occurred.'}',
-                        ),
-                        backgroundColor: AppColors.red,
-                      ),
-                    );
-                  }
-                }
-              } on FirebaseFunctionsException catch (e) {
-                // Handle specific Firebase function errors
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Function error: ${e.message}'),
-                    backgroundColor: AppColors.red,
-                  ),
-                );
-              } catch (e) {
-                // Handle any other unexpected errors
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('An unexpected error occurred: $e'),
-                    backgroundColor: AppColors.red,
-                  ),
-                );
-              }
-            },
+            onTap: _cleanScans,
           ),
-
         if (widget.level > 0) const SizedBox(height: 12),
-
         buildListItem(
           title: 'Logout',
           hasArrow: false,
@@ -136,12 +136,14 @@ class _SettingsPageState extends State<SettingsPage> {
           onTap: () {
             showConfirmationDialog(
               context: context,
-              onConfirm: () {
-                // TODO: Implementare la logica di logout
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const LoginPage()),
-                );
+              onConfirm: () async {
+                await FirebaseAuth.instance.signOut();
+                if (mounted) {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                  );
+                }
               },
               message: 'Are you sure you want to logout?',
             );

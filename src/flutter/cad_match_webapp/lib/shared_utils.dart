@@ -197,7 +197,7 @@ Widget buildInfoField({
 // Funzione ausiliaria per i pulsanti di salvataggio/azione
 Widget buildButton({
   required String label,
-  required Function() onTap,
+  required VoidCallback onTap,
   Color backgroundColor = AppColors.secondary,
   bool isEnabled = true,
   IconData? icon,
