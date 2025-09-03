@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'scanning_page.dart';
 import '../utils.dart';
 
 // Definizione della pagina come StatefulWidget per gestire lo stato del form
@@ -95,12 +96,11 @@ class _AddScanPageState extends State<AddScanPage> {
 
       if (!mounted) return;
 
-      // Navigare alla prossima pagina passando il payload
-      //Navigator.of(context).push(
-        //MaterialPageRoute(
-        //  builder: (context) => NextPage(payload: payload),
-        //),
-      //);
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => LidarScannerScreen(payload: payload),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
@@ -245,7 +245,7 @@ class _AddScanPageState extends State<AddScanPage> {
                 child: FilledButton(
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.black,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),

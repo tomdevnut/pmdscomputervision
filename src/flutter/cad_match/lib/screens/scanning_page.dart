@@ -1,12 +1,16 @@
+// scanning_page.dart
 import 'package:flutter/material.dart';
 import 'package:arkit_plugin/arkit_plugin.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
-import 'dart:io';
 import 'dart:math' as math;
+import 'send_scan_page.dart';
+import '../utils.dart';
 
 class LidarScannerScreen extends StatefulWidget {
+  final Map<String, dynamic> payload;
+
+  const LidarScannerScreen({super.key, required this.payload});
+
   @override
   _LidarScannerScreenState createState() => _LidarScannerScreenState();
 }
@@ -14,7 +18,6 @@ class LidarScannerScreen extends StatefulWidget {
 class _LidarScannerScreenState extends State<LidarScannerScreen> {
   late ARKitController arkitController;
   bool isScanning = false;
-  bool isProcessing = false;
   String? scanStatus;
   List<vector.Vector3> scannedPoints = [];
   List<ARKitNode> visualNodes = [];
@@ -28,427 +31,256 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
-        title: Text('Scanner LiDAR 3D'),
-        backgroundColor: Colors.blue.shade800,
+        backgroundColor: AppColors.backgroundColor,
+        foregroundColor: AppColors.textPrimary,
+        centerTitle: true,
+        elevation: 0.5,
+        title: Text(widget.payload['name'] ?? 'New Scan'),
       ),
       body: Stack(
         children: [
-          // Vista AR con LiDAR
           ARKitSceneView(
             onARKitViewCreated: onARKitViewCreated,
             configuration: ARKitConfiguration.worldTracking,
             showFeaturePoints: true,
-            planeDetection: ARPlaneDetection.vertical,
-            detectionImages: const <ARKitReferenceImage>[],
-            enableTapRecognizer: true,
-            enablePanRecognizer: true,
-            enablePinchRecognizer: true,
-            enableRotationRecognizer: true,
+            planeDetection: ARPlaneDetection.horizontal,
           ),
+          _buildUIOverlay(),
+        ],
+      ),
+    );
+  }
 
-          // Overlay UI
-          Positioned(
-            top: 20,
-            left: 20,
-            right: 20,
-            child: Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(12),
+  Widget _buildUIOverlay() {
+    return SafeArea(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          // Barra di stato in alto
+          Container(
+            margin: const EdgeInsets.all(16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: AppColors.cardBackground.withOpacity(0.8),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              scanStatus ?? 'Ready to scan',
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
-              child: Column(
-                children: [
-                  Text(
-                    scanStatus ?? 'Pronto per la scansione',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  if (isProcessing) SizedBox(height: 10),
-                  if (isProcessing)
-                    LinearProgressIndicator(
-                      backgroundColor: Colors.white30,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                    ),
-                ],
-              ),
+              textAlign: TextAlign.center,
             ),
           ),
 
           // Controlli in basso
-          Positioned(
-            bottom: 30,
-            left: 0,
-            right: 0,
-            child: Column(
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Pulsante principale di scansione
-                Center(
-                  child: GestureDetector(
-                    onTap: isProcessing ? null : toggleScanning,
-                    child: Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: isScanning ? Colors.red : Colors.blue,
-                        border: Border.all(color: Colors.white, width: 4),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 10,
-                            spreadRadius: 2,
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        isScanning ? Icons.stop : Icons.camera,
-                        color: Colors.white,
-                        size: 40,
-                      ),
-                    ),
-                  ),
+                // Pulsante Reset
+                _buildSideButton(
+                  icon: Icons.refresh,
+                  onPressed: resetScan,
+                  label: 'Reset',
                 ),
 
-                SizedBox(height: 20),
+                // Pulsante Start/Stop Stile iOS
+                _buildMainScanButton(),
 
-                // Pulsanti secondari
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    // Pulsante reset
-                    ElevatedButton.icon(
-                      onPressed: isProcessing ? null : resetScan,
-                      icon: Icon(Icons.refresh),
-                      label: Text('Reset'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
-
-                    // Pulsante salva e carica
-                    ElevatedButton.icon(
-                      onPressed: (scannedPoints.isNotEmpty && !isProcessing)
-                          ? saveAndUploadScan
-                          : null,
-                      icon: Icon(Icons.cloud_upload),
-                      label: Text('Salva e Carica'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 12,
-                        ),
-                      ),
-                    ),
-                  ],
+                // Pulsante Salva
+                _buildSideButton(
+                  icon: Icons.check,
+                  onPressed: scannedPoints.isNotEmpty ? _onSaveScan : null,
+                  label: 'Save',
                 ),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  // NUOVO: Widget per il pulsante principale stile iOS
+  Widget _buildMainScanButton() {
+    return GestureDetector(
+      onTap: toggleScanning,
+      child: Container(
+        width: 75,
+        height: 75,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white,
+          border: Border.all(color: Colors.white.withOpacity(0.5), width: 5),
+        ),
+        child: Center(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: isScanning ? 30 : 60,
+            height: isScanning ? 30 : 60,
+            decoration: BoxDecoration(
+              color: AppColors.red,
+              borderRadius: BorderRadius.circular(isScanning ? 8 : 30),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // MODIFICATO: Widget per i bottoni laterali
+  Widget _buildSideButton({
+    required IconData icon,
+    required VoidCallback? onPressed,
+    required String label,
+  }) {
+    return Opacity(
+      opacity: onPressed == null ? 0.5 : 1.0,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 56,
+            height: 56,
+            child: FilledButton(
+              onPressed: onPressed,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.cardBackground.withOpacity(0.8),
+                shape: const CircleBorder(),
+                padding: EdgeInsets.zero,
+              ),
+              child: Icon(icon, color: Colors.white, size: 28),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(color: AppColors.textPrimary)),
         ],
       ),
     );
   }
 
   void onARKitViewCreated(ARKitController controller) {
-    this.arkitController = controller;
-
-    // Gestione tap per aggiungere punti durante la scansione
-    arkitController.onNodeTap = (nodes) {
-      if (isScanning && nodes.isNotEmpty) {
-        final tappedNodeName = nodes.first; // è una String
-        final tappedNode = visualNodes.firstWhere(
-          (node) => node.name == tappedNodeName,
-        );
-
-        if (tappedNode != null && tappedNode.position != null) {
-          addScannedPoint(tappedNode.position!);
-        }
-      }
-    };
-
-    // Gestione piani rilevati (per LiDAR)
-    arkitController.onAddNodeForAnchor = (anchor) {
-      if (isScanning && anchor is ARKitPlaneAnchor) {
-        processPlaneSurface(anchor);
-      }
-    };
-
+    arkitController = controller;
     arkitController.onUpdateNodeForAnchor = (anchor) {
-      if (isScanning && anchor is ARKitPlaneAnchor) {
-        processPlaneSurface(anchor);
-      }
-    };
-
-    // Gestione feature points
-    arkitController.onUpdateNodeForAnchor = (anchor) {
-      if (isScanning && anchor.identifier != null) {
-        // Crea punti di scansione basati sugli anchor
-        final randomOffset = vector.Vector3(
-          (math.Random().nextDouble() - 0.5) * 0.1,
-          (math.Random().nextDouble() - 0.5) * 0.1,
-          (math.Random().nextDouble() - 0.5) * 0.1,
+      if (isScanning) {
+        final position = vector.Vector3(
+          anchor.transform.getColumn(3).x,
+          anchor.transform.getColumn(3).y,
+          anchor.transform.getColumn(3).z,
         );
-        addScannedPoint(randomOffset);
+        addScannedPoint(position);
       }
     };
-
     setState(() {
-      scanStatus = 'LiDAR inizializzato - Inquadra l\'oggetto';
+      scanStatus = 'Aim the object and press Start';
     });
   }
 
   void addScannedPoint(vector.Vector3 position) {
+    const minDistance = 0.01;
+    if (scannedPoints.any((p) => p.distanceTo(position) < minDistance)) return;
+
     scannedPoints.add(position);
 
-    // Aggiungi visualizzazione del punto
     final node = ARKitNode(
       geometry: ARKitSphere(
-        radius: 0.002,
+        radius: 0.003,
         materials: [
-          ARKitMaterial(diffuse: ARKitMaterialProperty.color(Colors.cyan)),
+          ARKitMaterial(
+            diffuse: ARKitMaterialProperty.color(AppColors.primary),
+          ),
         ],
       ),
       position: position,
     );
-
     visualNodes.add(node);
     arkitController.add(node);
 
-    // Aggiorna il conteggio
-    if (scannedPoints.length % 10 == 0) {
+    if (scannedPoints.length % 50 == 0) {
       setState(() {
-        scanStatus = 'Scansione in corso... ${scannedPoints.length} punti';
+        scanStatus = 'Scanning... ${scannedPoints.length} points';
       });
     }
   }
 
-  void processPlaneSurface(ARKitPlaneAnchor plane) {
-    // Genera punti sulla superficie del piano rilevato
-    final center = plane.center;
-    final extent = plane.extent;
-
-    // Crea una griglia di punti sul piano
-    const gridResolution = 10;
-    for (int i = 0; i < gridResolution; i++) {
-      for (int j = 0; j < gridResolution; j++) {
-        final x =
-            center.x + (i - gridResolution / 2) * (extent.x / gridResolution);
-        final y = center.y;
-        final z =
-            center.z + (j - gridResolution / 2) * (extent.z / gridResolution);
-
-        final point = vector.Vector3(x, y, z);
-        scannedPoints.add(point);
-
-        // Aggiungi visualizzazione (solo alcuni punti per performance)
-        if (scannedPoints.length % 5 == 0) {
-          final node = ARKitNode(
-            geometry: ARKitSphere(
-              radius: 0.001,
-              materials: [
-                ARKitMaterial(
-                  diffuse: ARKitMaterialProperty.color(Colors.green),
-                ),
-              ],
-            ),
-            position: point,
-          );
-          visualNodes.add(node);
-          arkitController.add(node);
-        }
-      }
+  // NUOVA: Funzione privata per pulire i dati
+  void _clearScanData() {
+    for (var node in visualNodes) {
+      arkitController.remove(node.name);
     }
+    visualNodes.clear();
+    scannedPoints.clear();
   }
 
+  // MODIFICATO: Logica di Start/Stop corretta
   void toggleScanning() {
     setState(() {
       isScanning = !isScanning;
       if (isScanning) {
-        scanStatus = 'Scansione in corso... Tocca per aggiungere punti';
-        scannedPoints.clear();
-
-        // Inizia la scansione automatica simulata
+        _clearScanData(); // Pulisce la scansione precedente
+        scanStatus = 'Scanning...';
         startAutomaticScanning();
       } else {
-        scanStatus =
-            'Scansione completata - ${scannedPoints.length} punti acquisiti';
+        scanStatus = 'Scan paused - ${scannedPoints.length} points acquired';
       }
     });
   }
 
   void startAutomaticScanning() {
-    // Simula acquisizione automatica di punti
     if (!isScanning) return;
 
-    Future.delayed(Duration(milliseconds: 100), () {
-      if (isScanning) {
-        // Genera punti casuali nell'area di fronte alla camera
-        final random = math.Random();
-        final point = vector.Vector3(
-          (random.nextDouble() - 0.5) * 2.0,
-          (random.nextDouble() - 0.5) * 2.0,
-          -1.0 - random.nextDouble() * 2.0,
-        );
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (!isScanning) return;
+      final random = math.Random();
+      final point = vector.Vector3(
+        (random.nextDouble() - 0.5) * 1.0,
+        (random.nextDouble() - 0.5) * 1.0,
+        -0.5 - random.nextDouble() * 1.5,
+      );
+      addScannedPoint(point);
 
-        addScannedPoint(point);
-
-        // Continua la scansione
-        if (scannedPoints.length < 500) {
-          startAutomaticScanning();
-        } else {
-          setState(() {
-            isScanning = false;
-            scanStatus = 'Scansione automatica completata';
-          });
-        }
+      if (scannedPoints.length < 2000) {
+        startAutomaticScanning();
+      } else {
+        setState(() {
+          isScanning = false;
+          scanStatus = 'Scan completed with ${scannedPoints.length} points';
+        });
       }
     });
   }
 
+  // MODIFICATO: Logica di Reset corretta
   void resetScan() {
     setState(() {
-      isScanning = false;
-      scanStatus = 'Pronto per la scansione';
-
-      // Rimuovi tutti i nodi visuali
-      for (var node in visualNodes) {
-        arkitController.remove(node.name);
-      }
-      visualNodes.clear();
-      scannedPoints.clear();
+      if (isScanning) isScanning = false;
+      _clearScanData();
+      scanStatus = 'Ready to scan';
     });
   }
 
-  Future<void> saveAndUploadScan() async {
-    setState(() {
-      isProcessing = true;
-      scanStatus = 'Generazione file PLY...';
-    });
+  void _onSaveScan() {
+    if (scannedPoints.isEmpty) return;
 
-    try {
-      // Genera il file PLY
-      final plyFile = await generatePLYFile();
-
+    if (isScanning) {
       setState(() {
-        scanStatus = 'Caricamento su Firebase...';
+        isScanning = false;
+        scanStatus = 'Scan paused - ${scannedPoints.length} points acquired';
       });
-
-      // Carica su Firebase Storage
-      final downloadUrl = await uploadToFirebase(plyFile);
-
-      setState(() {
-        isProcessing = false;
-        scanStatus = 'Caricamento completato!';
-      });
-
-      // Mostra dialogo di successo
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Successo!'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('La scansione è stata salvata con successo.'),
-              SizedBox(height: 10),
-              Text('Punti acquisiti: ${scannedPoints.length}'),
-              SizedBox(height: 5),
-              Text('File: scan_${DateTime.now().millisecondsSinceEpoch}.ply'),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                resetScan();
-              },
-              child: Text('OK'),
-            ),
-          ],
-        ),
-      );
-    } catch (e) {
-      setState(() {
-        isProcessing = false;
-        scanStatus = 'Errore: ${e.toString()}';
-      });
-
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Errore'),
-          content: Text(
-            'Si è verificato un errore durante il salvataggio: ${e.toString()}',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: Text('OK'),
-            ),
-          ],
-        ),
-      );
-    }
-  }
-
-  Future<File> generatePLYFile() async {
-    // Crea il contenuto del file PLY
-    StringBuffer plyContent = StringBuffer();
-
-    // Header PLY
-    plyContent.writeln('ply');
-    plyContent.writeln('format ascii 1.0');
-    plyContent.writeln('element vertex ${scannedPoints.length}');
-    plyContent.writeln('property float x');
-    plyContent.writeln('property float y');
-    plyContent.writeln('property float z');
-    plyContent.writeln('property uchar red');
-    plyContent.writeln('property uchar green');
-    plyContent.writeln('property uchar blue');
-    plyContent.writeln('end_header');
-
-    // Aggiungi i vertici
-    for (var point in scannedPoints) {
-      // Aggiungi coordinate x, y, z e colore RGB (cyan per i punti scansionati)
-      plyContent.writeln('${point.x} ${point.y} ${point.z} 0 255 255');
     }
 
-    // Salva il file localmente
-    final directory = await getApplicationDocumentsDirectory();
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final file = File('${directory.path}/scan_$timestamp.ply');
-    await file.writeAsString(plyContent.toString());
-
-    return file;
-  }
-
-  Future<String> uploadToFirebase(File file) async {
-    // Crea un riferimento univoco in Firebase Storage
-    final timestamp = DateTime.now().millisecondsSinceEpoch;
-    final storageRef = FirebaseStorage.instance
-        .ref()
-        .child('lidar_scans')
-        .child('scan_$timestamp.ply');
-
-    // Carica il file
-    final uploadTask = await storageRef.putFile(file);
-
-    // Ottieni l'URL di download
-    final downloadUrl = await uploadTask.ref.getDownloadURL();
-
-    // Opzionale: elimina il file locale dopo il caricamento
-    await file.delete();
-
-    return downloadUrl;
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            SendScanPage(payload: widget.payload, scannedPoints: scannedPoints),
+      ),
+    );
   }
 }
