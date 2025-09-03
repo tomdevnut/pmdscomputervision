@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-from datetime import timedelta
+from datetime import timedelta, datetime
 from google.cloud import secretmanager, storage as google_cloud_storage
 from firebase_functions import storage_fn
 from firebase_admin import firestore
@@ -106,6 +106,7 @@ def process_user_scan(event: storage_fn.CloudEvent) -> None:
         print(f"Error generating signed URL: {e}")
         return
 
+    timestamp_dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
     # Register the user-scan association in the Firestore database
     try:
         scan_data = {
@@ -114,7 +115,7 @@ def process_user_scan(event: storage_fn.CloudEvent) -> None:
             "step": step_id,
             "progress": 0,
             "name": scan_name,
-            "timestamp": timestamp
+            "timestamp": timestamp_dt
         }
         scans_collection_ref.document(scan_id).set(scan_data)
         print(f"Successfully registered scan {scan_id} in Firestore.")
