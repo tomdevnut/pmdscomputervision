@@ -147,15 +147,6 @@ class _NewUserState extends State<NewUser> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               buildTopBar(context, title: 'CREATE A NEW USER'),
-              const Text(
-                'An email will be sent to the user with their login credentials.',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 18,
-                  fontFamily: 'Inter',
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
               const SizedBox(height: 24),
               LayoutBuilder(
                 builder: (context, constraints) {

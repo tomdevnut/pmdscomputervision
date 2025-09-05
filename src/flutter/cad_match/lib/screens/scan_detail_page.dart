@@ -109,10 +109,23 @@ class ScanDetailPage extends StatelessWidget {
                     if (docSnapshot.exists && docSnapshot.data() != null) {
                       final statsData = docSnapshot.data()!;
                       final accuracy = statsData['accuracy'] as double? ?? 0.0;
+                      final minDeviation =
+                          statsData['min_deviation'] as double? ?? 0.0;
+                      final maxDeviation = 
+                          statsData['max_deviation'] as double? ?? 0.0;
+                      final avgDeviation = 
+                          statsData['avg_deviation'] as double? ?? 0.0;
+                      final stdDeviation = 
+                          statsData['std_deviation'] as double? ?? 0.0;
+                        final ppwt = 
+                          statsData['ppwt'] as double? ?? 0.0;
                       final statsMap = {
-                        'name': scan['name'],
-                        'scanId': scan['scanId'],
                         'accuracy': accuracy,
+                        'min_deviation': minDeviation,
+                        'max_deviation': maxDeviation,
+                        'avg_deviation': avgDeviation,
+                        'std_deviation': stdDeviation,
+                        'ppwt': ppwt,
                       };
 
                       if (context.mounted) {

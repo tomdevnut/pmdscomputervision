@@ -339,7 +339,7 @@ void showConfirmationDialog({
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         title: Text(
           title,
-          style: TextStyle(
+          style: const TextStyle(
             color: AppColors.textPrimary,
             fontSize: 20,
             fontFamily: 'Inter',
@@ -348,7 +348,7 @@ void showConfirmationDialog({
         ),
         content: Text(
           message ?? '',
-          style: TextStyle(
+          style: const TextStyle(
             color: AppColors.textSecondary,
             fontSize: 16,
             fontFamily: 'Inter',
@@ -361,15 +361,16 @@ void showConfirmationDialog({
               // Azione per il tasto "NO"
               Navigator.of(context).pop(); // Chiude il popup
             },
-            child: const Text(
-              'NO',
-              style: TextStyle(
-                color: AppColors.primary,
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.primary,
+              textStyle: const TextStyle(
                 fontSize: 16,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w700,
               ),
+              overlayColor: AppColors.borderGray,
             ),
+            child: const Text('NO'),
           ),
           TextButton(
             onPressed: () {
@@ -377,15 +378,16 @@ void showConfirmationDialog({
               Navigator.of(context).pop(); // Chiude il popup
               onConfirm();
             },
-            child: const Text(
-              'YES',
-              style: TextStyle(
-                color: AppColors.red,
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.red,
+              textStyle: const TextStyle(
                 fontSize: 16,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w700,
               ),
+              overlayColor: AppColors.borderGray,
             ),
+            child: const Text('YES'),
           ),
         ],
       );
@@ -429,7 +431,8 @@ void showResultDialog(BuildContext context, String title, String message) {
           fontSize: 16,
           fontFamily: 'Inter',
           fontWeight: FontWeight.w400,
-        ),        content: Text(message),
+        ),
+        content: Text(message),
         actions: [
           TextButton(
             onPressed: () {
@@ -442,6 +445,7 @@ void showResultDialog(BuildContext context, String title, String message) {
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w700,
               ),
+              overlayColor: AppColors.borderGray,
             ),
             child: const Text('OK'),
           ),

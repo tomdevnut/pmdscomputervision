@@ -38,7 +38,10 @@ class _MainPageState extends State<MainPage> {
         // Se la connessione è in attesa, mostra un indicatore di caricamento.
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
-            body: Center(child: CircularProgressIndicator()),
+            backgroundColor: AppColors.backgroundColor,
+            body: Center(child: CircularProgressIndicator(
+              color: AppColors.primary,
+            )),
           );
         }
 

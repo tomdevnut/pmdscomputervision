@@ -227,7 +227,7 @@ class _BulkUploadState extends State<BulkUpload> {
                               label: 'Upload CSV File',
                               onTap: _pickFile,
                               icon: Icons.upload_file,
-                              backgroundColor: AppColors.primary,
+                              backgroundColor: AppColors.secondary,
                             )
                           else
                             _buildFileDetails(),

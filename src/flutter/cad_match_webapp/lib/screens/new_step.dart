@@ -222,7 +222,7 @@ class _StepUploadState extends State<StepUpload> {
                               label: 'Upload File',
                               onTap: _pickFile,
                               icon: Icons.upload_file,
-                              backgroundColor: AppColors.primary,
+                              backgroundColor: AppColors.secondary,
                             )
                           else
                             _buildFileDetails(),

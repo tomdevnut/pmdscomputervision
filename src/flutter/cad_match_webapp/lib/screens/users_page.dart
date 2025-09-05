@@ -112,7 +112,7 @@ class _UsersPageState extends State<UsersPage> {
                 itemBuilder: (context, index) {
                   final userDoc = users[index];
                   final userData = userDoc.data() as Map<String, dynamic>;
-                  final isUserEnabled = userData['is_enabled'] ?? true;
+                  final isUserEnabled = userData['enabled'] ?? true;
                   final userLevel = userData['level'] ?? 0;
                   final userName = userData['name'] ?? 'No name';
                   final userSurname = userData['surname'] ?? 'No surname';
