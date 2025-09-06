@@ -100,7 +100,7 @@ class ScanDetailPage extends StatelessWidget {
                 if (status == 2) {
                   try {
                     // Fetch dei dati dal database delle statistiche
-                    final docId = scan['scanId'] as String;
+                    final docId = _v(scan['scanId']);
                     final docSnapshot = await FirebaseFirestore.instance
                         .collection('stats')
                         .doc(docId)
