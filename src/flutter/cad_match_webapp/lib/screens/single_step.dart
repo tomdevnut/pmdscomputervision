@@ -218,6 +218,12 @@ class _SingleStepState extends State<SingleStep> {
                                 value: _v(data['user']),
                                 icon: Icons.person,
                               ),
+                              const SizedBox(height: 24),
+                              buildInfoField(
+                                label: 'ID',
+                                value: widget.stepId,
+                                icon: Icons.tag,
+                              ),
                             ];
 
                             if (constraints.maxWidth > 800) {

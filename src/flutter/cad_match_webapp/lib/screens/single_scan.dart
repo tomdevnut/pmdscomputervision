@@ -254,7 +254,6 @@ class _SingleScanState extends State<SingleScan> {
                             icon: Icons.calendar_today,
                           ),
                           const SizedBox(height: 24),
-                          // Utilizza le variabili di stato per utente e step
                           buildInfoField(
                             label: 'User',
                             value: _username,
@@ -270,7 +269,7 @@ class _SingleScanState extends State<SingleScan> {
                           buildInfoField(
                             label: 'Step',
                             value: _stepName,
-                            icon: Icons.tag,
+                            icon: Icons.file_copy,
                           ),
                           const SizedBox(height: 24),
                           buildInfoField(
@@ -279,6 +278,12 @@ class _SingleScanState extends State<SingleScan> {
                                 ? '${data['progress']}%'
                                 : 'N/A',
                             icon: Icons.data_usage,
+                          ),
+                          const SizedBox(height: 24),
+                          buildInfoField(
+                            label: 'ID',
+                            value: widget.scanid,
+                            icon: Icons.tag,
                           ),
                         ];
 
@@ -289,14 +294,14 @@ class _SingleScanState extends State<SingleScan> {
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: widgets.sublist(0, 5),
+                                  children: widgets.sublist(0, 7),
                                 ),
                               ),
                               const SizedBox(width: 24),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: widgets.sublist(6, 11),
+                                  children: widgets.sublist(8, 13),
                                 ),
                               ),
                             ],

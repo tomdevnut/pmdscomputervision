@@ -102,8 +102,15 @@ class ScansPage extends StatelessWidget {
                     child: buildListItem(
                       title: title,
                       subtitle: subtitle,
-                      icon: Icons.view_in_ar,
+                      icon: status == 2
+                          ? Icons.check_circle
+                          : (status == -1 ? Icons.error : status == 1 ? Icons.hourglass_top_rounded : Icons.cloud_done),
                       hasArrow: true,
+                      iconColor: status == 2
+                          ? AppColors.green
+                          : (status == -1
+                              ? AppColors.red
+                              : (AppColors.yellow)),
                       onTap: () {
                         Navigator.push(
                           context,

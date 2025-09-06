@@ -64,7 +64,7 @@ class _SingleUserPageState extends State<SingleUserPage> {
         final userSurname = userData['surname'] ?? 'N/A';
         final isEnabled = userData['enabled'] ?? false;
         final userLevel = userData['level'] ?? 0;
-        final userEmail = user?.email ?? 'Email not available';
+        final userEmail = widget.userId == user?.uid ? user?.email ?? 'Email not available' : (userData['email'] ?? 'N/A');
 
         return Scaffold(
           backgroundColor: AppColors.backgroundColor,

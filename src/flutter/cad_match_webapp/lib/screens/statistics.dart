@@ -3,6 +3,7 @@ import '../shared_utils.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:js_interop';
+import 'three_d_viewer.dart';
 
 @JS('window.open')
 external void openUrl(String url, String target);
@@ -230,6 +231,19 @@ class _StatisticsState extends State<Statistics> {
                         icon: Icons.download,
                         onTap: () {
                           downloadFile();
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      buildButton(
+                        label: 'Open 3D Viewer',
+                        icon: Icons.view_in_ar,
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ThreeViewerPage(id: widget.scanid),
+                            ),
+                          );
                         },
                       ),
                     ],

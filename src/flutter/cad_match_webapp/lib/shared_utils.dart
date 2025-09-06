@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 class AppColors {
   static const Color primary = Color(0xFF0073a8);
   static const Color secondary = Color(0xFF00b0e0);
-  static const Color backgroundColor = Color(0xFFeff9fb);
+  static const Color backgroundColor = Color(0xFFEFF9FB);
   static const Color white = Colors.white;
   static const Color textPrimary = Color(0xFF111416);
   static const Color textSecondary = Color(0xFF6B7582);
@@ -13,6 +13,7 @@ class AppColors {
   static const Color disabledButton = Color(0xFF6B7582);
   static const Color red = Color(0xFFD94451);
   static const Color green = Color(0xFF03A411);
+  static const Color yellow = Color(0xFFFFC107);
 }
 
 // Funzione ausiliaria per la barra superiore con il pulsante "BACK"
