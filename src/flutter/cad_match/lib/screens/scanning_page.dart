@@ -63,7 +63,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.cardBackground.withOpacity(0.8),
+              color: AppColors.cardBackground.withValues(alpha: 204),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -86,7 +86,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
               children: [
                 // Pulsante Reset
                 _buildSideButton(
-                  icon: Icons.refresh,
+                  icon: Icons.refresh_rounded,
                   onPressed: resetScan,
                   label: 'Reset',
                 ),
@@ -96,7 +96,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
 
                 // Pulsante Salva
                 _buildSideButton(
-                  icon: Icons.check,
+                  icon: Icons.check_rounded,
                   onPressed: scannedPoints.isNotEmpty ? _onSaveScan : null,
                   label: 'Save',
                 ),
@@ -118,7 +118,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: Colors.white,
-          border: Border.all(color: Colors.white.withOpacity(0.5), width: 5),
+          border: Border.all(color: AppColors.white.withAlpha(128), width: 5),
         ),
         child: Center(
           child: AnimatedContainer(
@@ -152,7 +152,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
             child: FilledButton(
               onPressed: onPressed,
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.cardBackground.withOpacity(0.8),
+                backgroundColor: AppColors.cardBackground.withAlpha(204),
                 shape: const CircleBorder(),
                 padding: EdgeInsets.zero,
               ),

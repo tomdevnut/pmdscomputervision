@@ -79,7 +79,7 @@ class ScanItem extends StatelessWidget {
               )
             : null,
         trailing: const Icon(
-          Icons.arrow_forward_ios,
+          Icons.arrow_forward_ios_rounded,
           color: AppColors.white,
           size: 16,
         ),
@@ -92,13 +92,13 @@ class ScanItem extends StatelessWidget {
   Widget _buildStatusIcon(int status) {
     switch (status) {
       case 2: // Completed
-        return const Icon(Icons.check_circle, color: AppColors.green);
+        return const Icon(Icons.check_circle_rounded, color: AppColors.green);
       case 1: // Inviato al server di backend
-        return const Icon(Icons.hourglass_top, color: AppColors.yellow);
+        return const Icon(Icons.hourglass_top_rounded, color: AppColors.yellow);
       case 0: // Ricevuto
-        return const Icon(Icons.inbox, color: AppColors.yellow);
+        return const Icon(Icons.inbox_rounded, color: AppColors.yellow);
       default: // Errore (-1)
-        return const Icon(Icons.warning, color: AppColors.red);
+        return const Icon(Icons.warning_rounded, color: AppColors.red);
     }
   }
 }
@@ -196,7 +196,7 @@ class _ScansPageState extends State<ScansPage> {
           ).push(MaterialPageRoute(builder: (_) => const AddScanPage()));
         },
         backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add, color: AppColors.white),
+        child: const Icon(Icons.add_rounded, color: AppColors.white),
       ),
     );
   }

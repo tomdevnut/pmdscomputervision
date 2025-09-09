@@ -32,7 +32,7 @@ Widget _buildStepCard(String title, String subtitle, {VoidCallback? onTap}) {
     margin: const EdgeInsets.symmetric(vertical: 6),
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     child: ListTile(
-      leading: const Icon(Icons.file_copy, color: AppColors.primary),
+      leading: const Icon(Icons.file_copy_rounded, color: AppColors.primary),
       title: Text(
         title,
         style: const TextStyle(

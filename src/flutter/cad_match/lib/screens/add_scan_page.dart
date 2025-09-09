@@ -202,7 +202,7 @@ class _AddScanPageState extends State<AddScanPage> {
                           dropdownColor: AppColors.cardBackground,
                           decoration: _decoration('Select a step'),
                           icon: const Icon(
-                            Icons.arrow_drop_down,
+                            Icons.arrow_drop_down_rounded,
                             color: AppColors.textPrimary,
                           ),
                           items: steps.map((doc) {
@@ -264,7 +264,7 @@ class _AddScanPageState extends State<AddScanPage> {
                       : const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.camera_alt_outlined),
+                            Icon(Icons.camera_alt_rounded),
                             SizedBox(width: 8),
                             Text('Start Scanning'),
                           ],

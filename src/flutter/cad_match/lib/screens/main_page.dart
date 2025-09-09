@@ -31,9 +31,9 @@ class _MainPageState extends State<MainPage> {
           });
         },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.view_in_ar), label: 'Scans'),
-          BottomNavigationBarItem(icon: Icon(Icons.file_copy), label: 'Steps'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
+          BottomNavigationBarItem(icon: Icon(Icons.view_in_ar_rounded), label: 'Scans'),
+          BottomNavigationBarItem(icon: Icon(Icons.file_copy_rounded), label: 'Steps'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
         ],
       ),
     );
