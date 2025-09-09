@@ -1,11 +1,13 @@
-import 'dart:ui_web' as ui;
 import 'package:flutter/material.dart';
-import 'dart:html' as html;
 import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:js_interop';
+import 'dart:ui_web' as ui;
+import 'package:web/web.dart' as web;
+
 import '../shared_utils.dart';
 
 class ThreeViewerPage extends StatefulWidget {
-  final String id; 
+  final String id;
 
   const ThreeViewerPage({super.key, required this.id});
 
@@ -15,7 +17,7 @@ class ThreeViewerPage extends StatefulWidget {
 
 class _ThreeViewerPageState extends State<ThreeViewerPage> {
   final String _viewId = 'three-viewer-iframe';
-  late html.IFrameElement _iframeElement;
+  late web.HTMLIFrameElement _iframeElement;
 
   bool loading = true;
   String? error;
@@ -24,24 +26,34 @@ class _ThreeViewerPageState extends State<ThreeViewerPage> {
   void initState() {
     super.initState();
 
-    _iframeElement = html.IFrameElement()
-      ..style.border = 'none'
-      ..style.width = '100%'
-      ..style.height = '100%';
+    _iframeElement =
+        web.document.createElement('iframe') as web.HTMLIFrameElement
+          ..style.setProperty('border', 'none')
+          ..style.setProperty('width', '100%')
+          ..style.setProperty('height', '100%');
 
     ui.platformViewRegistry.registerViewFactory(
       _viewId,
       (int viewId) => _iframeElement,
     );
 
-    html.window.onMessage.listen((event) {
-      if (event.data is Map && event.data['status'] == 'ready') {
-        fetchPlyUrl();
-      }
-    });
+    web.window.addEventListener(
+      'message',
+      (web.Event event) {
+        final messageEvent = event as web.MessageEvent;
+        final data = messageEvent.data;
+
+        if (data.isA<JSObject>()) {
+          final status = (data.dartify() as Map)['status'];
+          if (status == 'ready') {
+            fetchPlyUrl();
+          }
+        }
+      }.toJS,
+    );
 
     _iframeElement.src =
-        '${html.window.location.origin}/viewer/model_viewer.html';
+        '${web.window.location.origin}/viewer/model_viewer.html';
 
     setState(() {
       loading = false;
@@ -52,7 +64,8 @@ class _ThreeViewerPageState extends State<ThreeViewerPage> {
     try {
       final ref = FirebaseStorage.instance.ref('comparisons/${widget.id}.ply');
       final url = await ref.getDownloadURL();
-      _iframeElement.contentWindow?.postMessage({'fileUrl': url}, '*');
+      final jsObject = {'fileUrl': url}.jsify();
+      _iframeElement.contentWindow?.postMessage(jsObject, '*'.toJS);
     } catch (e) {
       setState(() {
         error = 'Errore nel recupero del file: $e';
@@ -66,16 +79,21 @@ class _ThreeViewerPageState extends State<ThreeViewerPage> {
     if (loading) {
       return Scaffold(
         backgroundColor: AppColors.backgroundColor,
-        body: const Center(child: CircularProgressIndicator(
-          color: AppColors.primary,
-        )),
+        body: const Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
 
     if (error != null) {
       return Scaffold(
         backgroundColor: AppColors.backgroundColor,
-        body: Center(child: Text('Error: $error', style: const TextStyle(color: AppColors.red),)),
+        body: Center(
+          child: Text(
+            'Error: $error',
+            style: const TextStyle(color: AppColors.red),
+          ),
+        ),
       );
     }
 
