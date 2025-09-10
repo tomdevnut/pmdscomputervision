@@ -17,6 +17,7 @@ class ScanDetailPage extends StatelessWidget {
         ? '—'
         : value.toString();
   }
+
   // funzione per mostrare un messaggio di stato
   void showSnackBarMessage(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -108,19 +109,24 @@ class ScanDetailPage extends StatelessWidget {
 
                     if (docSnapshot.exists && docSnapshot.data() != null) {
                       final statsData = docSnapshot.data()!;
-                      final accuracy = statsData['accuracy'] as double? ?? 0.0;
+                      final accuracy =
+                          (statsData['accuracy'] as num?)?.toDouble() ?? 0.0;
                       final name = scan['name'] as String? ?? 'Unknown';
                       final scanId = scan['scanId'] as String? ?? 'Unknown';
                       final minDeviation =
-                          statsData['min_deviation'] as double? ?? 0.0;
-                      final maxDeviation = 
-                          statsData['max_deviation'] as double? ?? 0.0;
-                      final avgDeviation = 
-                          statsData['avg_deviation'] as double? ?? 0.0;
-                      final stdDeviation = 
-                          statsData['std_deviation'] as double? ?? 0.0;
-                        final ppwt = 
-                          statsData['ppwt'] as double? ?? 0.0;
+                          (statsData['min_deviation'] as num?)?.toDouble() ??
+                          0.0;
+                      final maxDeviation =
+                          (statsData['max_deviation'] as num?)?.toDouble() ??
+                          0.0;
+                      final avgDeviation =
+                          (statsData['avg_deviation'] as num?)?.toDouble() ??
+                          0.0;
+                      final stdDeviation =
+                          (statsData['std_deviation'] as num?)?.toDouble() ??
+                          0.0;
+                      final ppwt =
+                          (statsData['ppwt'] as num?)?.toDouble() ?? 0.0;
                       final statsMap = {
                         'name': name,
                         'scanId': scanId,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'ply_viewer_page.dart';
 import '../utils.dart';
 
 // Widget stateless per la pagina dei dettagli
@@ -7,11 +8,17 @@ class StatisticDetailPage extends StatelessWidget {
 
   const StatisticDetailPage({super.key, required this.stats});
 
-  // Funzione helper per normalizzare i valori
+  // Funzione helper per normalizzare i valori di testo
   String _v(dynamic value) {
     return (value == null || (value is String && value.trim().isEmpty))
         ? '—'
         : value.toString();
+  }
+
+  // Funzione helper per formattare i numeri con unità
+  String _f(dynamic value, int decimals, String unit) {
+    if (value == null || value is! num) return '—';
+    return '${value.toStringAsFixed(decimals)} $unit';
   }
 
   @override
@@ -60,21 +67,73 @@ class StatisticDetailPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  cardField('Accuracy', _v(stats['accuracy'])),
+                  cardField('Accuracy', _f(stats['accuracy'], 2, '%')),
                   const SizedBox(height: 20),
-                  cardField('Average deviation', _v(stats['avg_deviation'])),
+                  cardField(
+                    'Average deviation',
+                    _f(stats['avg_deviation'], 3, 'mm'),
+                  ),
                   const SizedBox(height: 20),
-                  cardField('Minimum deviation', _v(stats['min_deviation'])),
+                  cardField(
+                    'Minimum deviation',
+                    _f(stats['min_deviation'], 3, 'mm'),
+                  ),
                   const SizedBox(height: 20),
-                  cardField('Maximum deviation', _v(stats['max_deviation'])),
+                  cardField(
+                    'Maximum deviation',
+                    _f(stats['max_deviation'], 3, 'mm'),
+                  ),
                   const SizedBox(height: 20),
-                  cardField('Standard deviation', _v(stats['std_deviation'])),
+                  cardField(
+                    'Standard deviation',
+                    _f(stats['std_deviation'], 3, 'mm'),
+                  ),
                   const SizedBox(height: 20),
-                  cardField('Percentage of points within tolerance', _v(stats['ppwt'])),
+                  cardField(
+                    'Percentage of points within tolerance',
+                    _f(stats['ppwt'], 2, '%'),
+                  ),
                 ],
               ),
             ),
-            // TODO: visualizzatore della statistica 3D
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              // --- BOTTONE MODIFICATO ---
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.view_in_ar_rounded),
+                label: const Text(
+                  'VIEW 3D COMPARISON',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                onPressed: () {
+                  final scanId = stats['scanId'];
+                  if (scanId != null) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PlyViewerPage(scanId: scanId),
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Scan ID not available.'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                },
+              ),
+            ),
           ],
         ),
       ),
