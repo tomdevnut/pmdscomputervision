@@ -61,7 +61,8 @@ class _SingleUserPageState extends State<SingleUserPage> {
 
         final userData = userDoc.data() as Map<String, dynamic>;
         final userName = userData['name'] ?? 'N/A';
-        final userSurname = userData['surname'] ?? 'N/A';
+        final userSurname = userData['surname'] +
+                (widget.userId == user?.uid ? ' (you)' : '') ?? 'N/A';
         final isEnabled = userData['enabled'] ?? false;
         final userLevel = userData['level'] ?? 0;
         final userEmail = widget.userId == user?.uid ? user?.email ?? 'Email not available' : (userData['email'] ?? 'N/A');
