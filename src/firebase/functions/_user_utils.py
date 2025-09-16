@@ -33,7 +33,6 @@ def create_user_in_firebase(db: firestore.Client, email: str, password: str, lev
         user_profile_data = {
             "name": name,
             "surname": surname,
-            "email": email,
             "level": level,
             "enabled": True,
             "fcm_token": None
