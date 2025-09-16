@@ -72,7 +72,7 @@ class ScanDetailPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  cardField('Step Name', _v(scan['stepName'])),
+                  cardField('Step Name', _v(scan['step'])),
                   const SizedBox(height: 14),
                   cardField('User', _v(scan['user'])),
                   const SizedBox(height: 14),

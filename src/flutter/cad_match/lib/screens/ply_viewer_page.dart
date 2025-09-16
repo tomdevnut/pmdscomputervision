@@ -53,7 +53,10 @@ class _PlyViewerPageState extends State<PlyViewerPage> {
         future: _plyUrlFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(
+              color: AppColors.primary,
+            )
+            );
           }
           if (snapshot.hasError || !snapshot.hasData) {
             return const Center(child: Text('Failed to load model.'));
