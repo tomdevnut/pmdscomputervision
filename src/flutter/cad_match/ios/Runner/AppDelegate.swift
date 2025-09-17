@@ -1,5 +1,5 @@
-import UIKit
 import Flutter
+import UIKit
 
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -15,8 +15,14 @@ import Flutter
 
     let plyViewFactory = PlyViewFactory(messenger: controller.binaryMessenger)
     self.registrar(forPlugin: "ply-view-plugin")!.register(
-        plyViewFactory,
-        withId: "ply_viewer"
+      plyViewFactory,
+      withId: "ply_viewer"
+    )
+
+    let lidarFactory = LidarViewFactory(messenger: controller.binaryMessenger)
+    self.registrar(forPlugin: "devnut-lidar-plugin")!.register(
+      lidarFactory,
+      withId: "devnut.lidar_view"
     )
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)

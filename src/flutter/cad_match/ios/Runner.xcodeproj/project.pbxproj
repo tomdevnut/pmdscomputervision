@@ -18,6 +18,8 @@
 		D76896972E09DC7A34980CD8 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 039E99DF1D3A7D4F58041547 /* Pods_RunnerTests.framework */; };
 		F17C0D0C2E67D45A00872B5D /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = F17C0D0B2E67D45A00872B5D /* GoogleService-Info.plist */; };
 		F18B8A002E71BF6100674A6D /* PlyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F18B89FF2E71BF5800674A6D /* PlyView.swift */; };
+		F1C8A4352E79E60600037DEB /* LidarViewFactory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C8A4342E79E60600037DEB /* LidarViewFactory.swift */; };
+		F1C8A4362E79E60600037DEB /* LidarPlatformView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C8A4332E79E60600037DEB /* LidarPlatformView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -68,6 +70,8 @@
 		E8F8F9FF22A9F3A7D1259FF3 /* Pods-RunnerTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-RunnerTests.release.xcconfig"; path = "Target Support Files/Pods-RunnerTests/Pods-RunnerTests.release.xcconfig"; sourceTree = "<group>"; };
 		F17C0D0B2E67D45A00872B5D /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		F18B89FF2E71BF5800674A6D /* PlyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlyView.swift; sourceTree = "<group>"; };
+		F1C8A4332E79E60600037DEB /* LidarPlatformView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LidarPlatformView.swift; sourceTree = "<group>"; };
+		F1C8A4342E79E60600037DEB /* LidarViewFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LidarViewFactory.swift; sourceTree = "<group>"; };
 		F51223773AF5F3A1A8E6DC0E /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -147,6 +151,8 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
+				F1C8A4332E79E60600037DEB /* LidarPlatformView.swift */,
+				F1C8A4342E79E60600037DEB /* LidarViewFactory.swift */,
 				F18B89FF2E71BF5800674A6D /* PlyView.swift */,
 				97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
@@ -403,6 +409,8 @@
 			files = (
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				F18B8A002E71BF6100674A6D /* PlyView.swift in Sources */,
+				F1C8A4352E79E60600037DEB /* LidarViewFactory.swift in Sources */,
+				F1C8A4362E79E60600037DEB /* LidarPlatformView.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

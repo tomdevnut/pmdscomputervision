@@ -1,35 +1,121 @@
-// scanning_page.dart
 import 'package:flutter/material.dart';
-import 'package:arkit_plugin/arkit_plugin.dart';
-import 'package:vector_math/vector_math_64.dart' as vector;
+import 'dart:async';
 import 'dart:math' as math;
+import 'package:vector_math/vector_math_64.dart' as vector;
+import 'lidar_view.dart';
 import 'send_scan_page.dart';
 import '../utils.dart';
 
 class LidarScannerScreen extends StatefulWidget {
   final Map<String, dynamic> payload;
-
   const LidarScannerScreen({super.key, required this.payload});
 
   @override
-  _LidarScannerScreenState createState() => _LidarScannerScreenState();
+  State<LidarScannerScreen> createState() => _LidarScannerScreenState();
 }
 
 class _LidarScannerScreenState extends State<LidarScannerScreen> {
-  late ARKitController arkitController;
+  final scannedPoints = <vector.Vector3>[];
   bool isScanning = false;
-  String? scanStatus;
-  List<vector.Vector3> scannedPoints = [];
-  List<ARKitNode> visualNodes = [];
+  String? scanStatus = 'Pronto per la scansione';
+  final int recommendedPoints = 15000; // consigliato per oggetti grandi
+  final int minPointsToSave = 1500; // minimo per salvare qualcosa di utile
+  double minPointDistance = 0.01; // 1 cm
+  double maxScanDistance =
+      6.0; // 6 m (LiDAR arriva fino a ~5m, lasciamo margine)
+  Timer? uiTick;
+  final _lidarKey = GlobalKey<LidarViewState>();
+  DateTime? _lastPointsAt;
+
+  @override
+  void initState() {
+    super.initState();
+    uiTick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      setState(() {
+        // aggiorna stato warning / progress
+      });
+    });
+  }
 
   @override
   void dispose() {
-    arkitController.dispose();
+    uiTick?.cancel();
     super.dispose();
+  }
+
+  void _onPoints(List<vector.Vector3> pts) {
+    if (!isScanning) return;
+    _lastPointsAt = DateTime.now();
+
+    for (final p in pts) {
+      // Niente filtro su distanza dal mondo: nativo ha già filtrato d ∈ (0, 8]
+      if (scannedPoints.isEmpty ||
+          scannedPoints.last.distanceTo(p) >= minPointDistance) {
+        scannedPoints.add(p);
+      }
+    }
+
+    if (scannedPoints.length % 500 == 0) {
+      setState(
+        () =>
+            scanStatus = 'Scansione in corso... ${scannedPoints.length} punti',
+      );
+    }
+  }
+
+  void toggleScanning() {
+    setState(() {
+      isScanning = !isScanning;
+      if (isScanning) {
+        scanStatus =
+            'Scansione in corso... Muoviti lentamente attorno al pezzo';
+        _lidarKey.currentState?.start();
+      } else {
+        scanStatus = 'Scansione in pausa - ${scannedPoints.length} punti';
+        _lidarKey.currentState?.stop();
+      }
+    });
+  }
+
+  void resetScan() {
+    setState(() {
+      isScanning = false;
+      scannedPoints.clear();
+      scanStatus = 'Pronto per la scansione';
+      _lastPointsAt = null;
+    });
+    _lidarKey.currentState?.reset();
+  }
+
+  void _onSaveScan() {
+    if (scannedPoints.length < minPointsToSave) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Servono almeno $minPointsToSave punti per un risultato decente',
+          ),
+        ),
+      );
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            SendScanPage(payload: widget.payload, scannedPoints: scannedPoints),
+      ),
+    );
+  }
+
+  bool get _noPointsRecently {
+    if (!isScanning) return false;
+    if (_lastPointsAt == null) return true;
+    return DateTime.now().difference(_lastPointsAt!).inSeconds >= 2;
   }
 
   @override
   Widget build(BuildContext context) {
+    final progress = (scannedPoints.length / recommendedPoints).clamp(0.0, 1.0);
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
@@ -37,68 +123,151 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
         foregroundColor: AppColors.textPrimary,
         centerTitle: true,
         elevation: 0.5,
-        title: Text(widget.payload['name'] ?? 'New Scan'),
+        title: Text(widget.payload['name'] ?? 'Nuova scansione'),
       ),
       body: Stack(
         children: [
-          ARKitSceneView(
-            onARKitViewCreated: onARKitViewCreated,
-            configuration: ARKitConfiguration.worldTracking,
-            showFeaturePoints: true,
-            planeDetection: ARPlaneDetection.horizontal,
-          ),
-          _buildUIOverlay(),
+          LidarView(key: _lidarKey, onPoints: _onPoints),
+          _buildUIOverlay(progress),
+          if (isScanning) _buildScanningGuide(progress),
         ],
       ),
     );
   }
 
-  Widget _buildUIOverlay() {
+  Widget _buildScanningGuide(double progress) {
+    return Center(
+      child: CustomPaint(
+        size: const Size(200, 200),
+        painter: ScanningGuidePainter(progress: progress),
+      ),
+    );
+  }
+
+  Widget _buildUIOverlay(double progress) {
     return SafeArea(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Barra di stato in alto
+          // Barra stato compatta
           Container(
             margin: const EdgeInsets.all(16),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
-              color: AppColors.cardBackground.withValues(alpha: 204),
+              color: AppColors.cardBackground.withAlpha(204),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Text(
-              scanStatus ?? 'Ready to scan',
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  scanStatus ?? 'Pronto per la scansione',
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+
+                const SizedBox(height: 8),
+
+                // Prima di iniziare: mostra suggerimenti
+                if (!isScanning) ...[
+                  const Text(
+                    'Suggerimenti per pezzi grandi:\n'
+                    '• Mantieni 0.5–2.5 m dal pezzo.\n'
+                    '• Muoviti lentamente e copri tutto il perimetro.',
+                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Obiettivo: $recommendedPoints punti (consigliati)',
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                  ),
+                ],
+
+                // Durante la scansione: mostra solo contatore + progress
+                if (isScanning) ...[
+                  Text(
+                    'Punti: ${scannedPoints.length} / $recommendedPoints',
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                  ),
+                ],
+
+                const SizedBox(height: 8),
+
+                LinearProgressIndicator(
+                  value: math.max(0.02, progress),
+                  backgroundColor: Colors.white24,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                ),
+
+                // Warning "nessun punto" con testo che va a capo (niente overflow)
+                if (_noPointsRecently) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.orange,
+                        size: 18,
+                      ),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Nessun punto dal LiDAR. Avvicinati al pezzo o muovi lentamente.',
+                          style: TextStyle(
+                            color: Colors.orangeAccent,
+                            fontSize: 13,
+                          ),
+                          textAlign: TextAlign.center,
+                          softWrap: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
             ),
           ),
 
-          // Controlli in basso
+          // Suggerimenti aggiuntivi: mostra SOLO prima di iniziare
+          if (!isScanning)
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 32),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.black54,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'Copri tutte le superfici, specialmente i bordi.\nEvita movimenti bruschi.',
+                style: TextStyle(color: Colors.white, fontSize: 14),
+                textAlign: TextAlign.center,
+              ),
+            ),
+
+          // Controlli
           Container(
             padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
-              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // Pulsante Reset
                 _buildSideButton(
                   icon: Icons.refresh_rounded,
                   onPressed: resetScan,
                   label: 'Reset',
                 ),
-
-                // Pulsante Start/Stop Stile iOS
                 _buildMainScanButton(),
-
-                // Pulsante Salva
                 _buildSideButton(
                   icon: Icons.check_rounded,
-                  onPressed: scannedPoints.isNotEmpty ? _onSaveScan : null,
-                  label: 'Save',
+                  onPressed: scannedPoints.length >= minPointsToSave
+                      ? _onSaveScan
+                      : null,
+                  label: 'Salva',
                 ),
               ],
             ),
@@ -108,7 +277,6 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
     );
   }
 
-  // NUOVO: Widget per il pulsante principale stile iOS
   Widget _buildMainScanButton() {
     return GestureDetector(
       onTap: toggleScanning,
@@ -135,7 +303,6 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
     );
   }
 
-  // MODIFICATO: Widget per i bottoni laterali
   Widget _buildSideButton({
     required IconData icon,
     required VoidCallback? onPressed,
@@ -165,122 +332,32 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
       ),
     );
   }
+}
 
-  void onARKitViewCreated(ARKitController controller) {
-    arkitController = controller;
-    arkitController.onUpdateNodeForAnchor = (anchor) {
-      if (isScanning) {
-        final position = vector.Vector3(
-          anchor.transform.getColumn(3).x,
-          anchor.transform.getColumn(3).y,
-          anchor.transform.getColumn(3).z,
-        );
-        addScannedPoint(position);
-      }
-    };
-    setState(() {
-      scanStatus = 'Aim the object and press Start';
-    });
-  }
+class ScanningGuidePainter extends CustomPainter {
+  final double progress;
+  ScanningGuidePainter({required this.progress});
 
-  void addScannedPoint(vector.Vector3 position) {
-    const minDistance = 0.01;
-    if (scannedPoints.any((p) => p.distanceTo(position) < minDistance)) return;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.3)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
 
-    scannedPoints.add(position);
-
-    final node = ARKitNode(
-      geometry: ARKitSphere(
-        radius: 0.003,
-        materials: [
-          ARKitMaterial(
-            diffuse: ARKitMaterialProperty.color(AppColors.primary),
-          ),
-        ],
-      ),
-      position: position,
+    canvas.drawCircle(
+      Offset(size.width / 2, size.height / 2),
+      size.width / 2,
+      paint,
     );
-    visualNodes.add(node);
-    arkitController.add(node);
 
-    if (scannedPoints.length % 50 == 0) {
-      setState(() {
-        scanStatus = 'Scanning... ${scannedPoints.length} points';
-      });
-    }
+    paint.color = AppColors.primary;
+    paint.strokeWidth = 4;
+    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
+    canvas.drawArc(rect, -math.pi / 2, 2 * math.pi * progress, false, paint);
   }
 
-  // NUOVA: Funzione privata per pulire i dati
-  void _clearScanData() {
-    for (var node in visualNodes) {
-      arkitController.remove(node.name);
-    }
-    visualNodes.clear();
-    scannedPoints.clear();
-  }
-
-  // MODIFICATO: Logica di Start/Stop corretta
-  void toggleScanning() {
-    setState(() {
-      isScanning = !isScanning;
-      if (isScanning) {
-        _clearScanData(); // Pulisce la scansione precedente
-        scanStatus = 'Scanning...';
-        startAutomaticScanning();
-      } else {
-        scanStatus = 'Scan paused - ${scannedPoints.length} points acquired';
-      }
-    });
-  }
-
-  void startAutomaticScanning() {
-    if (!isScanning) return;
-
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (!isScanning) return;
-      final random = math.Random();
-      final point = vector.Vector3(
-        (random.nextDouble() - 0.5) * 1.0,
-        (random.nextDouble() - 0.5) * 1.0,
-        -0.5 - random.nextDouble() * 1.5,
-      );
-      addScannedPoint(point);
-
-      if (scannedPoints.length < 2000) {
-        startAutomaticScanning();
-      } else {
-        setState(() {
-          isScanning = false;
-          scanStatus = 'Scan completed with ${scannedPoints.length} points';
-        });
-      }
-    });
-  }
-
-  // MODIFICATO: Logica di Reset corretta
-  void resetScan() {
-    setState(() {
-      if (isScanning) isScanning = false;
-      _clearScanData();
-      scanStatus = 'Ready to scan';
-    });
-  }
-
-  void _onSaveScan() {
-    if (scannedPoints.isEmpty) return;
-
-    if (isScanning) {
-      setState(() {
-        isScanning = false;
-        scanStatus = 'Scan paused - ${scannedPoints.length} points acquired';
-      });
-    }
-
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) =>
-            SendScanPage(payload: widget.payload, scannedPoints: scannedPoints),
-      ),
-    );
-  }
+  @override
+  bool shouldRepaint(covariant ScanningGuidePainter oldDelegate) =>
+      oldDelegate.progress != progress;
 }
