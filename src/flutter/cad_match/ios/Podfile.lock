@@ -1188,9 +1188,6 @@ PODS:
     - abseil/meta/type_traits
     - abseil/xcprivacy
   - abseil/xcprivacy (1.20240722.0)
-  - arkit_plugin (0.0.1):
-    - Flutter
-    - GLTFSceneKit
   - BoringSSL-GRPC (0.0.37):
     - BoringSSL-GRPC/Implementation (= 0.0.37)
     - BoringSSL-GRPC/Interface (= 0.0.37)
@@ -1308,7 +1305,6 @@ PODS:
     - GoogleUtilities/Environment (~> 8.1)
     - GTMSessionFetcher/Core (< 6.0, >= 3.4)
   - Flutter (1.0.0)
-  - GLTFSceneKit (0.3.0)
   - GoogleDataTransport (10.1.0):
     - nanopb (~> 3.30910.0)
     - PromisesObjC (~> 2.4)
@@ -1442,7 +1438,6 @@ PODS:
   - RecaptchaInterop (101.0.0)
 
 DEPENDENCIES:
-  - arkit_plugin (from `.symlinks/plugins/arkit_plugin/ios`)
   - cloud_firestore (from `.symlinks/plugins/cloud_firestore/ios`)
   - cloud_functions (from `.symlinks/plugins/cloud_functions/ios`)
   - firebase_auth (from `.symlinks/plugins/firebase_auth/ios`)
@@ -1471,7 +1466,6 @@ SPEC REPOS:
     - FirebaseMessagingInterop
     - FirebaseSharedSwift
     - FirebaseStorage
-    - GLTFSceneKit
     - GoogleDataTransport
     - GoogleUtilities
     - "gRPC-C++"
@@ -1483,8 +1477,6 @@ SPEC REPOS:
     - RecaptchaInterop
 
 EXTERNAL SOURCES:
-  arkit_plugin:
-    :path: ".symlinks/plugins/arkit_plugin/ios"
   cloud_firestore:
     :path: ".symlinks/plugins/cloud_firestore/ios"
   cloud_functions:
@@ -1504,7 +1496,6 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   abseil: a05cc83bf02079535e17169a73c5be5ba47f714b
-  arkit_plugin: 498422c16fb9465f45bce2391ec73dbb3c69453c
   BoringSSL-GRPC: dded2a44897e45f28f08ae87a55ee4bcd19bc508
   cloud_firestore: d67bc84da67d31e982c94331d9ab947bc2316868
   cloud_functions: 4c3d04f004dc25f83251d5b4619ebbe5dafb54b4
@@ -1528,7 +1519,6 @@ SPEC CHECKSUMS:
   FirebaseSharedSwift: 52d868d4c269fcb4e4e1310c548435a9c1f46e25
   FirebaseStorage: f1578d57e1fd3683fc05f5d4d7b24b7490b321ac
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  GLTFSceneKit: d1b437c514ba2aed5555afb0fddd64e030612d57
   GoogleDataTransport: aae35b7ea0c09004c3797d53c8c41f66f219d6a7
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   "gRPC-C++": cc207623316fb041a7a3e774c252cf68a058b9e8

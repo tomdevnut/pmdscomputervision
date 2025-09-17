@@ -39,7 +39,6 @@ dependencies:
   firebase_auth: ^6.0.2
   firebase_storage: ^13.0.1
   intl: ^0.20.2
-  arkit_plugin: ^1.2.0
   path_provider: ^2.1.5
   vector_math: ^2.2.0
   firebase_messaging: ^16.0.1
