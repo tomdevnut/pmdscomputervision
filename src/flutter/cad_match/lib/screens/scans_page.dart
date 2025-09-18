@@ -8,45 +8,36 @@ import 'add_scan_page.dart';
 import 'scan_detail_page.dart';
 
 // Funzioni per recuperare dati utente e step in modo asincrono
-Future<String> getUsername(String userId) async {
-  if (userId.isEmpty) {
-    return 'Unknown User';
-  }
-  try {
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .get();
-    if (userDoc.exists) {
-      final userData = userDoc.data();
-      return '${userData?['name'] ?? 'Unknown User'} ${userData?['surname'] ?? 'Unknown User'}';
-    }
-  } catch (e) {
-    // Si potrebbe loggare l'errore per il debug
-  }
-  return 'Unknown User';
+// Aggiungo il pre-caricamento per ottimizzare le performance
+Future<Map<String, String>> fetchStepNames(List<String> stepIds) async {
+  // Filtra tutti gli ID vuoti o nulli
+  final validStepIds = stepIds.where((id) => id.isNotEmpty).toList();
+  if (validStepIds.isEmpty) return {};
+  final stepDocs = await FirebaseFirestore.instance
+      .collection('steps')
+      .where(FieldPath.documentId, whereIn: validStepIds)
+      .get();
+  return {
+    for (var doc in stepDocs.docs) doc.id: doc.data()['name'] ?? 'Unknown Step',
+  };
 }
 
-Future<String> getStepName(String stepId) async {
-  if (stepId.isEmpty) {
-    return 'Unknown or Deleted Step';
-  }
-  try {
-    final stepDoc = await FirebaseFirestore.instance
-        .collection('steps')
-        .doc(stepId)
-        .get();
-    if (stepDoc.exists) {
-      final stepData = stepDoc.data();
-      return stepData?['name'] ?? 'Unknown Step';
-    }
-  } catch (e) {
-    // Si potrebbe loggare l'errore per il debug
-  }
-  return 'Unknown or Deleted Step';
+Future<Map<String, String>> fetchUsernames(List<String> userIds) async {
+  // Filtra tutti gli ID vuoti o nulli
+  final validUserIds = userIds.where((id) => id.isNotEmpty).toList();
+  if (validUserIds.isEmpty) return {};
+  final userDocs = await FirebaseFirestore.instance
+      .collection('users')
+      .where(FieldPath.documentId, whereIn: validUserIds)
+      .get();
+  return {
+    for (var doc in userDocs.docs)
+      doc.id:
+          '${doc.data()['name'] ?? 'Unknown User'} ${doc.data()['surname'] ?? ''}',
+  };
 }
 
-// Widget separato per l'item della lista, per rendere il codice più pulito
+// Widget separato per l'item della lista, con design coerente
 class ScanItem extends StatelessWidget {
   final String title;
   final DateTime? date;
@@ -63,10 +54,13 @@ class ScanItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: AppColors.tileBackground,
+    return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.boxborder),
+      ),
       child: ListTile(
         title: Text(
           title,
@@ -80,7 +74,7 @@ class ScanItem extends StatelessWidget {
             : null,
         trailing: const Icon(
           Icons.arrow_forward_ios_rounded,
-          color: AppColors.white,
+          color: AppColors.textSecondary,
           size: 16,
         ),
         leading: _buildStatusIcon(status),
@@ -92,13 +86,16 @@ class ScanItem extends StatelessWidget {
   Widget _buildStatusIcon(int status) {
     switch (status) {
       case 2: // Completed
-        return const Icon(Icons.check_circle_rounded, color: AppColors.green);
-      case 1: // Inviato al server di backend
-        return const Icon(Icons.hourglass_top_rounded, color: AppColors.yellow);
-      case 0: // Ricevuto
-        return const Icon(Icons.inbox_rounded, color: AppColors.yellow);
-      default: // Errore (-1)
-        return const Icon(Icons.warning_rounded, color: AppColors.red);
+        return const Icon(Icons.check_circle_rounded, color: AppColors.success);
+      case 1: // Sent to backend server
+        return const Icon(
+          Icons.hourglass_top_rounded,
+          color: AppColors.warning,
+        );
+      case 0: // Received
+        return const Icon(Icons.inbox_rounded, color: AppColors.warning);
+      default: // Error (-1)
+        return const Icon(Icons.warning_rounded, color: AppColors.error);
     }
   }
 }
@@ -186,7 +183,17 @@ class _ScansPageState extends State<ScansPage> {
           if (uid == null) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Please sign in to add a scan')),
+                SnackBar(
+                  content: Text(
+                    'Please sign in to add a scan',
+                    style: TextStyle(color: AppColors.textPrimary),
+                  ),
+                  backgroundColor: AppColors.error,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
               );
             }
             return;
@@ -196,7 +203,7 @@ class _ScansPageState extends State<ScansPage> {
           ).push(MaterialPageRoute(builder: (_) => const AddScanPage()));
         },
         backgroundColor: AppColors.primary,
-        child: const Icon(Icons.add_rounded, color: AppColors.white),
+        child: const Icon(Icons.add_rounded, color: Colors.white),
       ),
     );
   }
@@ -223,7 +230,7 @@ class _ScansPageState extends State<ScansPage> {
             return Center(
               child: Text(
                 'Error: ${snapshot.error}',
-                style: const TextStyle(color: AppColors.red),
+                style: const TextStyle(color: AppColors.error),
               ),
             );
           }
@@ -236,24 +243,58 @@ class _ScansPageState extends State<ScansPage> {
               ),
             );
           }
-          return ListView.builder(
-            itemCount: snapshot.data!.docs.length,
-            itemBuilder: (context, index) {
-              final scan = snapshot.data!.docs[index];
-              final data = scan.data() as Map<String, dynamic>;
-              final title = data['name'] as String? ?? 'No Title';
-              final date = (data['timestamp'] as Timestamp?)?.toDate();
-              final status = data['status'] as int? ?? 0;
-              final userId = data['user'] as String? ?? '';
+          final scans = snapshot.data!.docs;
+          // Ottimizzazione: Raccogliamo tutti gli ID utente e step
+          final userIds = scans
+              .map(
+                (doc) =>
+                    (doc.data() as Map<String, dynamic>)['user'] as String? ??
+                    '',
+              )
+              .toList();
+          final stepIds = scans
+              .map(
+                (doc) =>
+                    (doc.data() as Map<String, dynamic>)['step'] as String? ??
+                    '',
+              )
+              .toList();
 
-              return ScanItem(
-                title: title,
-                date: date,
-                status: status,
-                onTap: () async {
-                  final localContext = context;
-                  final username = await getUsername(userId);
-                  final stepName = await getStepName(data['step'] ?? '');
+          return FutureBuilder<Map<String, Map<String, String>>>(
+            future: Future.wait([
+              fetchUsernames(userIds),
+              fetchStepNames(stepIds),
+            ]).then((results) => {'users': results[0], 'steps': results[1]}),
+            builder: (context, futureSnapshot) {
+              if (futureSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (futureSnapshot.hasError) {
+                return Center(
+                  child: Text(
+                    'Error loading data: ${futureSnapshot.error}',
+                    style: const TextStyle(color: AppColors.error),
+                  ),
+                );
+              }
+
+              final usernames = futureSnapshot.data?['users'] ?? {};
+              final stepNames = futureSnapshot.data?['steps'] ?? {};
+
+              return ListView.builder(
+                itemCount: scans.length,
+                itemBuilder: (context, index) {
+                  final scan = scans[index];
+                  final data = scan.data() as Map<String, dynamic>;
+                  final title = data['name'] as String? ?? 'No Title';
+                  final date = (data['timestamp'] as Timestamp?)?.toDate();
+                  final status = data['status'] as int? ?? 0;
+                  final userId = data['user'] as String? ?? '';
+                  final stepId = data['step'] as String? ?? '';
+
+                  final username = usernames[userId] ?? 'Unknown User';
+                  final stepName =
+                      stepNames[stepId] ?? 'Unknown or Deleted Step';
 
                   final scanData = {
                     'scanId': data['scanId'] ?? scan.id,
@@ -267,13 +308,18 @@ class _ScansPageState extends State<ScansPage> {
                     'description': data['description'] ?? '',
                   };
 
-                  if (localContext.mounted) {
-                    Navigator.of(localContext).push(
-                      MaterialPageRoute(
-                        builder: (_) => ScanDetailPage(scan: scanData),
-                      ),
-                    );
-                  }
+                  return ScanItem(
+                    title: title,
+                    date: date,
+                    status: status,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ScanDetailPage(scan: scanData),
+                        ),
+                      );
+                    },
+                  );
                 },
               );
             },

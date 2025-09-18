@@ -40,7 +40,6 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _resetPassword(BuildContext context) async {
-    // Create a popup asking if the user is sure about resetting the password: a reset link will be sent via email
     showConfirmationDialog(
       context,
       'Are you sure you want to reset your password? A reset link will be sent to your email.',
@@ -58,6 +57,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    const cardColor = AppColors.cardBackground;
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
@@ -71,23 +71,32 @@ class _ProfilePageState extends State<ProfilePage> {
                 const SizedBox(height: 20),
                 _buildProfileIcon(),
                 const SizedBox(height: 32),
-                _buildUserInfo(),
+                // Card per le informazioni dell'utente
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.boxborder),
+                  ),
+                  child: _buildUserInfo(),
+                ),
+                const SizedBox(height: 32),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Column(
-                      children: [
-                        const SizedBox(height: 32),
-                        buildButton(
-                          'RESET PASSWORD',
-                          onPressed: () => _resetPassword(context),
-                        ),
-                        const SizedBox(height: 16),
-                        buildButton('LOGOUT', onPressed: _signOut),
-                      ],
+                    Expanded(
+                      child: buildButton(
+                        'RESET PASSWORD',
+                        onPressed: () => _resetPassword(context),
+                        icon: Icons.lock_reset_rounded,
+                      ),
                     ),
+                    const SizedBox(width: 12),
+                    Expanded(child: buildButton('LOGOUT', onPressed: _signOut, icon: Icons.logout_rounded)),
                   ],
                 ),
+                const SizedBox(height: 24),
               ],
             ),
           ),
@@ -101,7 +110,7 @@ class _ProfilePageState extends State<ProfilePage> {
       child: CircleAvatar(
         radius: 60,
         backgroundColor: AppColors.primary,
-        child: Icon(Icons.person_rounded, size: 60, color: AppColors.white),
+        child: Icon(Icons.person_rounded, size: 60, color: Colors.white),
       ),
     );
   }
@@ -113,18 +122,28 @@ class _ProfilePageState extends State<ProfilePage> {
         ? Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInfoRow('Name:', nameAndSurname),
-              const SizedBox(height: 16),
-              _buildInfoRow('Email:', _user?.email ?? 'Loading...'),
-              const SizedBox(height: 16),
-              _buildInfoRow(
+              cardField('Name:', nameAndSurname, Icons.person_rounded),
+              const SizedBox(height: 10),
+              const Divider(color: AppColors.boxborder),
+              const SizedBox(height: 10),
+              cardField('Email:', _user?.email ?? 'Loading...', Icons.email_rounded),
+              const SizedBox(height: 10),
+              const Divider(color: AppColors.boxborder),
+              const SizedBox(height: 10),
+              cardField(
                 'Level:',
                 _userData?['level']?.toString() ?? 'Loading...',
+                Icons.bar_chart_rounded,
               ),
-              const SizedBox(height: 16),
-              _buildInfoRow(
+              const SizedBox(height: 10),
+              const Divider(color: AppColors.boxborder),
+              const SizedBox(height: 10),
+              cardField(
                 'Enabled:',
                 (_userData?['enabled'] ?? false) ? 'Yes' : 'No',
+                (_userData?['enabled'] ?? false)                    
+                ? Icons.check_circle_rounded
+                    : Icons.cancel_rounded,
               ),
             ],
           )
@@ -138,31 +157,4 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           );
   }
-
-  Widget _buildInfoRow(String label, String value) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-
-
 }

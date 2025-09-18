@@ -122,7 +122,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
         backgroundColor: AppColors.backgroundColor,
         foregroundColor: AppColors.textPrimary,
         centerTitle: true,
-        elevation: 0.5,
+        elevation: 0,
         title: Text(widget.payload['name'] ?? 'Nuova scansione'),
       ),
       body: Stack(
@@ -286,7 +286,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: Colors.white,
-          border: Border.all(color: AppColors.white.withAlpha(128), width: 5),
+          border: Border.all(color: AppColors.textPrimary.withAlpha(128), width: 5),
         ),
         child: Center(
           child: AnimatedContainer(
@@ -294,7 +294,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
             width: isScanning ? 30 : 60,
             height: isScanning ? 30 : 60,
             decoration: BoxDecoration(
-              color: AppColors.red,
+              color: AppColors.error,
               borderRadius: BorderRadius.circular(isScanning ? 8 : 30),
             ),
           ),

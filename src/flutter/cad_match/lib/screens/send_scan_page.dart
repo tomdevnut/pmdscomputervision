@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:uuid/uuid.dart'; // Importa il pacchetto uuid
+import 'package:uuid/uuid.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
 import '../utils.dart';
 
@@ -22,9 +22,9 @@ class SendScanPage extends StatefulWidget {
 }
 
 class _SendScanPageState extends State<SendScanPage> {
-  bool _isProcessing = false; // Stato per gestire il caricamento
+  bool _isProcessing = false;
 
-  /// Genera un file .ply dai punti scansionati con un nome basato sull'ID.
+  /// Genera un file .ply dai punti scansionati.
   Future<File> _generatePLYFile(
     List<vector.Vector3> scannedPoints,
     String scanId,
@@ -41,7 +41,6 @@ class _SendScanPageState extends State<SendScanPage> {
     plyContent.writeln('property uchar blue');
     plyContent.writeln('end_header');
 
-    // Colore arancione per i punti
     for (var point in scannedPoints) {
       plyContent.writeln('${point.x} ${point.y} ${point.z} 245 124 0');
     }
@@ -64,7 +63,6 @@ class _SendScanPageState extends State<SendScanPage> {
         .child('scans')
         .child('$scanId.ply');
 
-    // Imposta i metadati richiesti dalla Cloud Function
     final metadata = SettableMetadata(
       customMetadata: {
         'user': user.uid,
@@ -74,7 +72,7 @@ class _SendScanPageState extends State<SendScanPage> {
     );
 
     await storageRef.putFile(file, metadata);
-    await file.delete(); // Pulisce il file locale dopo l'upload
+    await file.delete();
   }
 
   /// Gestisce l'intero processo di upload e navigazione.
@@ -83,24 +81,51 @@ class _SendScanPageState extends State<SendScanPage> {
     setState(() => _isProcessing = true);
 
     try {
-      // 1. Genera un ID univoco usando il pacchetto uuid
+      if (FirebaseAuth.instance.currentUser == null) {
+        throw Exception("User not authenticated.");
+      }
+
       const uuid = Uuid();
       final scanId = uuid.v4();
 
-      // 2. Genera il file .ply usando l'ID
       final plyFile = await _generatePLYFile(widget.scannedPoints, scanId);
 
-      // 3. Carica il file su Firebase Storage con i metadati
       await _uploadToFirebase(plyFile, scanId);
 
-      // 4. Naviga alla schermata principale solo dopo il successo
       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Upload successful! Your scan is being processed.',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {
+      String message;
+      if (e.toString().contains("network error")) {
+        message = 'A network error occurred. Please check your connection.';
+      } else {
+        message = 'Upload failed: ${e.toString()}';
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Upload failed: ${e.toString()}')),
+          SnackBar(
+            content: Text(
+              message,
+              style: const TextStyle(color: AppColors.textPrimary),
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
         );
       }
     } finally {
@@ -124,11 +149,14 @@ class _SendScanPageState extends State<SendScanPage> {
         backgroundColor: AppColors.backgroundColor,
         foregroundColor: AppColors.textPrimary,
         centerTitle: true,
-        elevation: 0.5,
-        title: const Text('Confirm Scan'),
+        elevation: 0,
+        title: const Text(
+          'Confirm Scan',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -138,7 +166,7 @@ class _SendScanPageState extends State<SendScanPage> {
                 decoration: BoxDecoration(
                   color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.white),
+                  border: Border.all(color: AppColors.textPrimary),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,9 +180,12 @@ class _SendScanPageState extends State<SendScanPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    _buildSummaryRow('Name:', widget.payload['name']),
+                    _buildSummaryRow('Name:', widget.payload['name'] ?? 'N/A'),
                     const SizedBox(height: 8),
-                    _buildSummaryRow('Step:', widget.payload['stepName']),
+                    _buildSummaryRow(
+                      'Step:',
+                      widget.payload['stepName'] ?? 'N/A',
+                    ),
                     const SizedBox(height: 8),
                     _buildSummaryRow(
                       'Points captured:',
@@ -163,46 +194,19 @@ class _SendScanPageState extends State<SendScanPage> {
                   ],
                 ),
               ),
-              const Spacer(),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onPressed: _isProcessing ? null : _confirmAndUpload,
-                icon: _isProcessing
-                    ? Container(
-                        width: 24,
-                        height: 24,
-                        padding: const EdgeInsets.all(2.0),
-                        child: const CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 3,
-                        ),
-                      )
-                    : const Icon(Icons.cloud_upload_outlined),
-                label: Text(
-                  _isProcessing ? 'Uploading...' : 'Confirm & Upload',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+              const SizedBox(height: 50), // Spazio fisso invece dello Spacer
+              buildButton(
+                _isProcessing ? 'UPLOADING...' : 'CONFIRM & UPLOAD',
+                color: AppColors.primary,
+                icon: Icons.cloud_upload_rounded,
+                onPressed: _isProcessing ? () {} : _confirmAndUpload,
               ),
               const SizedBox(height: 12),
-              TextButton(
-                onPressed: _isProcessing ? null : _discardScan,
-                child: const Text(
-                  'Discard',
-                  style: TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 16,
-                  ),
-                ),
+              buildButton(
+                'DISCARD',
+                onPressed: _isProcessing ? (){} : _discardScan,
+                color: AppColors.error,
+                icon: Icons.delete_outline_rounded,
               ),
             ],
           ),

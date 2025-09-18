@@ -46,7 +46,7 @@ class _PlyViewerPageState extends State<PlyViewerPage> {
         shadowColor: cardColor,
         foregroundColor: AppColors.textPrimary,
         centerTitle: true,
-        elevation: 0.5,
+        elevation: 0,
         title: const Text('3D Comparison'),
       ),
       body: FutureBuilder<String>(

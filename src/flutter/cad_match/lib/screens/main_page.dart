@@ -20,21 +20,27 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: pages[currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: currentIndex,
-        backgroundColor: AppColors.backgroundColor,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.unselected,
-        onTap: (index) {
-          setState(() {
-            currentIndex = index;
-          });
-        },
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.view_in_ar_rounded), label: 'Scans'),
-          BottomNavigationBarItem(icon: Icon(Icons.file_copy_rounded), label: 'Steps'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
-        ],
+      bottomNavigationBar: Theme(
+        data: Theme.of(context).copyWith(
+          splashFactory: NoSplash.splashFactory,
+        ),
+        child: BottomNavigationBar(
+          currentIndex: currentIndex,
+          backgroundColor: AppColors.backgroundColor,
+          enableFeedback: false,
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: AppColors.unselected,
+          onTap: (index) {
+            setState(() {
+              currentIndex = index;
+            });
+          },
+          items: const [
+            BottomNavigationBarItem(icon: Icon(Icons.view_in_ar_rounded), label: 'Scans'),
+            BottomNavigationBarItem(icon: Icon(Icons.file_copy_rounded), label: 'Steps'),
+            BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
+          ],
+        ),
       ),
     );
   }

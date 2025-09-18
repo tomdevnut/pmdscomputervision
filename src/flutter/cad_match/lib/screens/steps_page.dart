@@ -5,38 +5,36 @@ import 'dart:async';
 import '../utils.dart';
 import 'step_detail_page.dart';
 
-// Funzione per recuperare dati utente
-Future<String> getUsername(String userId) async {
-  if (userId.isEmpty) {
-    return 'Unknown User';
-  }
-  try {
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(userId)
-        .get();
-    if (userDoc.exists) {
-      final userData = userDoc.data();
-      return '${userData?['name'] ?? 'Unknown User'} ${userData?['surname'] ?? 'Unknown User'}';
-    }
-  } catch (e) {
-    // Si potrebbe loggare l'errore per il debug
-  }
-  return 'Unknown User';
+// Funzione per recuperare i nomi utente in un'unica query
+Future<Map<String, String>> fetchUsernames(List<String> userIds) async {
+  final validUserIds = userIds.where((id) => id.isNotEmpty).toList();
+  if (validUserIds.isEmpty) return {};
+  final userDocs = await FirebaseFirestore.instance
+      .collection('users')
+      .where(FieldPath.documentId, whereIn: validUserIds)
+      .get();
+  return {
+    for (var doc in userDocs.docs)
+      doc.id:
+          '${doc.data()['name'] ?? 'Unknown User'} ${doc.data()['surname'] ?? ''}',
+  };
 }
 
 // funzione per costruire la card di un singolo step in modo coerente
 Widget _buildStepCard(String title, String subtitle, {VoidCallback? onTap}) {
-  return Card(
-    color: AppColors.tileBackground,
+  return Container(
     margin: const EdgeInsets.symmetric(vertical: 6),
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    decoration: BoxDecoration(
+      color: AppColors.cardBackground,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: AppColors.boxborder),
+    ),
     child: ListTile(
-      leading: const Icon(Icons.file_copy_rounded, color: AppColors.primary),
+      leading: const Icon(Icons.file_copy_rounded, color: AppColors.secondary),
       title: Text(
         title,
         style: const TextStyle(
-          color: AppColors.white,
+          color: AppColors.textPrimary,
           fontWeight: FontWeight.bold,
         ),
       ),
@@ -46,7 +44,7 @@ Widget _buildStepCard(String title, String subtitle, {VoidCallback? onTap}) {
       ),
       trailing: const Icon(
         Icons.arrow_forward_ios,
-        color: AppColors.white,
+        color: AppColors.textSecondary,
         size: 16,
       ),
       onTap: onTap,
@@ -151,48 +149,69 @@ class _StepsPageState extends State<StepsPage> {
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return _buildMessage('No steps found.');
         }
-        return _buildStepsList(snapshot.data!.docs);
-      },
-    );
-  }
 
-  Widget _buildStepsList(List<QueryDocumentSnapshot> steps) {
-    return ListView.builder(
-      itemCount: steps.length,
-      itemBuilder: (context, index) {
-        final doc = steps[index];
-        final data = doc.data() as Map<String, dynamic>;
+        final steps = snapshot.data!.docs;
+        final userIds = steps
+            .map(
+              (doc) =>
+                  (doc.data() as Map<String, dynamic>)['user'] as String? ?? '',
+            )
+            .toList();
 
-        // titoli/sottotitoli per la tile
-        final title = (data['name'] as String?)?.isNotEmpty == true
-            ? data['name'] as String
-            : (data['stepId'] as String?) ?? 'No Title';
-        final description = (data['description'] as String?)?.isNotEmpty == true
-            ? data['description'] as String
-            : (data['status'] as String?) ?? 'No Description';
-
-        // conversioni/estrazioni per la pagina di dettaglio
-        final user = data['user'] as String? ?? 'No User';
-
-        return _buildStepCard(
-          title,
-          description,
-          onTap: () async {
-            final username = await getUsername(user);
-            if (context.mounted) {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => StepDetailPage(
-                    step: {
-                      'stepId': doc.id,
-                      'name': title,
-                      'user': username,
-                      'description': description,
-                    },
-                  ),
-                ),
+        return FutureBuilder<Map<String, String>>(
+          future: fetchUsernames(userIds),
+          builder: (context, futureSnapshot) {
+            if (futureSnapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (futureSnapshot.hasError) {
+              return _buildMessage(
+                'Error loading user data: ${futureSnapshot.error}',
               );
             }
+
+            final usernames = futureSnapshot.data ?? {};
+
+            return ListView.builder(
+              itemCount: steps.length,
+              itemBuilder: (context, index) {
+                final doc = steps[index];
+                final data = doc.data() as Map<String, dynamic>;
+
+                final title = (data['name'] as String?)?.isNotEmpty == true
+                    ? data['name'] as String
+                    : (data['stepId'] as String?) ?? 'No Title';
+
+                final description =
+                    (data['description'] as String?)?.isNotEmpty == true
+                    ? data['description'] as String
+                    : 'No Description';
+
+                final userId = data['user'] as String? ?? '';
+                final username = usernames[userId] ?? 'Unknown User';
+
+                return _buildStepCard(
+                  title,
+                  description,
+                  onTap: () {
+                    if (context.mounted) {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => StepDetailPage(
+                            step: {
+                              'stepId': doc.id,
+                              'name': title,
+                              'user': username,
+                              'description': description,
+                            },
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                );
+              },
+            );
           },
         );
       },

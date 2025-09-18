@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'scanning_page.dart';
 import '../utils.dart';
 
-// Definizione della pagina come StatefulWidget per gestire lo stato del form
 class AddScanPage extends StatefulWidget {
   const AddScanPage({super.key});
 
@@ -11,83 +10,78 @@ class AddScanPage extends StatefulWidget {
   State<AddScanPage> createState() => _AddScanPageState();
 }
 
-// Stato della pagina
 class _AddScanPageState extends State<AddScanPage> {
-  // Chiave globale per validare il form
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
-
-  // Controller per il campo 'name'
   final TextEditingController _nameCtrl = TextEditingController();
 
-  // Variabili per lo step
   String? _selectedStepId;
   String? _selectedStepName;
   Stream<QuerySnapshot>? _stepsStream;
-  bool _saving = false;
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    // Inizializza il listener per recuperare gli step da Firestore
     _stepsStream = FirebaseFirestore.instance.collection('steps').snapshots();
   }
 
-  // Libera la memoria dei controller
   @override
   void dispose() {
     _nameCtrl.dispose();
     super.dispose();
   }
 
-  // Helper per lo stile del campo di testo
-  InputDecoration _decoration(String hint) {
+  InputDecoration _inputDecoration(String hint) {
     return InputDecoration(
       hintText: hint,
       filled: true,
-      fillColor: AppColors.cardBackground,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      fillColor: AppColors.textFieldBackground,
+      hintStyle: const TextStyle(color: AppColors.textHint),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0x33FFFFFF)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0x33FFFFFF)),
+        borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: Color(0x66FFFFFF)),
+        borderSide: const BorderSide(color: AppColors.primary),
       ),
-      hintStyle: const TextStyle(color: AppColors.textSecondary),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.error),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppColors.error),
+      ),
+      errorStyle: const TextStyle(
+        color: AppColors.error,
+        fontWeight: FontWeight.bold,
+      ),
     );
   }
 
-  // Funzione per mostrare un messaggio di stato
-  Widget _buildMessage(String message) {
-    return Center(
-      child: Text(
-        message,
-        style: const TextStyle(color: AppColors.textPrimary),
-        textAlign: TextAlign.center,
-      ),
-    );
-  }
-
-  // Funzione per gestire il salvataggio dei dati e navigare
   Future<void> _onStartScanning() async {
-    if (!(_formKey.currentState?.validate() ?? false) ||
-        _selectedStepId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please select a step and fill the name field.'),
-        ),
-      );
-      return;
-    }
+    if (_formKey.currentState?.validate() ?? false) {
+      if (_selectedStepId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Please select a step.',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+        return;
+      }
 
-    setState(() => _saving = true);
+      setState(() => _isSaving = true);
 
-    try {
       final payload = {
         'name': _nameCtrl.text.trim(),
         'stepId': _selectedStepId,
@@ -95,19 +89,16 @@ class _AddScanPageState extends State<AddScanPage> {
       };
 
       if (!mounted) return;
+      await Future.delayed(Duration(milliseconds: 500));
+      if (!mounted) return;
 
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (context) => LidarScannerScreen(payload: payload),
         ),
       );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
-    } finally {
-      if (mounted) setState(() => _saving = false);
+
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -120,7 +111,7 @@ class _AddScanPageState extends State<AddScanPage> {
         shadowColor: AppColors.cardBackground,
         foregroundColor: AppColors.textPrimary,
         centerTitle: true,
-        elevation: 0.5,
+        elevation: 0,
         title: const Text('New Scan'),
       ),
       body: SafeArea(
@@ -130,11 +121,11 @@ class _AddScanPageState extends State<AddScanPage> {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
             children: [
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
                   color: AppColors.cardBackground,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.white),
+                  border: Border.all(color: AppColors.boxborder),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,33 +139,30 @@ class _AddScanPageState extends State<AddScanPage> {
                       ),
                     ),
                     const SizedBox(height: 20),
-
-                    // Campo per il nome
-                    Text(
+                    const Text(
                       'Name',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.w700,
-                        fontSize: 18,
+                        fontSize: 16,
                       ),
                     ),
                     const SizedBox(height: 6),
                     TextFormField(
                       controller: _nameCtrl,
                       style: const TextStyle(color: AppColors.textPrimary),
-                      decoration: _decoration('Enter name'),
+                      cursorColor: AppColors.primary,
+                      decoration: _inputDecoration('Enter scan name'),
                       validator: (v) =>
                           (v == null || v.trim().isEmpty) ? 'Required' : null,
                     ),
-                    const SizedBox(height: 14),
-
-                    // Campo a discesa per lo step
-                    Text(
+                    const SizedBox(height: 20),
+                    const Text(
                       'Step',
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: AppColors.textPrimary,
                         fontWeight: FontWeight.w700,
-                        fontSize: 18,
+                        fontSize: 16,
                       ),
                     ),
                     const SizedBox(height: 6),
@@ -184,23 +172,34 @@ class _AddScanPageState extends State<AddScanPage> {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return const Center(
-                            child: CircularProgressIndicator(),
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                AppColors.primary,
+                              ),
+                            ),
                           );
                         }
                         if (snapshot.hasError) {
-                          return _buildMessage('Error loading steps');
+                          return Text(
+                            'Error loading steps: ${snapshot.error}',
+                            style: const TextStyle(color: AppColors.error),
+                            textAlign: TextAlign.center,
+                          );
                         }
                         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                          return _buildMessage('No steps available');
+                          return const Text(
+                            'No steps available. Please use the web app to add them.',
+                            style: TextStyle(color: AppColors.textPrimary),
+                            textAlign: TextAlign.center,
+                          );
                         }
 
                         final steps = snapshot.data!.docs;
 
                         return DropdownButtonFormField<String>(
-                          initialValue: _selectedStepId,
                           style: const TextStyle(color: AppColors.textPrimary),
                           dropdownColor: AppColors.cardBackground,
-                          decoration: _decoration('Select a step'),
+                          decoration: _inputDecoration('Select a step'),
                           icon: const Icon(
                             Icons.arrow_drop_down_rounded,
                             color: AppColors.textPrimary,
@@ -240,36 +239,10 @@ class _AddScanPageState extends State<AddScanPage> {
                 ),
               ),
               const SizedBox(height: 24),
-              SizedBox(
-                height: 56,
-                child: FilledButton(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    textStyle: const TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                    ),
-                  ),
-                  onPressed: _saving ? null : _onStartScanning,
-                  child: _saving
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.camera_alt_rounded),
-                            SizedBox(width: 8),
-                            Text('Start Scanning'),
-                          ],
-                        ),
-                ),
+              buildButton(
+                _isSaving ? 'STARTING...' : 'START SCANNING',
+                onPressed: _isSaving ? () {} : _onStartScanning,
+                icon: Icons.camera_alt_rounded,
               ),
             ],
           ),

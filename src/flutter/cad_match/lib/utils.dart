@@ -1,20 +1,45 @@
 import 'package:flutter/material.dart';
-
 class AppColors {
-  static const Color primary = Color(0xFFFF7C00);
-  static const Color backgroundColor = black;
-  static const Color white = Colors.white;
-  static const Color black = Colors.black;
-  static const Color textPrimary = white;
-  static const Color textSecondary = Color(0xFF6B7582);
-  static const Color textHint = Color(0x89FFFFFF);
-  static const Color red = Color(0xFFD94451);
-  static const Color green = Color(0xFF03A411);
-  static const Color textFieldBackground = Color(0xFF212121);
-  static const Color unselected = Color(0xB3FFFFFF);
-  static const Color tileBackground = Color(0xFF424242);
-  static const Color yellow = Color(0xFFFFDB3B);
-  static const Color cardBackground = Color(0xFF1E1E1E);
+  static const Color primary = Color(
+    0xFF306BAC,
+  ); 
+  static const Color secondary = Color(
+    0xFF6F9CEB,
+  ); 
+
+  static const Color backgroundColor = Color(
+    0xFF000807,
+  ); 
+  static const Color cardBackground = Color(
+    0xFF1F1F1F,
+  );
+  static const Color textFieldBackground = Color(
+    0xFF2C2C2C,
+  );
+
+  static const Color textPrimary = Color(
+    0xFFE0E0E0,
+  ); 
+  static const Color textSecondary = Color(
+    0xFFB0B0B0,
+  );
+  static const Color textHint = Color(
+    0xFF757575,
+  ); 
+
+  static const Color unselected = Color(
+    0xFF424242,
+  ); 
+
+  static const Color error = Color(
+    0xFFD94451,
+  ); 
+  static const Color success = Color(
+    0xFF03A411,
+  ); 
+  static const Color warning = Color(0xFFFFDB3B); 
+  static const Color boxborder = Color(
+    0x1AE0E0E0);
 }
 
 Widget buildHeader(String title) {
@@ -32,8 +57,11 @@ Widget buildHeader(String title) {
 }
 
 // funzione per costruire un campo di dettaglio in modo coerente
-Widget cardField(String label, String value) {
-  return Column(
+Widget cardField(String label, String value, IconData? icon) {
+  return Row (children: [
+  Icon( icon ?? Icons.chevron_right, color: AppColors.secondary, size: 16),
+  const SizedBox(width: 15),  
+  Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
@@ -54,13 +82,14 @@ Widget cardField(String label, String value) {
         ),
       ),
     ],
-  );
+  )]);
 }
 
 Widget buildButton(
   String title, {
   required VoidCallback onPressed,
   Color? color,
+  IconData? icon,
 }) {
   return SizedBox(
     width: 300,
@@ -68,13 +97,22 @@ Widget buildButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor: color ?? AppColors.primary,
-        foregroundColor: AppColors.white,
+        foregroundColor: AppColors.textPrimary,
         padding: const EdgeInsets.symmetric(vertical: 16),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
-      child: Text(
-        title,
-        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, color: AppColors.textPrimary),
+            const SizedBox(width: 8),
+          ],
+          Text(
+            title,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ],
       ),
     ),
   );
@@ -115,7 +153,8 @@ Future<void> showConfirmationDialog(
           style: TextStyle(color: AppColors.textPrimary),
         ),
         content: Text(message, style: TextStyle(color: AppColors.textHint)),
-        backgroundColor: AppColors.tileBackground,
+        backgroundColor: AppColors.cardBackground,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         actions: <Widget>[
           TextButton(
             onPressed: () {
@@ -125,7 +164,7 @@ Future<void> showConfirmationDialog(
             child: Text(cancelText),
           ),
           TextButton(
-            style: TextButton.styleFrom(foregroundColor: AppColors.red),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
             child: Text(confirmText),
             onPressed: () async {
               try {
@@ -138,7 +177,7 @@ Future<void> showConfirmationDialog(
                         'Successfully deleted!',
                         style: TextStyle(color: AppColors.textPrimary),
                       ),
-                      backgroundColor: AppColors.green,
+                      backgroundColor: AppColors.success,
                     ),
                   );
                   Navigator.of(dialogContext).pop(); // Chiude il dialogo
@@ -153,7 +192,7 @@ Future<void> showConfirmationDialog(
                         'Failed to delete: $e',
                         style: TextStyle(color: AppColors.textPrimary),
                       ),
-                      backgroundColor: AppColors.red,
+                      backgroundColor: AppColors.error,
                     ),
                   );
                   Navigator.of(dialogContext).pop();

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'ply_viewer_page.dart';
 import '../utils.dart';
 
-// Widget stateless per la pagina dei dettagli
+// Widget stateless per la pagina dei dettagli statistici
 class StatisticDetailPage extends StatelessWidget {
   final Map<String, dynamic> stats;
 
@@ -30,90 +30,104 @@ class StatisticDetailPage extends StatelessWidget {
       backgroundColor: bg,
       appBar: AppBar(
         backgroundColor: bg,
-        shadowColor: cardColor,
         foregroundColor: AppColors.textPrimary,
         centerTitle: true,
-        elevation: 0.5,
+        elevation: 0,
         title: const Text('Statistic Details'),
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.white),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _v(stats['name']),
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: cardColor,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.boxborder),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _v(stats['name']),
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 24,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'ID: ${_v(stats['scanId'])}',
+                            style: const TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          const Divider(color: AppColors.boxborder),
+                          const SizedBox(height: 10),
+                          cardField(
+                            'Accuracy',
+                            _f(stats['accuracy'], 2, '%'),
+                            Icons.speed_rounded,
+                          ),
+                          const SizedBox(height: 10),
+                          const Divider(color: AppColors.boxborder),
+                          const SizedBox(height: 10),
+                          cardField(
+                            'Average deviation',
+                            _f(stats['avg_deviation'], 3, 'mm'),
+                            Icons.analytics_rounded,
+                          ),
+                          const SizedBox(height: 10),
+                          const Divider(color: AppColors.boxborder),
+                          const SizedBox(height: 10),
+                          cardField(
+                            'Minimum deviation',
+                            _f(stats['min_deviation'], 3, 'mm'),
+                            Icons.arrow_circle_down_rounded,
+                          ),
+                          const SizedBox(height: 10),
+                          const Divider(color: AppColors.boxborder),
+                          const SizedBox(height: 10),
+                          cardField(
+                            'Maximum deviation',
+                            _f(stats['max_deviation'], 3, 'mm'),
+                            Icons.arrow_circle_up_rounded,
+                          ),
+                          const SizedBox(height: 10),
+                          const Divider(color: AppColors.boxborder),
+                          const SizedBox(height: 10),
+                          cardField(
+                            'Standard deviation',
+                            _f(stats['std_deviation'], 3, 'mm'),
+                            Icons.stacked_line_chart_rounded,
+                          ),
+                          const SizedBox(height: 10),
+                          const Divider(color: AppColors.boxborder),
+                          const SizedBox(height: 10),
+                          cardField(
+                            'Percentage of points within tolerance',
+                            _f(stats['ppwt'], 2, '%'),
+                            Icons.check_circle_outline_rounded,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'ID: ${_v(stats['scanId'])}',
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  cardField('Accuracy', _f(stats['accuracy'], 2, '%')),
-                  const SizedBox(height: 20),
-                  cardField(
-                    'Average deviation',
-                    _f(stats['avg_deviation'], 3, 'mm'),
-                  ),
-                  const SizedBox(height: 20),
-                  cardField(
-                    'Minimum deviation',
-                    _f(stats['min_deviation'], 3, 'mm'),
-                  ),
-                  const SizedBox(height: 20),
-                  cardField(
-                    'Maximum deviation',
-                    _f(stats['max_deviation'], 3, 'mm'),
-                  ),
-                  const SizedBox(height: 20),
-                  cardField(
-                    'Standard deviation',
-                    _f(stats['std_deviation'], 3, 'mm'),
-                  ),
-                  const SizedBox(height: 20),
-                  cardField(
-                    'Percentage of points within tolerance',
-                    _f(stats['ppwt'], 2, '%'),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              // --- BOTTONE MODIFICATO ---
-              child: ElevatedButton.icon(
-                icon: const Icon(Icons.view_in_ar_rounded),
-                label: const Text(
-                  'VIEW 3D COMPARISON',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
+              const SizedBox(height: 20),
+              buildButton(
+                'VIEW 3D COMPARISON',
+                icon: Icons.view_in_ar_rounded,
                 onPressed: () {
                   final scanId = stats['scanId'];
                   if (scanId != null) {
@@ -125,16 +139,24 @@ class StatisticDetailPage extends StatelessWidget {
                     );
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Scan ID not available.'),
-                        backgroundColor: Colors.red,
+                      SnackBar(
+                        content: Text(
+                          'Scan ID not available.',
+                          style: TextStyle(color: AppColors.textPrimary),
+                        ),
+                        backgroundColor: AppColors.error,
+                        behavior: SnackBarBehavior.floating,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
                       ),
                     );
                   }
                 },
               ),
-            ),
-          ],
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
