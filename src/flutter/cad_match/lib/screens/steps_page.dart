@@ -138,9 +138,7 @@ class _StepsPageState extends State<StepsPage> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-            ),
+            child: CircularProgressIndicator(color: AppColors.primary),
           );
         }
         if (snapshot.hasError) {
