@@ -10,6 +10,9 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
     private var eventSink: FlutterEventSink?
     private var lastPointsSent = CFAbsoluteTimeGetCurrent()
 
+    // Stato per controllare l'invio dei punti, non la sessione AR
+    private var isRecording = false
+
     init(frame: CGRect, viewId: Int64, messenger: FlutterBinaryMessenger, args: [String: Any]?) {
         self.sceneView = ARSCNView(frame: frame)
         self.methodChannel = FlutterMethodChannel(
@@ -23,7 +26,9 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
         self.sceneView.session.delegate = self
         self.sceneView.automaticallyUpdatesLighting = true
         self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints]
-        startSession()
+
+        // Avvia la sessione immediatamente per mostrare il feed della camera
+        configureAndRunSession()
     }
 
     func view() -> UIView { sceneView }
@@ -45,10 +50,12 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
     private func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch call.method {
         case "start":
-            startSession()
+            // Inizia solo la registrazione dei punti
+            isRecording = true
             result(nil)
         case "stop":
-            sceneView.session.pause()
+            // Ferma solo la registrazione dei punti, la sessione video continua
+            isRecording = false
             result(nil)
         case "reset":
             reset()
@@ -58,7 +65,7 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
         }
     }
 
-    private func startSession() {
+    private func configureAndRunSession() {
         #if targetEnvironment(simulator)
             print("LiDAR non disponibile sul simulatore.")
             return
@@ -83,12 +90,19 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
             }
         }
 
-        sceneView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
+        // Avvia la sessione senza metterla in pausa
+        sceneView.session.run(config)
     }
 
     private func reset() {
+        // Ferma la registrazione e pulisce la scena
+        isRecording = false
         sceneView.scene.rootNode.childNodes.forEach { $0.removeFromParentNode() }
-        startSession()
+
+        if let config = sceneView.session.configuration {
+            // Riavvia la sessione per resettare il tracking
+            sceneView.session.run(config, options: [.resetTracking, .removeExistingAnchors])
+        }
     }
 
     // Throttle ~10 Hz
@@ -102,7 +116,8 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
     }
 
     private func sendPointCloud(from frame: ARFrame) {
-        guard let sink = eventSink, shouldSendNow() else { return }
+        // Invia i punti solo se la registrazione è attiva
+        guard let sink = eventSink, isRecording, shouldSendNow() else { return }
 
         let depth: ARDepthData?
         if #available(iOS 14.0, *) {
@@ -156,6 +171,7 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
 
 extension LidarPlatformView: ARSCNViewDelegate, ARSessionDelegate {
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        // Questo metodo viene sempre chiamato, ma l'invio dei punti è controllato da `isRecording`
         sendPointCloud(from: frame)
     }
 }

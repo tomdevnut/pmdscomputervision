@@ -17,12 +17,12 @@ class LidarScannerScreen extends StatefulWidget {
 class _LidarScannerScreenState extends State<LidarScannerScreen> {
   final scannedPoints = <vector.Vector3>[];
   bool isScanning = false;
-  String? scanStatus = 'Pronto per la scansione';
-  final int recommendedPoints = 15000; // consigliato per oggetti grandi
-  final int minPointsToSave = 1500; // minimo per salvare qualcosa di utile
+  String? scanStatus = 'Ready to scan';
+  final int recommendedPoints = 15000; // recommended for large objects
+  final int minPointsToSave = 1500; // minimum to save something useful
   double minPointDistance = 0.01; // 1 cm
   double maxScanDistance =
-      6.0; // 6 m (LiDAR arriva fino a ~5m, lasciamo margine)
+      6.0; // 6 m (LiDAR reaches up to ~5m, let's leave a margin)
   Timer? uiTick;
   final _lidarKey = GlobalKey<LidarViewState>();
   DateTime? _lastPointsAt;
@@ -33,7 +33,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
     uiTick = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
       setState(() {
-        // aggiorna stato warning / progress
+        // update warning / progress status
       });
     });
   }
@@ -56,11 +56,8 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
       }
     }
 
-    if (scannedPoints.length % 500 == 0) {
-      setState(
-        () =>
-            scanStatus = 'Scansione in corso... ${scannedPoints.length} punti',
-      );
+    if (scannedPoints.length % 50 == 0) {
+      setState(() => scanStatus = 'Scanning... ${scannedPoints.length} points');
     }
   }
 
@@ -68,11 +65,10 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
     setState(() {
       isScanning = !isScanning;
       if (isScanning) {
-        scanStatus =
-            'Scansione in corso... Muoviti lentamente attorno al pezzo';
+        scanStatus = 'Scanning... Move slowly around the part';
         _lidarKey.currentState?.start();
       } else {
-        scanStatus = 'Scansione in pausa - ${scannedPoints.length} punti';
+        scanStatus = 'Scan paused - ${scannedPoints.length} points';
         _lidarKey.currentState?.stop();
       }
     });
@@ -82,7 +78,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
     setState(() {
       isScanning = false;
       scannedPoints.clear();
-      scanStatus = 'Pronto per la scansione';
+      scanStatus = 'Ready to scan';
       _lastPointsAt = null;
     });
     _lidarKey.currentState?.reset();
@@ -93,7 +89,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Servono almeno $minPointsToSave punti per un risultato decente',
+            'At least $minPointsToSave points are needed for a decent result',
           ),
         ),
       );
@@ -123,7 +119,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
         foregroundColor: AppColors.textPrimary,
         centerTitle: true,
         elevation: 0,
-        title: Text(widget.payload['name'] ?? 'Nuova scansione'),
+        title: Text(widget.payload['name'] ?? 'New Scan'),
       ),
       body: Stack(
         children: [
@@ -161,7 +157,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  scanStatus ?? 'Pronto per la scansione',
+                  scanStatus ?? 'Ready to scan',
                   style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 16,
@@ -172,26 +168,26 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
 
                 const SizedBox(height: 8),
 
-                // Prima di iniziare: mostra suggerimenti
+                // Before starting: show tips
                 if (!isScanning) ...[
                   const Text(
-                    'Suggerimenti per pezzi grandi:\n'
-                    '• Mantieni 0.5–2.5 m dal pezzo.\n'
-                    '• Muoviti lentamente e copri tutto il perimetro.',
+                    'Tips for large parts:\n'
+                    '• Keep 0.5–2.5 m from the part.\n'
+                    '• Move slowly and cover the entire perimeter.',
                     style: TextStyle(color: Colors.white70, fontSize: 13),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 10),
                   Text(
-                    'Obiettivo: $recommendedPoints punti (consigliati)',
+                    'Goal: $recommendedPoints points (recommended)',
                     style: const TextStyle(color: Colors.white, fontSize: 14),
                   ),
                 ],
 
-                // Durante la scansione: mostra solo contatore + progress
+                // During scanning: show only counter + progress
                 if (isScanning) ...[
                   Text(
-                    'Punti: ${scannedPoints.length} / $recommendedPoints',
+                    'Points: ${scannedPoints.length} / $recommendedPoints',
                     style: const TextStyle(color: Colors.white, fontSize: 14),
                   ),
                 ],
@@ -204,7 +200,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
                   valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                 ),
 
-                // Warning "nessun punto" con testo che va a capo (niente overflow)
+                // Warning "no points" with text wrapping (no overflow)
                 if (_noPointsRecently) ...[
                   const SizedBox(height: 10),
                   Row(
@@ -218,7 +214,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
                       SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          'Nessun punto dal LiDAR. Avvicinati al pezzo o muovi lentamente.',
+                          'No points from LiDAR. Get closer to the part or move slowly.',
                           style: TextStyle(
                             color: Colors.orangeAccent,
                             fontSize: 13,
@@ -234,7 +230,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
             ),
           ),
 
-          // Suggerimenti aggiuntivi: mostra SOLO prima di iniziare
+          // Additional tips: show ONLY before starting
           if (!isScanning)
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 32),
@@ -244,13 +240,13 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
                 borderRadius: BorderRadius.circular(8),
               ),
               child: const Text(
-                'Copri tutte le superfici, specialmente i bordi.\nEvita movimenti bruschi.',
+                'Cover all surfaces, especially the edges.\nAvoid sudden movements.',
                 style: TextStyle(color: Colors.white, fontSize: 14),
                 textAlign: TextAlign.center,
               ),
             ),
 
-          // Controlli
+          // Controls
           Container(
             padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
             child: Row(
@@ -267,7 +263,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
                   onPressed: scannedPoints.length >= minPointsToSave
                       ? _onSaveScan
                       : null,
-                  label: 'Salva',
+                  label: 'Save',
                 ),
               ],
             ),
@@ -286,7 +282,10 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: Colors.white,
-          border: Border.all(color: AppColors.textPrimary.withAlpha(128), width: 5),
+          border: Border.all(
+            color: AppColors.textPrimary.withAlpha(128),
+            width: 5,
+          ),
         ),
         child: Center(
           child: AnimatedContainer(
