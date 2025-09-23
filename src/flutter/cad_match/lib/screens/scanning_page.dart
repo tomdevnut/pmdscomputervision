@@ -208,7 +208,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
                     children: const [
                       Icon(
                         Icons.warning_amber_rounded,
-                        color: Colors.orange,
+                        color: AppColors.warning,
                         size: 18,
                       ),
                       SizedBox(width: 6),
@@ -216,7 +216,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
                         child: Text(
                           'No points from LiDAR. Get closer to the part or move slowly.',
                           style: TextStyle(
-                            color: Colors.orangeAccent,
+                            color: AppColors.warning,
                             fontSize: 13,
                           ),
                           textAlign: TextAlign.center,
