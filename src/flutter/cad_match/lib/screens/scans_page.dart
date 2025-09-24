@@ -224,9 +224,9 @@ class _ScansPageState extends State<ScansPage> {
         stream: _scansStream,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(
-              color: AppColors.primary,
-            ));
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            );
           }
           if (snapshot.hasError) {
             return Center(
@@ -269,7 +269,9 @@ class _ScansPageState extends State<ScansPage> {
             ]).then((results) => {'users': results[0], 'steps': results[1]}),
             builder: (context, futureSnapshot) {
               if (futureSnapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                );
               }
               if (futureSnapshot.hasError) {
                 return Center(

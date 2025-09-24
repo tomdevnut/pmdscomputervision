@@ -53,9 +53,8 @@ class _PlyViewerPageState extends State<PlyViewerPage> {
         future: _plyUrlFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator(
-              color: AppColors.primary,
-            )
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
             );
           }
           if (snapshot.hasError || !snapshot.hasData) {
@@ -110,7 +109,10 @@ class _PlyViewerState extends State<PlyViewer> {
             }
           },
         ),
-        if (_isNativeLoading) const Center(child: CircularProgressIndicator()),
+        if (_isNativeLoading)
+          const Center(
+            child: CircularProgressIndicator(color: AppColors.primary),
+          ),
       ],
     );
   }

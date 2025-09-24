@@ -39,7 +39,9 @@ class _SingleUserPageState extends State<SingleUserPage> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             backgroundColor: AppColors.backgroundColor,
-            body: Center(child: CircularProgressIndicator()),
+            body: Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
           );
         }
 
@@ -61,11 +63,15 @@ class _SingleUserPageState extends State<SingleUserPage> {
 
         final userData = userDoc.data() as Map<String, dynamic>;
         final userName = userData['name'] ?? 'N/A';
-        final userSurname = userData['surname'] +
-                (widget.userId == user?.uid ? ' (you)' : '') ?? 'N/A';
+        final userSurname =
+            userData['surname'] +
+                (widget.userId == user?.uid ? ' (you)' : '') ??
+            'N/A';
         final isEnabled = userData['enabled'] ?? false;
         final userLevel = userData['level'] ?? 0;
-        final userEmail = widget.userId == user?.uid ? user?.email ?? 'Email not available' : (userData['email'] ?? 'N/A');
+        final userEmail = widget.userId == user?.uid
+            ? user?.email ?? 'Email not available'
+            : (userData['email'] ?? 'N/A');
 
         return Scaffold(
           backgroundColor: AppColors.backgroundColor,
@@ -351,22 +357,26 @@ class _SingleUserPageState extends State<SingleUserPage> {
           ),
         if (canDeleteOrDisable) const SizedBox(width: 30),
         // Pulsante per modificare la password
-        if (canDeleteOrDisable) buildButton(
-          label: 'Change user\'s password',
-          icon: Icons.lock,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => ChangePassword(userId: widget.userId)),
-            );
-          },
-        ),
+        if (canDeleteOrDisable)
+          buildButton(
+            label: 'Change user\'s password',
+            icon: Icons.lock,
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChangePassword(userId: widget.userId),
+                ),
+              );
+            },
+          ),
         if (canDeleteOrDisable) const SizedBox(width: 30),
-        if (canDeleteOrDisable) buildButton(
-          label: 'Delete user',
-          icon: Icons.delete,
-          backgroundColor: AppColors.red,
-          onTap: () {
+        if (canDeleteOrDisable)
+          buildButton(
+            label: 'Delete user',
+            icon: Icons.delete,
+            backgroundColor: AppColors.red,
+            onTap: () {
               showConfirmationDialog(
                 context: context,
                 message:

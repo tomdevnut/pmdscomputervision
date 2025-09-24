@@ -229,7 +229,11 @@ class _SingleScanState extends State<SingleScan> {
                 future: _scanDataFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppColors.primary,
+                      ),
+                    );
                   } else if (snapshot.hasError) {
                     return Center(child: Text('Error: ${snapshot.error}'));
                   } else if (snapshot.hasData && snapshot.data!.exists) {
@@ -249,7 +253,8 @@ class _SingleScanState extends State<SingleScan> {
                             label: 'Date',
                             value: data['timestamp'] != null
                                 ? DateFormat('yyyy-MM-dd, HH:mm').format(
-                                    (data['timestamp'] as Timestamp).toDate())
+                                    (data['timestamp'] as Timestamp).toDate(),
+                                  )
                                 : 'N/A',
                             icon: Icons.calendar_today,
                           ),

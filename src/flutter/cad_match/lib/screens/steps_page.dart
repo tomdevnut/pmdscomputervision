@@ -160,7 +160,9 @@ class _StepsPageState extends State<StepsPage> {
           future: fetchUsernames(userIds),
           builder: (context, futureSnapshot) {
             if (futureSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              );
             }
             if (futureSnapshot.hasError) {
               return _buildMessage(

@@ -85,7 +85,9 @@ class _StatisticsState extends State<Statistics> {
             future: _scanDataFuture,
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                );
               }
               if (snapshot.hasError) {
                 return Center(child: Text('Error: ${snapshot.error}'));
@@ -165,8 +167,7 @@ class _StatisticsState extends State<Statistics> {
                                   buildInfoField(
                                     label:
                                         'Percentage of Points within Tolerance',
-                                    value:
-                                        '${(statistics['ppwt'] ?? 'N/A')}',
+                                    value: '${(statistics['ppwt'] ?? 'N/A')}',
                                     icon: Icons.percent,
                                   ),
                                 ],
@@ -193,13 +194,15 @@ class _StatisticsState extends State<Statistics> {
                             const SizedBox(height: 24),
                             buildInfoField(
                               label: 'Maximum Deviation',
-                              value: '${(statistics['max_deviation'] ?? 'N/A')}',
+                              value:
+                                  '${(statistics['max_deviation'] ?? 'N/A')}',
                               icon: Icons.arrow_circle_up,
                             ),
                             const SizedBox(height: 24),
                             buildInfoField(
                               label: 'Minimum Deviation',
-                              value: '${(statistics['min_deviation'] ?? 'N/A')}',
+                              value:
+                                  '${(statistics['min_deviation'] ?? 'N/A')}',
                               icon: Icons.arrow_circle_down,
                             ),
                             const SizedBox(height: 24),
@@ -212,8 +215,7 @@ class _StatisticsState extends State<Statistics> {
                             const SizedBox(height: 24),
                             buildInfoField(
                               label: 'Percentage of Points within Tolerance',
-                              value:
-                                  '${(statistics['ppwt'] ?? 'N/A')}',
+                              value: '${(statistics['ppwt'] ?? 'N/A')}',
                               icon: Icons.percent,
                             ),
                           ],
@@ -241,7 +243,8 @@ class _StatisticsState extends State<Statistics> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => ThreeViewerPage(id: widget.scanid),
+                              builder: (context) =>
+                                  ThreeViewerPage(id: widget.scanid),
                             ),
                           );
                         },

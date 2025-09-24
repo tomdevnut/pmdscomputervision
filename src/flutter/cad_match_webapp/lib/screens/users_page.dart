@@ -94,7 +94,7 @@ class _UsersPageState extends State<UsersPage> {
             stream: _usersCollection.snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(child: ());
               }
 
               if (snapshot.hasError) {
@@ -137,9 +137,8 @@ class _UsersPageState extends State<UsersPage> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => SingleUserPage(
-                              userId: userDoc.id,
-                            ),
+                            builder: (context) =>
+                                SingleUserPage(userId: userDoc.id),
                           ),
                         );
                       },

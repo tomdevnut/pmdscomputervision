@@ -7,6 +7,7 @@ import 'firebase_options.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'screens/main_page.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import '../utils.dart';
 
 const String kSaveFcmTokenUrl =
     'https://save-fcm-token-5ja5umnfkq-ey.a.run.app';
@@ -79,7 +80,9 @@ class MyApp extends StatelessWidget {
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(
-              body: Center(child: CircularProgressIndicator()),
+              body: Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
             );
           }
           if (snapshot.hasData) {

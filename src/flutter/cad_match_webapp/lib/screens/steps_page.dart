@@ -61,7 +61,9 @@ class _StepsPageState extends State<StepsPage> {
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                );
               }
 
               if (snapshot.hasError) {
@@ -87,16 +89,17 @@ class _StepsPageState extends State<StepsPage> {
 
                   return buildListItem(
                     title: title,
-                    subtitle: _truncateDescription(
-                      description,
-                    ),
+                    subtitle: _truncateDescription(description),
                     icon: Icons.file_copy_rounded,
                     hasArrow: true,
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => SingleStep(stepId: stepDoc.id, userlevel: widget.level),
+                          builder: (context) => SingleStep(
+                            stepId: stepDoc.id,
+                            userlevel: widget.level,
+                          ),
                         ),
                       );
                     },

@@ -57,7 +57,9 @@ class ScansPage extends StatelessWidget {
             builder: (context, snapshot) {
               // Se la connessione non è attiva, mostra un indicatore di caricamento.
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return const Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                );
               }
 
               // Se c'è un errore nella query, mostra un messaggio di errore.
@@ -104,13 +106,15 @@ class ScansPage extends StatelessWidget {
                       subtitle: subtitle,
                       icon: status == 2
                           ? Icons.check_circle
-                          : (status == -1 ? Icons.error : status == 1 ? Icons.hourglass_top_rounded : Icons.cloud_done),
+                          : (status == -1
+                                ? Icons.error
+                                : status == 1
+                                ? Icons.hourglass_top_rounded
+                                : Icons.cloud_done),
                       hasArrow: true,
                       iconColor: status == 2
                           ? AppColors.green
-                          : (status == -1
-                              ? AppColors.red
-                              : (AppColors.yellow)),
+                          : (status == -1 ? AppColors.red : (AppColors.yellow)),
                       onTap: () {
                         Navigator.push(
                           context,
