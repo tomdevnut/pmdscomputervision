@@ -5,7 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-const String kCleanScansUrl ='https://clean-scans-5ja5umnfkq-ey.a.run.app';
+const String kCleanScansUrl = 'https://clean-scans-5ja5umnfkq-ey.a.run.app';
 
 class SettingsPage extends StatefulWidget {
   final int level;
@@ -125,7 +125,16 @@ class _SettingsPageState extends State<SettingsPage> {
             icon: Icons.delete_forever,
             hasArrow: false,
             iconColor: AppColors.red,
-            onTap: _cleanScans,
+            onTap: () {
+              showConfirmationDialog(
+                context: context,
+                onConfirm: () {
+                  _cleanScans();
+                },
+                message:
+                    'Are you sure you want to delete all scans? This action cannot be undone.',
+              );
+            },
           ),
         if (widget.level > 0) const SizedBox(height: 12),
         buildListItem(
