@@ -48,17 +48,11 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
     if (!isScanning) return;
     _lastPointsAt = DateTime.now();
 
-    for (final p in pts) {
-      // Niente filtro su distanza dal mondo: nativo ha già filtrato d ∈ (0, 8]
-      if (scannedPoints.isEmpty ||
-          scannedPoints.last.distanceTo(p) >= minPointDistance) {
-        scannedPoints.add(p);
-      }
-    }
+    scannedPoints.addAll(pts);
 
-    if (scannedPoints.length % 50 == 0) {
-      setState(() => scanStatus = 'Scanning... ${scannedPoints.length} points');
-    }
+    setState(() {
+      scanStatus = 'Scanning... ${scannedPoints.length} points';
+    });
   }
 
   void toggleScanning() {

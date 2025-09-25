@@ -3,6 +3,17 @@ import Flutter
 import Foundation
 import SceneKit
 
+// TO REMOVE: Debug label per mostrare lo stato della registrazione
+private let debugLabel: UILabel = {
+    let label = UILabel()
+    label.font = .systemFont(ofSize: 12)
+    label.numberOfLines = 0
+    label.backgroundColor = UIColor.black.withAlphaComponent(0.6)
+    label.textColor = .white
+    label.translatesAutoresizingMaskIntoConstraints = false
+    return label
+}()
+
 class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
     private let sceneView: ARSCNView
     private let methodChannel: FlutterMethodChannel
@@ -26,6 +37,16 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
         self.sceneView.session.delegate = self
         self.sceneView.automaticallyUpdatesLighting = true
         self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints]
+
+        // TO REMOVE: Debug label per mostrare lo stato della registrazione
+        self.sceneView.addSubview(debugLabel)
+        NSLayoutConstraint.activate([
+            debugLabel.leadingAnchor.constraint(equalTo: self.sceneView.leadingAnchor, constant: 8),
+            debugLabel.trailingAnchor.constraint(
+                equalTo: self.sceneView.trailingAnchor, constant: -8),
+            debugLabel.topAnchor.constraint(
+                equalTo: self.sceneView.safeAreaLayoutGuide.topAnchor, constant: 8),
+        ])
 
         // Avvia la sessione immediatamente per mostrare il feed della camera
         configureAndRunSession()
@@ -116,8 +137,16 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
     }
 
     private func sendPointCloud(from frame: ARFrame) {
+        // TO REMOVE: Debug label per mostrare lo stato della registrazione
+        var debugText = "isRecording: \(isRecording)\n"
+        debugText += "eventSink: \(eventSink != nil ? "Ready" : "Not Ready")\n"
+
         // Invia i punti solo se la registrazione è attiva
-        guard let sink = eventSink, isRecording, shouldSendNow() else { return }
+        guard let sink = eventSink, isRecording, shouldSendNow() else {
+            // TO REMOVE: Aggiorna la label di debug
+            DispatchQueue.main.async { debugLabel.text = debugText }
+            return
+        }
 
         let depth: ARDepthData?
         if #available(iOS 14.0, *) {
@@ -125,7 +154,12 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
         } else {
             depth = frame.sceneDepth
         }
-        guard let depthData = depth else { return }
+        guard let depthData = depth else {
+            // TO REMOVE: Aggiorna la label di debug
+            debugText += "Status: No depth data in this frame."
+            DispatchQueue.main.async { debugLabel.text = debugText }
+            return
+        }
 
         let depthMap = depthData.depthMap
         let width = CVPixelBufferGetWidth(depthMap)
@@ -163,9 +197,20 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
             }
         }
 
-        if out.isEmpty { return }
+        // TO REMOVE: Aggiorna la label di debug
+        debugText += "Points generated in this frame: \(out.count / 3)"
+
+        if out.isEmpty {
+            // TO REMOVE: Aggiorna la label di debug
+            debugText += "\nStatus: Generated 0 points. Check filters or distance."
+            DispatchQueue.main.async { debugLabel.text = debugText }
+            return
+        }
         let data = Data(bytes: out, count: out.count * MemoryLayout<Float32>.size)
         sink(FlutterStandardTypedData(float32: data))
+
+        debugText += "\nStatus: Sent \(out.count / 3) points to Flutter."
+        DispatchQueue.main.async { debugLabel.text = debugText }
     }
 }
 

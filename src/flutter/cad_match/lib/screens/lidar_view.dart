@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:typed_data';
+import 'dart:typed_data'; // <-- aggiungi questo
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
@@ -32,17 +32,32 @@ class LidarViewState extends State<LidarView> {
     final stream = EventChannel(
       'devnut.lidar/points_$id',
     ).receiveBroadcastStream();
+
     _sub = stream.listen((data) {
-      Uint8List bytes;
-      if (data is ByteData) {
-        bytes = data.buffer.asUint8List();
-      } else {
-        bytes = data as Uint8List;
+      try {
+        // Gestione corretta dei tipi dal canale
+        Float32List f32;
+        if (data is Float32List) {
+          f32 = data;
+        } else if (data is Uint8List) {
+          f32 = data.buffer.asFloat32List();
+        } else if (data is ByteData) {
+          f32 = data.buffer.asFloat32List();
+        } else {
+          if (kDebugMode) {
+            debugPrint('Unexpected lidar payload type: ${data.runtimeType}');
+          }
+          return;
+        }
+
+        final pts = _toVec3(f32);
+        if (pts.isNotEmpty) lastPointsAt = DateTime.now();
+        widget.onPoints(pts);
+      } catch (e, st) {
+        if (kDebugMode) {
+          debugPrint('Lidar decode error: $e\n$st');
+        }
       }
-      final f32 = bytes.buffer.asFloat32List();
-      final pts = _toVec3(f32);
-      if (pts.isNotEmpty) lastPointsAt = DateTime.now();
-      widget.onPoints(pts);
     });
   }
 
