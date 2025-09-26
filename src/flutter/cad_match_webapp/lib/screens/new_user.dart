@@ -341,7 +341,7 @@ class _NewUserState extends State<NewUser> {
   }
 
   Widget _buildLevelSelector() {
-    final levels = ['0', '1', '2'];
+    final levels = ['0', '1'];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

@@ -66,6 +66,9 @@ Widget buildInputField({
   TextEditingController? controller,
   bool obscureText = false,
   String? Function(String?)? validator,
+  TextInputType? keyboardType,
+  TextInputAction? textInputAction,
+  void Function(String)? onFieldSubmitted,
 }) {
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -100,6 +103,9 @@ Widget buildInputField({
         controller: controller,
         obscureText: obscureText,
         validator: validator,
+        keyboardType: keyboardType,
+        textInputAction: textInputAction,
+        onFieldSubmitted: onFieldSubmitted,
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: const TextStyle(
