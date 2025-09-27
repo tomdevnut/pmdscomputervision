@@ -1,18 +1,8 @@
 import ARKit
 import Flutter
 import Foundation
+import Metal
 import SceneKit
-
-// TO REMOVE: Debug label per mostrare lo stato della registrazione
-private let debugLabel: UILabel = {
-    let label = UILabel()
-    label.font = .systemFont(ofSize: 12)
-    label.numberOfLines = 0
-    label.backgroundColor = UIColor.black.withAlphaComponent(0.6)
-    label.textColor = .white
-    label.translatesAutoresizingMaskIntoConstraints = false
-    return label
-}()
 
 class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
     private let sceneView: ARSCNView
@@ -20,6 +10,7 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
     private let eventChannel: FlutterEventChannel
     private var eventSink: FlutterEventSink?
     private var lastPointsSent = CFAbsoluteTimeGetCurrent()
+    private var useSceneMesh = false
 
     // Stato per controllare l'invio dei punti, non la sessione AR
     private var isRecording = false
@@ -37,16 +28,6 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
         self.sceneView.session.delegate = self
         self.sceneView.automaticallyUpdatesLighting = true
         self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints]
-
-        // TO REMOVE: Debug label per mostrare lo stato della registrazione
-        self.sceneView.addSubview(debugLabel)
-        NSLayoutConstraint.activate([
-            debugLabel.leadingAnchor.constraint(equalTo: self.sceneView.leadingAnchor, constant: 8),
-            debugLabel.trailingAnchor.constraint(
-                equalTo: self.sceneView.trailingAnchor, constant: -8),
-            debugLabel.topAnchor.constraint(
-                equalTo: self.sceneView.safeAreaLayoutGuide.topAnchor, constant: 8),
-        ])
 
         // Avvia la sessione immediatamente per mostrare il feed della camera
         configureAndRunSession()
@@ -98,8 +79,12 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
 
         if ARWorldTrackingConfiguration.supportsSceneReconstruction(.meshWithClassification) {
             config.sceneReconstruction = .meshWithClassification
+            useSceneMesh = true
         } else if ARWorldTrackingConfiguration.supportsSceneReconstruction(.mesh) {
             config.sceneReconstruction = .mesh
+            useSceneMesh = true
+        } else {
+            useSceneMesh = false
         }
 
         if ARWorldTrackingConfiguration.supportsFrameSemantics(.sceneDepth) {
@@ -136,15 +121,43 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
         return false
     }
 
-    private func sendPointCloud(from frame: ARFrame) {
-        // TO REMOVE: Debug label per mostrare lo stato della registrazione
-        var debugText = "isRecording: \(isRecording)\n"
-        debugText += "eventSink: \(eventSink != nil ? "Ready" : "Not Ready")\n"
-
-        // Invia i punti solo se la registrazione è attiva
+    private func sendMeshPoints(from meshAnchor: ARMeshAnchor) {
         guard let sink = eventSink, isRecording, shouldSendNow() else {
-            // TO REMOVE: Aggiorna la label di debug
-            DispatchQueue.main.async { debugLabel.text = debugText }
+            return
+        }
+
+        let geometry = meshAnchor.geometry
+        let vertexCount = geometry.vertices.count
+        guard vertexCount > 0 else { return }
+
+        let vertexBuffer = geometry.vertices.buffer
+        let vertexStride = geometry.vertices.stride
+        let vertexOffset = geometry.vertices.offset
+        let transform = meshAnchor.transform
+
+        var out = [Float32]()
+        out.reserveCapacity(vertexCount * 3)
+
+        let baseAddress = vertexBuffer.contents().advanced(by: vertexOffset)
+        for index in 0..<vertexCount {
+            let pointer = baseAddress.advanced(by: index * vertexStride)
+            let vertex = pointer.assumingMemoryBound(to: simd_float3.self).pointee
+            let position = transform * simd_float4(vertex, 1.0)
+            out.append(position.x)
+            out.append(position.y)
+            out.append(position.z)
+        }
+
+        if out.isEmpty {
+            return
+        }
+        let data = Data(bytes: out, count: out.count * MemoryLayout<Float32>.size)
+        sink(FlutterStandardTypedData(float32: data))
+    }
+
+    private func sendPointCloud(from frame: ARFrame) {
+        // Invia i punti solo se la registrazione è attiva
+        guard !useSceneMesh, let sink = eventSink, isRecording, shouldSendNow() else {
             return
         }
 
@@ -155,9 +168,6 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
             depth = frame.sceneDepth
         }
         guard let depthData = depth else {
-            // TO REMOVE: Aggiorna la label di debug
-            debugText += "Status: No depth data in this frame."
-            DispatchQueue.main.async { debugLabel.text = debugText }
             return
         }
 
@@ -197,24 +207,33 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
             }
         }
 
-        // TO REMOVE: Aggiorna la label di debug
-        debugText += "Points generated in this frame: \(out.count / 3)"
-
         if out.isEmpty {
-            // TO REMOVE: Aggiorna la label di debug
-            debugText += "\nStatus: Generated 0 points. Check filters or distance."
-            DispatchQueue.main.async { debugLabel.text = debugText }
             return
         }
         let data = Data(bytes: out, count: out.count * MemoryLayout<Float32>.size)
         sink(FlutterStandardTypedData(float32: data))
-
-        debugText += "\nStatus: Sent \(out.count / 3) points to Flutter."
-        DispatchQueue.main.async { debugLabel.text = debugText }
     }
 }
 
 extension LidarPlatformView: ARSCNViewDelegate, ARSessionDelegate {
+    func session(_ session: ARSession, didAdd anchors: [ARAnchor]) {
+        guard useSceneMesh else { return }
+        for anchor in anchors {
+            if let meshAnchor = anchor as? ARMeshAnchor {
+                sendMeshPoints(from: meshAnchor)
+            }
+        }
+    }
+
+    func session(_ session: ARSession, didUpdate anchors: [ARAnchor]) {
+        guard useSceneMesh else { return }
+        for anchor in anchors {
+            if let meshAnchor = anchor as? ARMeshAnchor {
+                sendMeshPoints(from: meshAnchor)
+            }
+        }
+    }
+
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
         // Questo metodo viene sempre chiamato, ma l'invio dei punti è controllato da `isRecording`
         sendPointCloud(from: frame)
