@@ -87,24 +87,7 @@ def process_user_scan(event: storage_fn.CloudEvent) -> None:
     if not all([user_id, step_id, scan_name, timestamp]):
         print("Error: Essential metadata is missing. Cannot process scan.")
         return
-    
-    # Generate signed URLs for the scan and step files
-    try:
-        scan_signed_url = generate_signed_url_with_key(
-            bucket_name,
-            file_path,
-            SERVICE_ACCOUNT,
-            timedelta(minutes=15)
-        )
-        step_signed_url = generate_signed_url_with_key(
-            bucket_name,
-            f"steps/{step_id}",
-            SERVICE_ACCOUNT,
-            timedelta(minutes=15)
-        )
-    except Exception as e:
-        print(f"Error generating signed URL: {e}")
-        return
+
 
     timestamp_dt = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
     # Register the user-scan association in the Firestore database
@@ -121,6 +104,25 @@ def process_user_scan(event: storage_fn.CloudEvent) -> None:
         print(f"Successfully registered scan {scan_id} in Firestore.")
     except Exception as e:
         print(f"Error writing to Firestore: {e}")
+        return
+    
+    # Generate signed URLs for the scan and step files
+    try:
+        scan_signed_url = generate_signed_url_with_key(
+            bucket_name,
+            file_path,
+            SERVICE_ACCOUNT,
+            timedelta(minutes=15)
+        )
+        step_signed_url = generate_signed_url_with_key(
+            bucket_name,
+            f"steps/{step_id}.step",
+            SERVICE_ACCOUNT,
+            timedelta(minutes=15)
+        )
+    except Exception as e:
+        print(f"Error generating signed URL: {e}")
+        scans_collection_ref.document(scan_id).update({'status': -1})  # Mark as error on server side
         return
     
     # Notify the backend server
