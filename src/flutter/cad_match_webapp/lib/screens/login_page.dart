@@ -22,7 +22,7 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-Future<void> _signIn() async {
+  Future<void> _signIn() async {
     // Validazione dei campi
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
@@ -34,7 +34,6 @@ Future<void> _signIn() async {
         password: _passwordController.text.trim(),
       );
     } on FirebaseAuthException catch (e) {
-
       String errorMessage = e.message ?? 'Authentication error.';
 
       if (mounted) {
@@ -45,14 +44,11 @@ Future<void> _signIn() async {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('An unexpected error occurred.'),
-          ),
+          const SnackBar(content: Text('An unexpected error occurred.')),
         );
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -152,6 +148,9 @@ Future<void> _signIn() async {
                     hintText: 'Please enter your email',
                     icon: Icons.email,
                     controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your email';
@@ -170,6 +169,9 @@ Future<void> _signIn() async {
                     icon: Icons.lock,
                     obscureText: true,
                     controller: _passwordController,
+                    keyboardType: TextInputType.visiblePassword,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _signIn(),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Please enter your password';
