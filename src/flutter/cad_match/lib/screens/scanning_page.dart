@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math' as math;
-import 'package:vector_math/vector_math_64.dart' as vector;
 import 'lidar_view.dart';
 import 'send_scan_page.dart';
 import '../utils.dart';
@@ -15,7 +14,7 @@ class LidarScannerScreen extends StatefulWidget {
 }
 
 class _LidarScannerScreenState extends State<LidarScannerScreen> {
-  final scannedPoints = <vector.Vector3>[];
+  final scannedPoints = <LidarPoint>[];
   bool isScanning = false;
   String? scanStatus = 'Ready to scan';
   final int recommendedPoints = 15000; // recommended for large objects
@@ -44,7 +43,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
     super.dispose();
   }
 
-  void _onPoints(List<vector.Vector3> pts) {
+  void _onPoints(List<LidarPoint> pts) {
     if (!isScanning) return;
     _lastPointsAt = DateTime.now();
 

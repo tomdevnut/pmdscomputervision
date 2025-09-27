@@ -5,7 +5,21 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:vector_math/vector_math_64.dart' as v;
 
-typedef LidarPointsCallback = void Function(List<v.Vector3> pts);
+class LidarPoint {
+  final v.Vector3 position;
+  final int r;
+  final int g;
+  final int b;
+
+  const LidarPoint({
+    required this.position,
+    required this.r,
+    required this.g,
+    required this.b,
+  });
+}
+
+typedef LidarPointsCallback = void Function(List<LidarPoint> pts);
 
 class LidarView extends StatefulWidget {
   final LidarPointsCallback onPoints;
@@ -49,7 +63,7 @@ class LidarViewState extends State<LidarView> {
           return;
         }
 
-        final pts = _toVec3(f32);
+        final pts = _toPoints(f32);
         if (pts.isNotEmpty) lastPointsAt = DateTime.now();
         widget.onPoints(pts);
       } catch (e, st) {
@@ -60,10 +74,14 @@ class LidarViewState extends State<LidarView> {
     });
   }
 
-  List<v.Vector3> _toVec3(Float32List buf) {
-    final out = <v.Vector3>[];
-    for (var i = 0; i + 2 < buf.length; i += 3) {
-      out.add(v.Vector3(buf[i], buf[i + 1], buf[i + 2]));
+  List<LidarPoint> _toPoints(Float32List buf) {
+    final out = <LidarPoint>[];
+    for (var i = 0; i + 5 < buf.length; i += 6) {
+      final pos = v.Vector3(buf[i], buf[i + 1], buf[i + 2]);
+      final r = _channel(buf[i + 3]);
+      final g = _channel(buf[i + 4]);
+      final b = _channel(buf[i + 5]);
+      out.add(LidarPoint(position: pos, r: r, g: g, b: b));
     }
     return out;
   }
@@ -79,5 +97,16 @@ class LidarViewState extends State<LidarView> {
       onPlatformViewCreated: _onCreated,
       gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{},
     );
+  }
+
+  int _channel(double value) {
+    var normalized = value;
+    if (normalized.isNaN) normalized = 0.0;
+    if (normalized < 0.0) normalized = 0.0;
+    if (normalized > 1.0) normalized = 1.0;
+    final rounded = (normalized * 255.0).round();
+    if (rounded < 0) return 0;
+    if (rounded > 255) return 255;
+    return rounded;
   }
 }

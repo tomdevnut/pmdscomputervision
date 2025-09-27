@@ -4,12 +4,12 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
-import 'package:vector_math/vector_math_64.dart' as vector;
 import '../utils.dart';
+import 'lidar_view.dart';
 
 class SendScanPage extends StatefulWidget {
   final Map<String, dynamic> payload;
-  final List<vector.Vector3> scannedPoints;
+  final List<LidarPoint> scannedPoints;
 
   const SendScanPage({
     super.key,
@@ -26,7 +26,7 @@ class _SendScanPageState extends State<SendScanPage> {
 
   /// Genera un file .ply dai punti scansionati.
   Future<File> _generatePLYFile(
-    List<vector.Vector3> scannedPoints,
+    List<LidarPoint> scannedPoints,
     String scanId,
   ) async {
     StringBuffer plyContent = StringBuffer();
@@ -42,7 +42,10 @@ class _SendScanPageState extends State<SendScanPage> {
     plyContent.writeln('end_header');
 
     for (var point in scannedPoints) {
-      plyContent.writeln('${point.x} ${point.y} ${point.z} 245 124 0');
+      final pos = point.position;
+      plyContent.writeln(
+        '${pos.x} ${pos.y} ${pos.z} ${point.r} ${point.g} ${point.b}',
+      );
     }
 
     final directory = await getApplicationDocumentsDirectory();
@@ -204,7 +207,7 @@ class _SendScanPageState extends State<SendScanPage> {
               const SizedBox(height: 12),
               buildButton(
                 'DISCARD',
-                onPressed: _isProcessing ? (){} : _discardScan,
+                onPressed: _isProcessing ? () {} : _discardScan,
                 color: AppColors.error,
                 icon: Icons.delete_outline_rounded,
               ),

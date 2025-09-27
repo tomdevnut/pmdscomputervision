@@ -3,6 +3,7 @@ import Flutter
 import Foundation
 import Metal
 import SceneKit
+import UIKit
 
 class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
     private let sceneView: ARSCNView
@@ -126,6 +127,8 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
             return
         }
 
+        guard let frame = sceneView.session.currentFrame else { return }
+
         let geometry = meshAnchor.geometry
         let vertexCount = geometry.vertices.count
         guard vertexCount > 0 else { return }
@@ -135,17 +138,57 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
         let vertexOffset = geometry.vertices.offset
         let transform = meshAnchor.transform
 
+        let pixelBuffer = frame.capturedImage
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
+
+        guard
+            let yBase = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0),
+            let cbcrBase = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 1)
+        else { return }
+
+        let buffers = ColorBuffers(
+            yPtr: yBase.assumingMemoryBound(to: UInt8.self),
+            cbcrPtr: cbcrBase.assumingMemoryBound(to: UInt8.self),
+            yWidth: CVPixelBufferGetWidthOfPlane(pixelBuffer, 0),
+            yHeight: CVPixelBufferGetHeightOfPlane(pixelBuffer, 0),
+            yBytesPerRow: CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0),
+            cbcrBytesPerRow: CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 1),
+            cbcrWidth: CVPixelBufferGetWidthOfPlane(pixelBuffer, 1),
+            cbcrHeight: CVPixelBufferGetHeightOfPlane(pixelBuffer, 1)
+        )
+
+        let orientation = currentOrientation()
+        let resolution = frame.camera.imageResolution
+        let viewportSize = CGSize(
+            width: CGFloat(resolution.width), height: CGFloat(resolution.height))
+
         var out = [Float32]()
-        out.reserveCapacity(vertexCount * 3)
+        out.reserveCapacity(vertexCount * 6)
 
         let baseAddress = vertexBuffer.contents().advanced(by: vertexOffset)
         for index in 0..<vertexCount {
             let pointer = baseAddress.advanced(by: index * vertexStride)
             let vertex = pointer.assumingMemoryBound(to: simd_float3.self).pointee
-            let position = transform * simd_float4(vertex, 1.0)
-            out.append(position.x)
-            out.append(position.y)
-            out.append(position.z)
+            let worldPosition = transform * simd_float4(vertex, 1.0)
+            let colorPixel = projectToColorPixel(
+                position: worldPosition,
+                frame: frame,
+                orientation: orientation,
+                viewportSize: viewportSize,
+                buffers: buffers
+            )
+            let color =
+                colorPixel.flatMap {
+                    sampleColor(pixelX: $0.0, pixelY: $0.1, buffers: buffers)
+                } ?? simd_float3(repeating: 0.6)
+
+            out.append(worldPosition.x)
+            out.append(worldPosition.y)
+            out.append(worldPosition.z)
+            out.append(color.x)
+            out.append(color.y)
+            out.append(color.z)
         }
 
         if out.isEmpty {
@@ -188,22 +231,62 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
         let cy = intr.columns.2.y
         let camT = frame.camera.transform
 
-        var out = [Float32]()
-        out.reserveCapacity((width * height * 3) / 16)
+        let pixelBuffer = frame.capturedImage
+        CVPixelBufferLockBaseAddress(pixelBuffer, .readOnly)
+        defer { CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly) }
 
-        // Downsample per prestazioni: campiona ogni "step" pixel
-        let step = max(2, min(12, width / 80))
-        for y in stride(from: 0, to: height, by: step) {
-            for x in stride(from: 0, to: width, by: step) {
+        guard
+            let yBase = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 0),
+            let cbcrBase = CVPixelBufferGetBaseAddressOfPlane(pixelBuffer, 1)
+        else { return }
+
+        let buffers = ColorBuffers(
+            yPtr: yBase.assumingMemoryBound(to: UInt8.self),
+            cbcrPtr: cbcrBase.assumingMemoryBound(to: UInt8.self),
+            yWidth: CVPixelBufferGetWidthOfPlane(pixelBuffer, 0),
+            yHeight: CVPixelBufferGetHeightOfPlane(pixelBuffer, 0),
+            yBytesPerRow: CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0),
+            cbcrBytesPerRow: CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 1),
+            cbcrWidth: CVPixelBufferGetWidthOfPlane(pixelBuffer, 1),
+            cbcrHeight: CVPixelBufferGetHeightOfPlane(pixelBuffer, 1)
+        )
+
+        let orientation = currentOrientation()
+        let resolution = frame.camera.imageResolution
+        let viewportSize = CGSize(
+            width: CGFloat(resolution.width), height: CGFloat(resolution.height))
+
+        var out = [Float32]()
+        out.reserveCapacity(width * height * 6)
+
+        // Processa ogni pixel per ottenere la massima precisione
+        for y in 0..<height {
+            for x in 0..<width {
                 let d = ptr[y * width + x]
-                if !d.isFinite || d <= 0.0 || d > 8.0 { continue }  // fino a ~8m su LiDAR
+                if !d.isFinite || d <= 0.0 || d > 3.0 { continue }  // fino a ~3m su LiDAR
                 let X = (Float32(x) - Float32(cx)) * d / Float32(fx)
                 let Y = (Float32(y) - Float32(cy)) * d / Float32(fy)
                 let local = simd_float4(X, Y, -d, 1.0)  // camera space (ARKit avanti = -Z)
                 let world = camT * local  // world space
+
+                let colorPixel = projectToColorPixel(
+                    position: world,
+                    frame: frame,
+                    orientation: orientation,
+                    viewportSize: viewportSize,
+                    buffers: buffers
+                )
+                let color =
+                    colorPixel.flatMap {
+                        sampleColor(pixelX: $0.0, pixelY: $0.1, buffers: buffers)
+                    } ?? simd_float3(repeating: 0.6)
+
                 out.append(world.x)
                 out.append(world.y)
                 out.append(world.z)
+                out.append(color.x)
+                out.append(color.y)
+                out.append(color.z)
             }
         }
 
@@ -212,6 +295,85 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
         }
         let data = Data(bytes: out, count: out.count * MemoryLayout<Float32>.size)
         sink(FlutterStandardTypedData(float32: data))
+    }
+
+    private struct ColorBuffers {
+        let yPtr: UnsafePointer<UInt8>
+        let cbcrPtr: UnsafePointer<UInt8>
+        let yWidth: Int
+        let yHeight: Int
+        let yBytesPerRow: Int
+        let cbcrBytesPerRow: Int
+        let cbcrWidth: Int
+        let cbcrHeight: Int
+    }
+
+    private func currentOrientation() -> UIInterfaceOrientation {
+        if #available(iOS 13.0, *) {
+            return sceneView.window?.windowScene?.interfaceOrientation ?? .portrait
+        } else {
+            return UIApplication.shared.statusBarOrientation
+        }
+    }
+
+    private func projectToColorPixel(
+        position: simd_float4,
+        frame: ARFrame,
+        orientation: UIInterfaceOrientation,
+        viewportSize: CGSize,
+        buffers: ColorBuffers
+    ) -> (Int, Int)? {
+        let projected = frame.camera.projectPoint(
+            simd_float3(position.x, position.y, position.z),
+            orientation: orientation,
+            viewportSize: viewportSize
+        )
+
+        guard projected.x.isFinite, projected.y.isFinite else { return nil }
+
+        let px = Int(projected.x.rounded())
+        let py = Int(projected.y.rounded())
+
+        if buffers.yWidth == 0 || buffers.yHeight == 0 { return nil }
+
+        let clampedX = min(max(px, 0), buffers.yWidth - 1)
+        let clampedY = min(max(py, 0), buffers.yHeight - 1)
+        return (clampedX, clampedY)
+    }
+
+    private func sampleColor(
+        pixelX: Int,
+        pixelY: Int,
+        buffers: ColorBuffers
+    ) -> simd_float3? {
+        guard
+            pixelX >= 0, pixelX < buffers.yWidth,
+            pixelY >= 0, pixelY < buffers.yHeight
+        else { return nil }
+
+        let yIndex = pixelY * buffers.yBytesPerRow + pixelX
+        let yValue = Float(buffers.yPtr[yIndex])
+
+        let cbRow = pixelY / 2
+        let cbCol = pixelX / 2
+        guard
+            cbRow >= 0, cbRow < buffers.cbcrHeight,
+            cbCol >= 0, cbCol < buffers.cbcrWidth
+        else { return nil }
+
+        let cbIndex = cbRow * buffers.cbcrBytesPerRow + cbCol * 2
+        let cb = Float(buffers.cbcrPtr[cbIndex]) - 128.0
+        let cr = Float(buffers.cbcrPtr[cbIndex + 1]) - 128.0
+
+        var r = yValue + 1.402 * cr
+        var g = yValue - 0.344136 * cb - 0.714136 * cr
+        var b = yValue + 1.772 * cb
+
+        r = max(0.0, min(255.0, r))
+        g = max(0.0, min(255.0, g))
+        b = max(0.0, min(255.0, b))
+
+        return simd_float3(Float(r / 255.0), Float(g / 255.0), Float(b / 255.0))
     }
 }
 
