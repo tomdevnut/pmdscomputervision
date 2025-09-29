@@ -4,7 +4,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../shared_utils.dart';
 
-const String kChangePasswordUrl ='https://change-password-5ja5umnfkq-ey.a.run.app';
+const String kChangePasswordUrl =
+    'https://change-password-5ja5umnfkq-ey.a.run.app';
 
 class ChangePassword extends StatefulWidget {
   final String userId;
@@ -100,6 +101,16 @@ class _ChangePasswordState extends State<ChangePassword> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               buildTopBar(context, title: 'CHANGE PASSWORD'),
+              const SizedBox(height: 20),
+              const Text(
+                'Set a new password for the user below. This user will be disconnected from all devices and a notification will be sent.',
+                style: TextStyle(
+                  color: AppColors.textSecondary,
+                  fontSize: 16,
+                  fontFamily: 'Inter',
+                  fontWeight: FontWeight.w400,
+                ),
+              ),
               const SizedBox(height: 40),
               Center(
                 child: SizedBox(

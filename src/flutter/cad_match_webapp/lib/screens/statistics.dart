@@ -102,8 +102,17 @@ class _StatisticsState extends State<Statistics> {
               final statistics = snapshot.data!.data() as Map<String, dynamic>?;
 
               if (statistics == null || statistics.isEmpty) {
-                return const Center(
-                  child: Text('No statistics found for this scan.'),
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      buildTopBar(context, title: 'SCAN STATISTICS'),
+                      SizedBox(height: 40),
+                      Icon(Icons.info, size: 48, color: AppColors.primary),
+                      SizedBox(height: 16),
+                      Text('No statistics available for this scan.'),
+                    ],
+                  ),
                 );
               }
 

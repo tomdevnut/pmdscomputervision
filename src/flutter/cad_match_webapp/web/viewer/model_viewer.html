@@ -101,6 +101,8 @@
             loadingDiv.style.display = 'block';
             loadingDiv.innerText = 'Loading model...';
 
+            console.log('Loading model from URL:', fileUrl);
+
             const loader = new PLYLoader();
             loader.load(
                 fileUrl,
@@ -154,6 +156,7 @@
 
         window.addEventListener('message', (event) => {
             const fileUrl = event.data?.fileUrl;
+            console.log('Received message from parent:', event.data);
             if (!fileUrl) {
                 document.getElementById('loading').innerText = 'No model specified (via message).';
                 return;
@@ -164,6 +167,7 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             parent.postMessage({ status: 'ready' }, '*');
+            console.log('Sent message to parent: { status: "ready" }');
         });
 
     </script>

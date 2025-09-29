@@ -16,8 +16,10 @@ class ThreeViewerPage extends StatefulWidget {
 }
 
 class _ThreeViewerPageState extends State<ThreeViewerPage> {
-  final String _viewId = 'three-viewer-iframe';
+  late String _viewId;
   late web.HTMLIFrameElement _iframeElement;
+
+  late web.EventListener _messageListener;
 
   bool loading = true;
   String? error;
@@ -25,6 +27,8 @@ class _ThreeViewerPageState extends State<ThreeViewerPage> {
   @override
   void initState() {
     super.initState();
+
+    _viewId = 'iframe-${widget.id}-${DateTime.now().millisecondsSinceEpoch}';
 
     _iframeElement =
         web.document.createElement('iframe') as web.HTMLIFrameElement
@@ -37,23 +41,21 @@ class _ThreeViewerPageState extends State<ThreeViewerPage> {
       (int viewId) => _iframeElement,
     );
 
-    web.window.addEventListener(
-      'message',
-      (web.Event event) {
-        final messageEvent = event as web.MessageEvent;
-        final data = messageEvent.data;
+    _messageListener = (web.Event event) {
+      final messageEvent = event as web.MessageEvent;
+      final data = messageEvent.data;
 
-        if (data.isA<JSObject>()) {
-          final status = (data.dartify() as Map)['status'];
-          if (status == 'ready') {
-            fetchPlyUrl();
-          }
+      if (data.isA<JSObject>()) {
+        final status = (data.dartify() as Map)['status'];
+        if (status == 'ready') {
+          fetchPlyUrl();
         }
-      }.toJS,
-    );
+      }
+    }.toJS;
+    web.window.addEventListener('message', _messageListener);
 
     _iframeElement.src =
-        '${web.window.location.origin}/viewer/model_viewer.html';
+        '${web.window.location.origin}/viewer/model_viewer.html?v=${DateTime.now().millisecondsSinceEpoch}';
 
     setState(() {
       loading = false;
@@ -64,14 +66,31 @@ class _ThreeViewerPageState extends State<ThreeViewerPage> {
     try {
       final ref = FirebaseStorage.instance.ref('comparisons/${widget.id}.ply');
       final url = await ref.getDownloadURL();
-      final jsObject = {'fileUrl': url}.jsify();
-      _iframeElement.contentWindow?.postMessage(jsObject, '*'.toJS);
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (mounted) {
+          _iframeElement.contentWindow?.postMessage(
+            {'fileUrl': url}.jsify(),
+            '*'.toJS,
+          );
+          print('Posted message to iframe with URL: $url');
+
+          setState(() {
+            loading = false;
+          });
+        }
+      });
     } catch (e) {
       setState(() {
-        error = 'Errore nel recupero del file: $e';
+        error = 'Error while fetching PLY URL: $e';
         loading = false;
       });
     }
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    web.window.removeEventListener('message', _messageListener);
   }
 
   @override
@@ -79,8 +98,18 @@ class _ThreeViewerPageState extends State<ThreeViewerPage> {
     if (loading) {
       return Scaffold(
         backgroundColor: AppColors.backgroundColor,
-        body: const Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
+        body: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 60),
+          child: Column(
+            children: [
+              buildTopBar(context, title: '3D VIEWER'),
+              const Expanded(
+                child: Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }
