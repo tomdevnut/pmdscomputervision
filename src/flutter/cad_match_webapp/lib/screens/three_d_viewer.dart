@@ -72,7 +72,6 @@ class _ThreeViewerPageState extends State<ThreeViewerPage> {
             {'fileUrl': url}.jsify(),
             '*'.toJS,
           );
-          print('Posted message to iframe with URL: $url');
 
           setState(() {
             loading = false;
