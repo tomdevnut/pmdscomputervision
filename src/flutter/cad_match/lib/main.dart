@@ -74,7 +74,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'CADmatch',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(),
+      theme: ThemeData.light(),
       home: StreamBuilder<User?>(
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {

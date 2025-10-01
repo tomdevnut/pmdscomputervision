@@ -65,7 +65,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           SnackBar(
             content: Text(
               message,
-              style: const TextStyle(color: AppColors.textPrimary),
+              style: const TextStyle(color: AppColors.buttonText),
             ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
@@ -149,7 +149,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    style: const TextStyle(color: Colors.white),
+                    style: const TextStyle(color: AppColors.textPrimary),
                     cursorColor: AppColors.primary,
                     onFieldSubmitted: (_) => _sendPasswordResetEmail(),
                     decoration: _inputDecoration('Email'),

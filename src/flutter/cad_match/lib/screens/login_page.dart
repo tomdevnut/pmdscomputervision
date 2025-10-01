@@ -43,7 +43,7 @@ class _LoginPageState extends State<LoginPage> {
           SnackBar(
             content: const Text(
               'Login successful!',
-              style: TextStyle(color: AppColors.textPrimary),
+              style: TextStyle(color: AppColors.buttonText),
             ),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
@@ -73,7 +73,7 @@ class _LoginPageState extends State<LoginPage> {
           SnackBar(
             content: Text(
               message,
-              style: const TextStyle(color: AppColors.textPrimary),
+              style: const TextStyle(color: AppColors.buttonText),
             ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
@@ -127,97 +127,97 @@ class _LoginPageState extends State<LoginPage> {
       backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
         child: Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.asset('assets/logo.png', height: 150),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.asset('assets/logo.png', height: 150),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Welcome to CADmatch',
+                    style: TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Welcome to CADmatch',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  ),
+                  const Text(
+                    'Please log in',
+                    style: TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 16,
                     ),
-                    const Text(
-                      'Please log in',
-                      style: TextStyle(
-                        color: AppColors.textSecondary,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      style: const TextStyle(color: Colors.white),
-                      cursorColor: AppColors.primary,
-                      onFieldSubmitted: (_) => _signIn(),
-                      decoration: _inputDecoration('Email'),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your email';
-                        }
-                        final emailRegExp = RegExp(r'^[^@]+@[^@]+\.[^@]+');
-                        if (!emailRegExp.hasMatch(value)) {
-                          return 'Please enter a valid email address';
-                        }
-                        return null;
+                  ),
+                  const SizedBox(height: 40),
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    cursorColor: AppColors.primary,
+                    onFieldSubmitted: (_) => _signIn(),
+                    decoration: _inputDecoration('Email'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      final emailRegExp = RegExp(r'^[^@]+@[^@]+\.[^@]+');
+                      if (!emailRegExp.hasMatch(value)) {
+                        return 'Please enter a valid email address';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    style: const TextStyle(color: AppColors.textPrimary),
+                    cursorColor: AppColors.primary,
+                    onFieldSubmitted: (_) => _signIn(),
+                    decoration: _inputDecoration('Password'),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your password';
+                      }
+                      return null;
+                    },
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const ForgotPasswordPage(),
+                          ),
+                        );
                       },
-                    ),
-                    const SizedBox(height: 16),
-                    TextFormField(
-                      controller: _passwordController,
-                      obscureText: true,
-                      style: const TextStyle(color: Colors.white),
-                      cursorColor: AppColors.primary,
-                      onFieldSubmitted: (_) => _signIn(),
-                      decoration: _inputDecoration('Password'),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your password';
-                        }
-                        return null;
-                      },
-                    ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(
-                              builder: (context) => const ForgotPasswordPage(),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Forgot password?',
-                          style: TextStyle(color: AppColors.textSecondary),
-                        ),
+                      child: const Text(
+                        'Forgot password?',
+                        style: TextStyle(color: AppColors.textSecondary),
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    buildButton(
-                      _isSigningIn ? 'LOGGING IN...' : 'LOGIN',
-                      onPressed: _isSigningIn ? () {} : _signIn,
-                      icon: Icons.login_rounded,
-                    ),
-                    const SizedBox(height: 50),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 16),
+                  buildButton(
+                    _isSigningIn ? 'LOGGING IN...' : 'LOGIN',
+                    onPressed: _isSigningIn ? () {} : _signIn,
+                    icon: Icons.login_rounded,
+                  ),
+                  const SizedBox(height: 50),
+                ],
               ),
             ),
           ),
         ),
+      ),
     );
   }
 }
