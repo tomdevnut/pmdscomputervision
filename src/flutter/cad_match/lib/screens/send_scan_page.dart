@@ -201,7 +201,6 @@ class _SendScanPageState extends State<SendScanPage> {
               buildButton(
                 _isProcessing ? 'UPLOADING...' : 'CONFIRM & UPLOAD',
                 color: AppColors.primary,
-                icon: Icons.cloud_upload_rounded,
                 onPressed: _isProcessing ? () {} : _confirmAndUpload,
               ),
               const SizedBox(height: 12),
@@ -209,7 +208,6 @@ class _SendScanPageState extends State<SendScanPage> {
                 'DISCARD',
                 onPressed: _isProcessing ? () {} : _discardScan,
                 color: AppColors.error,
-                icon: Icons.delete_outline_rounded,
               ),
             ],
           ),

@@ -127,7 +127,6 @@ class StatisticDetailPage extends StatelessWidget {
               const SizedBox(height: 20),
               buildButton(
                 'VIEW 3D COMPARISON',
-                icon: Icons.view_in_ar_rounded,
                 onPressed: () {
                   final scanId = stats['scanId'];
                   if (scanId != null) {

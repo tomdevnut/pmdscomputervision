@@ -21,6 +21,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   }
 
   Future<void> _sendPasswordResetEmail() async {
+    // La logica di invio email rimane invariata
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
@@ -38,15 +39,16 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           SnackBar(
             content: const Text(
               'Password reset email sent! Check your inbox.',
-              style: TextStyle(color: AppColors.textPrimary),
+              style: TextStyle(color: AppColors.buttonText),
             ),
             backgroundColor: AppColors.success,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(20),
             ),
           ),
         );
+        Navigator.of(context).pop();
       }
     } on FirebaseAuthException catch (e) {
       String message;
@@ -70,7 +72,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(20),
             ),
           ),
         );
@@ -84,12 +86,14 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     }
   }
 
-  InputDecoration _inputDecoration(String hint) {
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    // Lo stile dei campi di input rimane invariato
     return InputDecoration(
-      hintText: hint,
+      labelText: label,
+      labelStyle: const TextStyle(color: AppColors.textHint),
+      prefixIcon: Icon(icon, color: AppColors.textHint, size: 20),
       filled: true,
       fillColor: AppColors.textFieldBackground,
-      hintStyle: const TextStyle(color: AppColors.textHint),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
@@ -106,10 +110,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AppColors.error),
       ),
-      errorStyle: const TextStyle(
-        color: AppColors.error,
-        fontWeight: FontWeight.bold,
-      ),
     );
   }
 
@@ -117,62 +117,93 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppColors.backgroundColor,
-        shadowColor: AppColors.cardBackground,
-        foregroundColor: AppColors.textPrimary,
-        title: const Text(
-          'Password Reset',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        elevation: 0,
-      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40),
-          child: SingleChildScrollView(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 50),
-                  const Text(
-                    'Enter your email to receive a password reset link.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 50),
-                  TextFormField(
-                    controller: _emailController,
-                    keyboardType: TextInputType.emailAddress,
-                    style: const TextStyle(color: AppColors.textPrimary),
-                    cursorColor: AppColors.primary,
-                    onFieldSubmitted: (_) => _sendPasswordResetEmail(),
-                    decoration: _inputDecoration('Email'),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter your email';
-                      }
-                      if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
-                        return 'Please enter a valid email';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 32),
-                  buildButton(
-                    _isLoading ? 'SENDING...' : 'SEND RESET LINK',
-                    onPressed: _isLoading ? () {} : _sendPasswordResetEmail,
-                    icon: Icons.send_rounded,
-                  ),
-                ],
+        child: Column(
+          // Usiamo una Column per separare il pulsante dal resto
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // --- PULSANTE INDIETRO CON PADDING ---
+            Padding(
+              padding: const EdgeInsets.only(
+                left: 12.0,
+                top: 8.0,
+              ), // Aggiunto padding
+              child: IconButton(
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: AppColors.textPrimary,
+                ),
+                onPressed: () => Navigator.of(context).pop(),
               ),
             ),
-          ),
+
+            // --- CONTENUTO DELLA PAGINA ---
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const SizedBox(height: 20),
+                      const Icon(
+                        Icons.lock_reset_rounded,
+                        size: 60,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'Reset Password',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Enter your email and we will send you a link to reset your password',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 16,
+                        ),
+                      ),
+                      const SizedBox(height: 48),
+                      TextFormField(
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        style: const TextStyle(color: AppColors.textPrimary),
+                        cursorColor: AppColors.primary,
+                        decoration: _inputDecoration(
+                          'Email',
+                          Icons.alternate_email_rounded,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          if (!RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(value)) {
+                            return 'Please enter a valid email';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 32),
+                      buildButton(
+                        'SEND RESET LINK',
+                        isLoading: _isLoading,
+                        onPressed: _sendPasswordResetEmail,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

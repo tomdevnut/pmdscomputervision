@@ -13,6 +13,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   User? _user;
   Map<String, dynamic>? _userData;
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -21,6 +22,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadUserData() async {
+    setState(() => _isLoading = true);
     _user = FirebaseAuth.instance.currentUser;
     if (_user != null) {
       final doc = await FirebaseFirestore.instance
@@ -33,128 +35,255 @@ class _ProfilePageState extends State<ProfilePage> {
         });
       }
     }
+    setState(() => _isLoading = false);
   }
 
-  Future<void> _signOut() async {
-    await FirebaseAuth.instance.signOut();
+  Future<void> _signOut(BuildContext context) async {
+    showConfirmationDialog(
+      context,
+      'Are you sure you want to log out?',
+      () async {
+        // La pop della dialog viene gestita da showConfirmationDialog in caso di successo
+        await FirebaseAuth.instance.signOut();
+      },
+      title: 'Logout',
+      confirmText: 'Logout',
+    );
   }
 
   Future<void> _resetPassword(BuildContext context) async {
+    if (_user?.email == null) return;
+
     showConfirmationDialog(
       context,
-      'Are you sure you want to reset your password? A reset link will be sent to your email.',
+      'A reset link will be sent to your email: ${_user!.email}.',
       () async {
-        Navigator.of(context).pop();
         await FirebaseAuth.instance.sendPasswordResetEmail(
-          email: _user?.email ?? '',
+          email: _user!.email!,
         );
       },
       title: 'Reset Password',
-      confirmText: 'Reset',
+      confirmText: 'Send Email',
       cancelText: 'Cancel',
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    const cardColor = AppColors.cardBackground;
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                buildHeader('Profile'),
-                const SizedBox(height: 20),
-                _buildProfileIcon(),
-                const SizedBox(height: 32),
-                // Card per le informazioni dell'utente
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.boxborder),
-                  ),
-                  child: _buildUserInfo(),
-                ),
-                const SizedBox(height: 32),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: buildButton(
-                        'RESET PASSWORD',
-                        onPressed: () => _resetPassword(context),
-                        icon: Icons.lock_reset_rounded,
-                      ),
+      body: _isLoading
+          ? const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            )
+          : _user == null
+          ? _buildSignedOutView()
+          : SingleChildScrollView(
+              padding: const EdgeInsets.only(top: 100.0, bottom: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _buildProfileIconWithBadge(),
+                  const SizedBox(height: 16),
+                  Text(
+                    '${_userData?['name'] ?? ''} ${_userData?['surname'] ?? ''}',
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(child: buildButton('LOGOUT', onPressed: _signOut, icon: Icons.logout_rounded)),
-                  ],
-                ),
-                const SizedBox(height: 24),
-              ],
+                  ),
+                  Text(
+                    _user?.email ?? '',
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  _buildInfoCard(),
+                  const SizedBox(height: 16),
+                  _buildActionsMenu(),
+                ],
+              ),
             ),
+    );
+  }
+
+  Widget _buildProfileIconWithBadge() {
+    String level = _userData?['level']?.toString() ?? '...';
+    return Stack(
+      alignment: Alignment.bottomRight,
+      children: [
+        const CircleAvatar(
+          radius: 60,
+          backgroundColor: AppColors.primary,
+          child: Icon(Icons.person_rounded, size: 60, color: Colors.white),
+        ),
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppColors.secondary,
+            shape: BoxShape.circle,
+            border: Border.all(color: AppColors.backgroundColor, width: 3),
+          ),
+          child: Text(
+            level,
+            style: const TextStyle(
+              color: AppColors.buttonText,
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildInfoCard() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          _buildInfoRow(
+            icon: Icons.shield_rounded,
+            label: 'Status',
+            value: (_userData?['enabled'] ?? false) ? 'Enabled' : 'Not Enabled',
+          ),
+          // Aggiungi qui altre info se necessario
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionsMenu() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        children: [
+          _buildActionRow(
+            icon: Icons.lock_reset_rounded,
+            title: 'Reset Password',
+            onTap: () => _resetPassword(context),
+          ),
+          const Divider(height: 1, indent: 16, endIndent: 16),
+          _buildActionRow(
+            icon: Icons.logout_rounded,
+            title: 'Logout',
+            color: AppColors.error,
+            onTap: () => _signOut(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow({
+    required IconData icon,
+    required String label,
+    required String value,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.textSecondary, size: 20),
+          const SizedBox(width: 16),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 16,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionRow({
+    required IconData icon,
+    required String title,
+    Color? color,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          child: Row(
+            children: [
+              Icon(icon, color: color ?? AppColors.primary),
+              const SizedBox(width: 16),
+              Text(
+                title,
+                style: TextStyle(
+                  color: color ?? AppColors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const Spacer(),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: AppColors.unselected,
+                size: 16,
+              ),
+            ],
           ),
         ),
       ),
     );
   }
 
-  Widget _buildProfileIcon() {
-    return const Center(
-      child: CircleAvatar(
-        radius: 60,
-        backgroundColor: AppColors.primary,
-        child: Icon(Icons.person_rounded, size: 60, color: Colors.white),
+  Widget _buildSignedOutView() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(
+            Icons.person_off_rounded,
+            size: 80,
+            color: AppColors.unselected,
+          ),
+          const SizedBox(height: 20),
+          const Text(
+            'You are not signed in',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Please sign in to view your profile.',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+          ),
+        ],
       ),
     );
-  }
-
-  Widget _buildUserInfo() {
-    String nameAndSurname =
-        '${_userData?['name'] ?? ''} ${_userData?['surname'] ?? ''}';
-    return _user != null
-        ? Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              cardField('Name:', nameAndSurname, Icons.person_rounded),
-              const SizedBox(height: 10),
-              const Divider(color: AppColors.boxborder),
-              const SizedBox(height: 10),
-              cardField('Email:', _user?.email ?? 'Loading...', Icons.email_rounded),
-              const SizedBox(height: 10),
-              const Divider(color: AppColors.boxborder),
-              const SizedBox(height: 10),
-              cardField(
-                'Level:',
-                _userData?['level']?.toString() ?? 'Loading...',
-                Icons.bar_chart_rounded,
-              ),
-              const SizedBox(height: 10),
-              const Divider(color: AppColors.boxborder),
-              const SizedBox(height: 10),
-              cardField(
-                'Enabled:',
-                (_userData?['enabled'] ?? false) ? 'Yes' : 'No',
-                (_userData?['enabled'] ?? false)                    
-                ? Icons.check_circle_rounded
-                    : Icons.cancel_rounded,
-              ),
-            ],
-          )
-        : Center(
-            child: Text(
-              'Please sign in to view your profile.',
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontSize: 16,
-              ),
-            ),
-          );
   }
 }

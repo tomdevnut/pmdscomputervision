@@ -242,7 +242,6 @@ class _AddScanPageState extends State<AddScanPage> {
               buildButton(
                 _isSaving ? 'STARTING...' : 'START SCANNING',
                 onPressed: _isSaving ? () {} : _onStartScanning,
-                icon: Icons.camera_alt_rounded,
               ),
             ],
           ),
