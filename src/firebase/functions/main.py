@@ -27,6 +27,7 @@ from delete_user import delete_user
 from save_fcm_token import save_fcm_token
 from bulk_create_users import bulk_create_users
 from change_password import change_password
+from get_all_pending import get_all_pending
 
 # Lista di funzioni che verranno esportate (non necessaria per il funzionamento, ma utile per la documentazione)
 __all__ = [
@@ -42,5 +43,6 @@ __all__ = [
     "save_fcm_token",
     "delete_scan",
     "bulk_create_users",
-    "change_password"
+    "change_password",
+    "get_all_pending"
 ]

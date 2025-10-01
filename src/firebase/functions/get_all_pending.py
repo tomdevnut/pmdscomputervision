@@ -62,7 +62,7 @@ def generate_signed_url_with_key(bucket_name, file_path, private_key_secret, exp
 
 def get_all_pending(request: https_fn.Request) -> https_fn.Response:
     """
-    Http function fo be called by the backend server after a restart or a loss of connection. This function retreives all scans with a status of '0' (received from firebase but not yet sent to backend server).
+    Http function to be called by the backend server after a restart or a loss of connection. This function retreives all scans with a status of '0' (received from firebase but not yet sent to backend server).
 
     The server must provide the API key in the request header to be authenticated. The API key is fetched in Google Secret Manager and compared to the one provided in the request header.
     """
