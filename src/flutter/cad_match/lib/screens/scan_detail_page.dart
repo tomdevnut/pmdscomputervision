@@ -277,11 +277,7 @@ class ScanDetailPage extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-      child: Icon(
-        icon,
-        color: AppColors.buttonText,
-        size: 18,
-      ), // Ridotta dimensione icona
+      child: Icon(icon, color: AppColors.buttonText, size: 18),
     );
   }
 
@@ -304,7 +300,7 @@ class ScanDetailPage extends StatelessWidget {
                 return AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   width: constraints.maxWidth * (isActive ? 1.0 : progress),
-                  height: 8, // Aumentato spessore linea
+                  height: 8,
                   decoration: BoxDecoration(
                     color: AppColors.primary,
                     borderRadius: BorderRadius.circular(4),

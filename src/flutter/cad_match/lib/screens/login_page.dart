@@ -25,7 +25,6 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _signIn() async {
-    // La logica di sign-in rimane invariata
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
@@ -240,7 +239,6 @@ class _LoginPageState extends State<LoginPage> {
                       Align(
                         alignment: Alignment.centerRight,
                         child: buildTextButton(
-                          // <-- WIDGET DA UTILS
                           'Forgot password?',
                           onPressed: () {
                             Navigator.of(context).push(
@@ -254,7 +252,6 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       const SizedBox(height: 24),
                       buildButton(
-                        // <-- WIDGET DA UTILS
                         'LOG IN',
                         isLoading: _isSigningIn,
                         onPressed: _signIn,

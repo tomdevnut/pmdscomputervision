@@ -21,7 +21,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   }
 
   Future<void> _sendPasswordResetEmail() async {
-    // La logica di invio email rimane invariata
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
@@ -87,7 +86,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
   }
 
   InputDecoration _inputDecoration(String label, IconData icon) {
-    // Lo stile dei campi di input rimane invariato
     return InputDecoration(
       labelText: label,
       labelStyle: const TextStyle(color: AppColors.textHint),
@@ -119,15 +117,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
       backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
         child: Column(
-          // Usiamo una Column per separare il pulsante dal resto
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // --- PULSANTE INDIETRO CON PADDING ---
             Padding(
-              padding: const EdgeInsets.only(
-                left: 12.0,
-                top: 8.0,
-              ), // Aggiunto padding
+              padding: const EdgeInsets.only(left: 12.0, top: 8.0),
               child: IconButton(
                 icon: const Icon(
                   Icons.arrow_back_ios_new_rounded,

@@ -48,7 +48,6 @@ class LidarViewState extends State<LidarView> {
 
     _sub = stream.listen((data) {
       try {
-        // Gestione corretta dei tipi dal canale
         Float32List f32;
         if (data is Float32List) {
           f32 = data;

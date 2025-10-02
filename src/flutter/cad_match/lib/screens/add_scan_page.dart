@@ -61,7 +61,6 @@ class _AddScanPageState extends State<AddScanPage> {
   }
 
   Future<void> _onStartScanning() async {
-    // Il validator del form ora gestisce tutti i controlli
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }

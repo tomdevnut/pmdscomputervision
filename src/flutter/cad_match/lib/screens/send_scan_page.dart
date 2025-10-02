@@ -24,7 +24,6 @@ class SendScanPage extends StatefulWidget {
 class _SendScanPageState extends State<SendScanPage> {
   bool _isProcessing = false;
 
-  // Tutta la logica di generazione file e upload è invariata
   Future<File> _generatePLYFile(
     List<LidarPoint> scannedPoints,
     String scanId,

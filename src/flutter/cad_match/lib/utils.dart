@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // Colori primari e secondari (mantenuti come richiesto)
+  // Colori primari e secondari
   static const Color primary = Color(0xFF306BAC);
   static const Color secondary = Color(0xFF6F9CEB);
 
   // Sfondi
   static const Color backgroundColor = Color(0xFFF5F5F5); // Grigio molto chiaro
   static const Color cardBackground = Color(0xFFFFFFFF); // Bianco
-  static const Color textFieldBackground = Color(0xFFEEEEEE);
+  static const Color textFieldBackground = Color(0xFFEEEEEE); // Grigio chiaro
 
   // Testi
   static const Color textPrimary = Color(
@@ -24,8 +24,12 @@ class AppColors {
   static const Color unselected = Color(
     0xFFBDBDBD,
   ); // Grigio per elementi non selezionati
-  static Color filterChipColor = primary.withAlpha(51);
-  static Color rowBoxColor = primary.withAlpha(26);
+  static Color filterChipColor = primary.withAlpha(
+    51,
+  ); // Colore per i filtri selezionati
+  static Color rowBoxColor = primary.withAlpha(
+    26,
+  ); // Colore per il box delle righe
   static const Color unselectedSemiTransparent = Color(
     0x99BDBDBD,
   ); // Grigio semi-trasparente per elementi non selezionati
@@ -35,13 +39,13 @@ class AppColors {
   static const Color buttonTextSemiTransparent = Color(
     0x99FFFFFF,
   ); // Bianco semi-trasparente
-  static const Color shadows = Colors.black12;
-  static const Color blackOverlay = Color(0x80000000);
+  static const Color shadows = Colors.black12; // Ombre leggere
+  static const Color blackOverlay = Color(0x80000000); // Nero semi-trasparente
 
   // Colori semantici
-  static const Color error = Color(0xFFD94451);
-  static const Color success = Color(0xFF03A411);
-  static const Color warning = Color(0xFFFFDB3B);
+  static const Color error = Color(0xFFD94451); // Rosso per errori
+  static const Color success = Color(0xFF03A411); // Verde per successi
+  static const Color warning = Color(0xFFFFDB3B); // Giallo per avvisi
 }
 
 Widget buildButton(

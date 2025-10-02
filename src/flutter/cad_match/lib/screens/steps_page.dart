@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../utils.dart';
 
-// Funzione per recuperare i nomi utente in un'unica query (invariata)
+// Funzione per recuperare i nomi utente in un'unica query
 Future<Map<String, String>> fetchUsernames(List<String> userIds) async {
   final validUserIds = userIds.where((id) => id.isNotEmpty).toList();
   if (validUserIds.isEmpty) {
@@ -54,7 +54,6 @@ class _StepsPageState extends State<StepsPage> {
     super.dispose();
   }
 
-  // La logica per lo stream e la ricerca rimane invariata
   void _initializeStreamLogic() {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {

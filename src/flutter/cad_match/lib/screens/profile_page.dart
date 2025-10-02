@@ -68,7 +68,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // --- NUOVA FUNZIONE HELPER PER L'ICONA ---
   IconData _getIconForLevel(int? level) {
     switch (level) {
       case 2:
@@ -85,7 +84,6 @@ class _ProfilePageState extends State<ProfilePage> {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       body: SafeArea(
-        // Aggiunto SafeArea per rispettare la status bar
         bottom: false,
         child: _isLoading
             ? const Center(
@@ -94,10 +92,7 @@ class _ProfilePageState extends State<ProfilePage> {
             : _user == null
             ? _buildSignedOutView()
             : SingleChildScrollView(
-                padding: const EdgeInsets.only(
-                  top: 60.0,
-                  bottom: 24.0,
-                ), // Aggiustato padding
+                padding: const EdgeInsets.only(top: 60.0, bottom: 24.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [

@@ -236,7 +236,7 @@ class _NewUserState extends State<NewUser> {
                     icon: _isLoading
                         ? Icons.hourglass_full
                         : Icons.check_circle,
-                    onTap: _onButtonTap, // Passiamo la nuova funzione sincrona
+                    onTap: _onButtonTap,
                   ),
                 ],
               ),

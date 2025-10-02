@@ -83,7 +83,6 @@ class _BulkUploadState extends State<BulkUpload> {
 
       var request = http.MultipartRequest('POST', Uri.parse(_functionUrl));
 
-      // The key change: handle both bytes (web) and path (mobile/desktop)
       final http.MultipartFile multipartFile;
       if (_selectedFile!.bytes != null) {
         multipartFile = http.MultipartFile.fromBytes(

@@ -7,7 +7,6 @@ import 'settings_page.dart';
 import 'steps_page.dart';
 import '../shared_utils.dart';
 
-// La MainPage ora accetta l'oggetto User, come discusso in precedenza.
 class MainPage extends StatefulWidget {
   final User user;
 
@@ -39,9 +38,9 @@ class _MainPageState extends State<MainPage> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             backgroundColor: AppColors.backgroundColor,
-            body: Center(child: CircularProgressIndicator(
-              color: AppColors.primary,
-            )),
+            body: Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
           );
         }
 

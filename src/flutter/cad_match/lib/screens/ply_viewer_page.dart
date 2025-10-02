@@ -60,7 +60,6 @@ class _PlyViewerPageState extends State<PlyViewerPage> {
             ),
           ),
           child: ClipRRect(
-            // Aggiunto per contenere la vista nativa dentro i bordi arrotondati
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(30),
               topRight: Radius.circular(30),
@@ -132,7 +131,6 @@ class _PlyViewerState extends State<PlyViewer> {
             } catch (e) {
               debugPrint("Errore dal lato nativo: $e");
               if (mounted) {
-                // Potresti voler mostrare un messaggio di errore qui
                 setState(() {
                   _isNativeLoading = false;
                 });
@@ -142,7 +140,6 @@ class _PlyViewerState extends State<PlyViewer> {
         ),
         if (_isNativeLoading)
           Container(
-            // Sfondo semi-trasparente per il caricamento
             color: AppColors.backgroundColor.withAlpha(128),
             child: const Center(
               child: CircularProgressIndicator(color: AppColors.primary),

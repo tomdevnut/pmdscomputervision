@@ -37,7 +37,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
   @override
   void dispose() {
     uiTick?.cancel();
-    _lidarKey.currentState?.stop(); // Assicurati che lo scan si fermi
+    _lidarKey.currentState?.stop();
     super.dispose();
   }
 
