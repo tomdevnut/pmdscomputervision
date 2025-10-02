@@ -58,6 +58,19 @@
         import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
         import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js';
 
+        // --- NUOVA FUNZIONE PER CREARE UNA TEXTURE CIRCOLARE ---
+        function createCircleTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const context = canvas.getContext('2d');
+            context.beginPath();
+            context.arc(32, 32, 30, 0, 2 * Math.PI);
+            context.fillStyle = 'white';
+            context.fill();
+            return new THREE.CanvasTexture(canvas);
+        }
+
         const scene = new THREE.Scene();
         scene.background = new THREE.Color('#eff9fb');
 
@@ -70,10 +83,6 @@
 
         const controls = new OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
-        controls.dampingFactor = 0.1;
-        controls.rotateSpeed = 1.0;
-        controls.zoomSpeed = 1.0;
-        controls.panSpeed = 1.0;
 
         scene.add(new THREE.AmbientLight(0xffffff, 1.2));
         const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
@@ -81,6 +90,7 @@
         scene.add(dirLight);
 
         let points = null;
+        const circleTexture = createCircleTexture(); // Crea la texture una sola volta
 
         function animate() {
             requestAnimationFrame(animate);
@@ -105,12 +115,14 @@
             loader.load(
                 fileUrl,
                 (geometry) => {
-
                     geometry.computeVertexNormals();
                     const hasColors = geometry.hasAttribute('color');
 
                     const material = new THREE.PointsMaterial({
-                        size: 0.01,
+                        size: 0.003,
+                        map: circleTexture,   // Applica la texture circolare
+                        transparent: true,      // Necessario per la trasparenza della texture
+                        alphaTest: 0.5,         // Migliora i bordi dei cerchi
                         vertexColors: hasColors,
                         color: hasColors ? undefined : 0x0073a8
                     });
@@ -119,7 +131,6 @@
                         scene.remove(points);
                         points.geometry.dispose();
                         points.material.dispose();
-                        points = null;
                     }
 
                     points = new THREE.Points(geometry, material);
@@ -137,29 +148,25 @@
                     points.position.sub(center.multiplyScalar(scale));
 
                     scene.add(points);
-
                     loadingDiv.style.display = 'none';
                 },
                 (xhr) => {
                     if (xhr.lengthComputable) {
                         const percent = ((xhr.loaded / xhr.total) * 100).toFixed(1);
-                        document.getElementById('loading').innerText = `Loading model... ${percent}%`;
+                        loadingDiv.innerText = `Loading model... ${percent}%`;
                     }
                 },
                 (error) => {
-                    document.getElementById('loading').innerText = 'Failed to load model.';
+                    loadingDiv.innerText = 'Failed to load model.';
                 }
             );
         }
 
         window.addEventListener('message', (event) => {
             const fileUrl = event.data?.fileUrl;
-            if (!fileUrl) {
-                document.getElementById('loading').innerText = 'No model specified (via message).';
-                return;
+            if (fileUrl) {
+                loadModel(fileUrl);
             }
-
-            loadModel(fileUrl);
         });
 
         document.addEventListener('DOMContentLoaded', () => {
