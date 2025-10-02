@@ -43,11 +43,11 @@ class _ProfilePageState extends State<ProfilePage> {
       context,
       'Are you sure you want to log out?',
       () async {
-        // La pop della dialog viene gestita da showConfirmationDialog in caso di successo
         await FirebaseAuth.instance.signOut();
       },
       title: 'Logout',
       confirmText: 'Logout',
+      pop: false,
     );
   }
 
