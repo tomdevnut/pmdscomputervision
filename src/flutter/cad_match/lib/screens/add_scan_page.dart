@@ -17,12 +17,15 @@ class _AddScanPageState extends State<AddScanPage> {
   String? _selectedStepId;
   String? _selectedStepName;
   Stream<QuerySnapshot>? _stepsStream;
-  bool _isSaving = false;
+  bool _isStarting = false;
 
   @override
   void initState() {
     super.initState();
-    _stepsStream = FirebaseFirestore.instance.collection('steps').snapshots();
+    _stepsStream = FirebaseFirestore.instance
+        .collection('steps')
+        .orderBy('name')
+        .snapshots();
   }
 
   @override
@@ -31,13 +34,13 @@ class _AddScanPageState extends State<AddScanPage> {
     super.dispose();
   }
 
-  InputDecoration _inputDecoration(String hint) {
+  InputDecoration _inputDecoration(String label, {Widget? icon}) {
     return InputDecoration(
-      hintText: hint,
+      labelText: label,
+      labelStyle: const TextStyle(color: AppColors.textHint),
+      prefixIcon: icon,
       filled: true,
-      fillColor: AppColors.textFieldBackground,
-      hintStyle: const TextStyle(color: AppColors.textHint),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      fillColor: AppColors.cardBackground,
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide.none,
@@ -54,196 +57,193 @@ class _AddScanPageState extends State<AddScanPage> {
         borderRadius: BorderRadius.circular(12),
         borderSide: const BorderSide(color: AppColors.error),
       ),
-      errorStyle: const TextStyle(
-        color: AppColors.error,
-        fontWeight: FontWeight.bold,
-      ),
     );
   }
 
   Future<void> _onStartScanning() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      if (_selectedStepId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text(
-              'Please select a step.',
-              style: TextStyle(color: AppColors.textPrimary),
-            ),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
-        return;
-      }
+    // Il validator del form ora gestisce tutti i controlli
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
 
-      setState(() => _isSaving = true);
+    setState(() => _isStarting = true);
 
-      final payload = {
-        'name': _nameCtrl.text.trim(),
-        'stepId': _selectedStepId,
-        'stepName': _selectedStepName,
-      };
+    final payload = {
+      'name': _nameCtrl.text.trim(),
+      'stepId': _selectedStepId,
+      'stepName': _selectedStepName,
+    };
 
-      if (!mounted) return;
-      await Future.delayed(Duration(milliseconds: 500));
-      if (!mounted) return;
+    await Future.delayed(const Duration(milliseconds: 300));
 
-      Navigator.of(context).push(
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
         MaterialPageRoute(
           builder: (context) => LidarScannerScreen(payload: payload),
         ),
       );
-
-      if (mounted) setState(() => _isSaving = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: AppColors.primary,
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundColor,
-        shadowColor: AppColors.cardBackground,
-        foregroundColor: AppColors.textPrimary,
-        centerTitle: true,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('New Scan'),
+        foregroundColor: AppColors.buttonText,
+        title: const Text(
+          'New Scan',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
       ),
       body: SafeArea(
+        bottom: false,
         child: Form(
           key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.boxborder),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Insert scan details',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 20,
+          child: Container(
+            width: double.infinity,
+            height: double.infinity,
+            decoration: const BoxDecoration(
+              color: AppColors.backgroundColor,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(30),
+                topRight: Radius.circular(30),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                    children: [
+                      const Text(
+                        'Add Scan Details',
+                        style: TextStyle(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Name',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Enter a name and select the desired step to begin.',
+                        style: TextStyle(
+                          color: AppColors.textSecondary,
+                          fontSize: 16,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    TextFormField(
-                      controller: _nameCtrl,
-                      style: const TextStyle(color: AppColors.textPrimary),
-                      cursorColor: AppColors.primary,
-                      decoration: _inputDecoration('Enter scan name'),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Required' : null,
-                    ),
-                    const SizedBox(height: 20),
-                    const Text(
-                      'Step',
-                      style: TextStyle(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    StreamBuilder<QuerySnapshot>(
-                      stream: _stepsStream,
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(
-                              valueColor: AlwaysStoppedAnimation<Color>(
-                                AppColors.primary,
-                              ),
-                            ),
-                          );
-                        }
-                        if (snapshot.hasError) {
-                          return Text(
-                            'Error loading steps: ${snapshot.error}',
-                            style: const TextStyle(color: AppColors.error),
-                            textAlign: TextAlign.center,
-                          );
-                        }
-                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                          return const Text(
-                            'No steps available. Please use the web app to add them.',
-                            style: TextStyle(color: AppColors.textPrimary),
-                            textAlign: TextAlign.center,
-                          );
-                        }
-
-                        final steps = snapshot.data!.docs;
-
-                        return DropdownButtonFormField<String>(
-                          style: const TextStyle(color: AppColors.textPrimary),
-                          dropdownColor: AppColors.cardBackground,
-                          decoration: _inputDecoration('Select a step'),
+                      const SizedBox(height: 32),
+                      TextFormField(
+                        controller: _nameCtrl,
+                        style: const TextStyle(color: AppColors.textPrimary),
+                        cursorColor: AppColors.primary,
+                        decoration: _inputDecoration(
+                          'Scan Name',
                           icon: const Icon(
-                            Icons.arrow_drop_down_rounded,
-                            color: AppColors.textPrimary,
+                            Icons.label_outline_rounded,
+                            color: AppColors.textHint,
                           ),
-                          items: steps.map((doc) {
-                            final data = doc.data() as Map<String, dynamic>;
-                            final stepName =
-                                (data['name'] as String?)?.isNotEmpty == true
-                                ? data['name'] as String
-                                : 'No name';
-                            return DropdownMenuItem(
-                              value: doc.id,
-                              child: Text(
-                                stepName,
-                                style: const TextStyle(
-                                  color: AppColors.textPrimary,
+                        ),
+                        validator: (v) => (v == null || v.trim().isEmpty)
+                            ? 'Please enter a name'
+                            : null,
+                      ),
+                      const SizedBox(height: 24),
+                      StreamBuilder<QuerySnapshot>(
+                        stream: _stepsStream,
+                        builder: (context, snapshot) {
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const Center(
+                              child: CircularProgressIndicator(
+                                color: AppColors.primary,
+                              ),
+                            );
+                          }
+                          if (!snapshot.hasData ||
+                              snapshot.data!.docs.isEmpty) {
+                            return Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: AppColors.textFieldBackground,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Text(
+                                'No steps available.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: AppColors.textSecondary,
                                 ),
                               ),
                             );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedStepId = value;
-                              _selectedStepName =
-                                  steps
-                                          .firstWhere((doc) => doc.id == value)
-                                          .get('name')
-                                      as String;
-                            });
-                          },
-                          validator: (value) =>
-                              value == null ? 'Required' : null,
-                        );
-                      },
-                    ),
-                  ],
+                          }
+
+                          final steps = snapshot.data!.docs;
+                          return DropdownButtonFormField<String>(
+                            initialValue: _selectedStepId,
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 16,
+                            ),
+                            dropdownColor: AppColors.cardBackground,
+                            decoration: _inputDecoration(
+                              'Select a Step',
+                              icon: const Icon(
+                                Icons.file_copy_outlined,
+                                color: AppColors.textHint,
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: AppColors.textHint,
+                            ),
+                            items: steps.map((doc) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              final stepName =
+                                  (data['name'] as String?)?.isNotEmpty == true
+                                  ? data['name'] as String
+                                  : 'No name';
+                              return DropdownMenuItem(
+                                value: doc.id,
+                                child: Text(stepName),
+                              );
+                            }).toList(),
+                            onChanged: (value) {
+                              if (value == null) {
+                                return;
+                              }
+                              final selectedDoc = steps.firstWhere(
+                                (doc) => doc.id == value,
+                              );
+                              final data =
+                                  selectedDoc.data() as Map<String, dynamic>;
+                              setState(() {
+                                _selectedStepId = value;
+                                _selectedStepName = data['name'] as String?;
+                              });
+                            },
+                            validator: (value) =>
+                                value == null ? 'Please select a step' : null,
+                          );
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-              buildButton(
-                _isSaving ? 'STARTING...' : 'START SCANNING',
-                onPressed: _isSaving ? () {} : _onStartScanning,
-              ),
-            ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                  child: buildButton(
+                    'START SCANNING',
+                    isLoading: _isStarting,
+                    onPressed: _onStartScanning,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

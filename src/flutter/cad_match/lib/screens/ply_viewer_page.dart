@@ -22,7 +22,6 @@ class _PlyViewerPageState extends State<PlyViewerPage> {
 
   Future<String> _getPlyUrl() async {
     try {
-      // Usa il percorso dinamico
       final ref = FirebaseStorage.instance.ref(
         'comparisons/${widget.scanId}.ply',
       );
@@ -36,33 +35,60 @@ class _PlyViewerPageState extends State<PlyViewerPage> {
 
   @override
   Widget build(BuildContext context) {
-    const bg = AppColors.backgroundColor;
-    const cardColor = AppColors.cardBackground;
-
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: AppColors.primary,
       appBar: AppBar(
-        backgroundColor: bg,
-        shadowColor: cardColor,
-        foregroundColor: AppColors.textPrimary,
-        centerTitle: true,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('3D Comparison'),
+        foregroundColor: AppColors.buttonText,
+        title: const Text(
+          '3D Comparison',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
       ),
-      body: FutureBuilder<String>(
-        future: _plyUrlFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            );
-          }
-          if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(child: Text('Failed to load model.'));
-          }
-          // Passiamo sia l'URL che lo scanId al nostro PlyViewer
-          return PlyViewer(modelUrl: snapshot.data!, scanId: widget.scanId);
-        },
+      body: SafeArea(
+        bottom: false,
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            color: AppColors.backgroundColor,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(30),
+              topRight: Radius.circular(30),
+            ),
+          ),
+          child: ClipRRect(
+            // Aggiunto per contenere la vista nativa dentro i bordi arrotondati
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(30),
+              topRight: Radius.circular(30),
+            ),
+            child: FutureBuilder<String>(
+              future: _plyUrlFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary),
+                  );
+                }
+                if (snapshot.hasError || !snapshot.hasData) {
+                  return const Center(
+                    child: Text(
+                      'Failed to load 3D model.',
+                      style: TextStyle(color: AppColors.textSecondary),
+                    ),
+                  );
+                }
+                return PlyViewer(
+                  modelUrl: snapshot.data!,
+                  scanId: widget.scanId,
+                );
+              },
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -70,7 +96,7 @@ class _PlyViewerPageState extends State<PlyViewerPage> {
 
 class PlyViewer extends StatefulWidget {
   final String modelUrl;
-  final String scanId; // Aggiunto scanId
+  final String scanId;
   const PlyViewer({super.key, required this.modelUrl, required this.scanId});
 
   @override
@@ -94,7 +120,6 @@ class _PlyViewerState extends State<PlyViewer> {
           onPlatformViewCreated: (int id) async {
             final channel = MethodChannel('ply_viewer_$id');
             try {
-              // --- MODIFICA: Passiamo una mappa con entrambi i valori ---
               await channel.invokeMethod('loadModel', {
                 'url': widget.modelUrl,
                 'scanId': widget.scanId,
@@ -106,12 +131,22 @@ class _PlyViewerState extends State<PlyViewer> {
               }
             } catch (e) {
               debugPrint("Errore dal lato nativo: $e");
+              if (mounted) {
+                // Potresti voler mostrare un messaggio di errore qui
+                setState(() {
+                  _isNativeLoading = false;
+                });
+              }
             }
           },
         ),
         if (_isNativeLoading)
-          const Center(
-            child: CircularProgressIndicator(color: AppColors.primary),
+          Container(
+            // Sfondo semi-trasparente per il caricamento
+            color: AppColors.backgroundColor.withAlpha(128),
+            child: const Center(
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ),
           ),
       ],
     );

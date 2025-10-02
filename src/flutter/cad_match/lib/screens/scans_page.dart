@@ -203,7 +203,7 @@ class _ScansPageState extends State<ScansPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Your Scans',
+            'Scans',
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,

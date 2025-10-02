@@ -24,22 +24,22 @@ class SendScanPage extends StatefulWidget {
 class _SendScanPageState extends State<SendScanPage> {
   bool _isProcessing = false;
 
-  /// Genera un file .ply dai punti scansionati.
+  // Tutta la logica di generazione file e upload è invariata
   Future<File> _generatePLYFile(
     List<LidarPoint> scannedPoints,
     String scanId,
   ) async {
-    StringBuffer plyContent = StringBuffer();
-    plyContent.writeln('ply');
-    plyContent.writeln('format ascii 1.0');
-    plyContent.writeln('element vertex ${scannedPoints.length}');
-    plyContent.writeln('property float x');
-    plyContent.writeln('property float y');
-    plyContent.writeln('property float z');
-    plyContent.writeln('property uchar red');
-    plyContent.writeln('property uchar green');
-    plyContent.writeln('property uchar blue');
-    plyContent.writeln('end_header');
+    final plyContent = StringBuffer()
+      ..writeln('ply')
+      ..writeln('format ascii 1.0')
+      ..writeln('element vertex ${scannedPoints.length}')
+      ..writeln('property float x')
+      ..writeln('property float y')
+      ..writeln('property float z')
+      ..writeln('property uchar red')
+      ..writeln('property uchar green')
+      ..writeln('property uchar blue')
+      ..writeln('end_header');
 
     for (var point in scannedPoints) {
       final pos = point.position;
@@ -54,7 +54,6 @@ class _SendScanPageState extends State<SendScanPage> {
     return file;
   }
 
-  /// Carica il file su Firebase Storage con i metadati corretti.
   Future<void> _uploadToFirebase(File file, String scanId) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -65,7 +64,6 @@ class _SendScanPageState extends State<SendScanPage> {
         .ref()
         .child('scans')
         .child('$scanId.ply');
-
     final metadata = SettableMetadata(
       customMetadata: {
         'user': user.uid,
@@ -78,7 +76,6 @@ class _SendScanPageState extends State<SendScanPage> {
     await file.delete();
   }
 
-  /// Gestisce l'intero processo di upload e navigazione.
   void _confirmAndUpload() async {
     if (_isProcessing) return;
     setState(() => _isProcessing = true);
@@ -90,38 +87,33 @@ class _SendScanPageState extends State<SendScanPage> {
 
       const uuid = Uuid();
       final scanId = uuid.v4();
-
       final plyFile = await _generatePLYFile(widget.scannedPoints, scanId);
-
       await _uploadToFirebase(plyFile, scanId);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Upload successful! Your scan is being processed.',
-              style: TextStyle(color: AppColors.textPrimary),
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      }
-    } catch (e) {
-      String message;
-      if (e.toString().contains("network error")) {
-        message = 'A network error occurred. Please check your connection.';
-      } else {
-        message = 'Upload failed: ${e.toString()}';
-      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
+              'Upload successful! Your scan is being processed.',
+              style: TextStyle(color: AppColors.buttonText),
+            ),
+            backgroundColor: AppColors.success,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } catch (e) {
+      String message = 'Upload failed: ${e.toString()}';
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
               message,
-              style: const TextStyle(color: AppColors.textPrimary),
+              style: TextStyle(color: AppColors.buttonText),
             ),
             backgroundColor: AppColors.error,
             behavior: SnackBarBehavior.floating,
@@ -138,7 +130,6 @@ class _SendScanPageState extends State<SendScanPage> {
     }
   }
 
-  /// Scarta la scansione e naviga alla Home.
   void _discardScan() {
     if (_isProcessing) return;
     Navigator.of(context).popUntil((route) => route.isFirst);
@@ -147,67 +138,117 @@ class _SendScanPageState extends State<SendScanPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: AppColors.primary,
       appBar: AppBar(
-        backgroundColor: AppColors.backgroundColor,
-        foregroundColor: AppColors.textPrimary,
-        centerTitle: true,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        foregroundColor: AppColors.buttonText,
         title: const Text(
           'Confirm Scan',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        centerTitle: true,
+        automaticallyImplyLeading: false, // Rimuove il pulsante "indietro"
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
+        bottom: false,
+        child: Container(
+          width: double.infinity,
+          height: double.infinity,
+          decoration: const BoxDecoration(
+            color: AppColors.backgroundColor,
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(30),
+              topRight: Radius.circular(30),
+            ),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: AppColors.cardBackground,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.textPrimary),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
                   children: [
                     const Text(
                       'Scan Summary',
                       style: TextStyle(
                         color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 22,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    _buildSummaryRow('Name:', widget.payload['name'] ?? 'N/A'),
                     const SizedBox(height: 8),
-                    _buildSummaryRow(
-                      'Step:',
-                      widget.payload['stepName'] ?? 'N/A',
+                    const Text(
+                      'Please review the scan details before uploading.',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 16,
+                      ),
                     ),
-                    const SizedBox(height: 8),
-                    _buildSummaryRow(
-                      'Points captured:',
-                      widget.scannedPoints.length.toString(),
+                    const SizedBox(height: 32),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 8,
+                        horizontal: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.cardBackground,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.shadows,
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          _buildInfoRow(
+                            Icons.label_outline_rounded,
+                            'Name',
+                            widget.payload['name'] ?? 'N/A',
+                          ),
+                          const Divider(),
+                          _buildInfoRow(
+                            Icons.file_copy_outlined,
+                            'Step',
+                            widget.payload['stepName'] ?? 'N/A',
+                          ),
+                          const Divider(),
+                          _buildInfoRow(
+                            Icons.scatter_plot_rounded,
+                            'Points captured',
+                            widget.scannedPoints.length.toString(),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 50), // Spazio fisso invece dello Spacer
-              buildButton(
-                _isProcessing ? 'UPLOADING...' : 'CONFIRM & UPLOAD',
-                color: AppColors.primary,
-                onPressed: _isProcessing ? () {} : _confirmAndUpload,
-              ),
-              const SizedBox(height: 12),
-              buildButton(
-                'DISCARD',
-                onPressed: _isProcessing ? () {} : _discardScan,
-                color: AppColors.error,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                child: Column(
+                  children: [
+                    buildButton(
+                      'CONFIRM & UPLOAD',
+                      isLoading: _isProcessing,
+                      onPressed: _confirmAndUpload,
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: _isProcessing ? null : _discardScan,
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.error,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                      child: const Text('Discard'),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -216,23 +257,28 @@ class _SendScanPageState extends State<SendScanPage> {
     );
   }
 
-  Widget _buildSummaryRow(String title, String value) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(color: AppColors.textSecondary, fontSize: 16),
-        ),
-        Text(
-          value,
-          style: const TextStyle(
-            color: AppColors.textPrimary,
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.textSecondary, size: 20),
+          const SizedBox(width: 16),
+          Text(label, style: const TextStyle(color: AppColors.textSecondary)),
+          const Spacer(),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

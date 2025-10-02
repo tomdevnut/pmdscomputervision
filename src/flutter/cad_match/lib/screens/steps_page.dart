@@ -3,12 +3,13 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../utils.dart';
-import 'step_detail_page.dart';
 
-// Funzione per recuperare i nomi utente in un'unica query
+// Funzione per recuperare i nomi utente in un'unica query (invariata)
 Future<Map<String, String>> fetchUsernames(List<String> userIds) async {
   final validUserIds = userIds.where((id) => id.isNotEmpty).toList();
-  if (validUserIds.isEmpty) return {};
+  if (validUserIds.isEmpty) {
+    return {};
+  }
   final userDocs = await FirebaseFirestore.instance
       .collection('users')
       .where(FieldPath.documentId, whereIn: validUserIds)
@@ -34,6 +35,9 @@ class _StepsPageState extends State<StepsPage> {
   final _searchController = TextEditingController();
   Timer? _searchDebouncer;
 
+  // --- STATO PER L'ESPANSIONE ---
+  String? _expandedStepId;
+
   @override
   void initState() {
     super.initState();
@@ -50,6 +54,7 @@ class _StepsPageState extends State<StepsPage> {
     super.dispose();
   }
 
+  // La logica per lo stream e la ricerca rimane invariata
   void _initializeStreamLogic() {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -144,7 +149,10 @@ class _StepsPageState extends State<StepsPage> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide(color: AppColors.primary, width: 2),
+                borderSide: const BorderSide(
+                  color: AppColors.primary,
+                  width: 2,
+                ),
               ),
             ),
           ),
@@ -181,7 +189,7 @@ class _StepsPageState extends State<StepsPage> {
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Center(
             child: Text(
-              'No steps found. Please mind that step names are case-sensitive.',
+              'No steps found.',
               style: TextStyle(color: AppColors.textPrimary, fontSize: 16),
               textAlign: TextAlign.center,
             ),
@@ -217,41 +225,26 @@ class _StepsPageState extends State<StepsPage> {
             final usernames = futureSnapshot.data ?? {};
 
             return ListView.builder(
-              padding: const EdgeInsets.only(bottom: 24),
+              padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
               itemCount: steps.length,
               itemBuilder: (context, index) {
                 final doc = steps[index];
                 final data = doc.data() as Map<String, dynamic>;
+                final bool isExpanded = doc.id == _expandedStepId;
 
-                final title = (data['name'] as String?)?.isNotEmpty == true
-                    ? data['name'] as String
-                    : (data['stepId'] as String?) ?? 'No Title';
-                final description =
-                    (data['description'] as String?)?.isNotEmpty == true
-                    ? data['description'] as String
-                    : 'No Description';
-                final userId = data['user'] as String? ?? '';
-                final username = usernames[userId] ?? 'Unknown User';
-
-                // Usiamo il nuovo widget da utils.dart
-                return buildStepListItem(
-                  title: title,
-                  subtitle: description,
+                return _buildExpandableStepItem(
+                  data: data,
+                  docId: doc.id,
+                  usernames: usernames,
+                  isExpanded: isExpanded,
                   onTap: () {
-                    if (context.mounted) {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => StepDetailPage(
-                            step: {
-                              'stepId': doc.id,
-                              'name': title,
-                              'user': username,
-                              'description': description,
-                            },
-                          ),
-                        ),
-                      );
-                    }
+                    setState(() {
+                      if (isExpanded) {
+                        _expandedStepId = null; // Se è già aperto, chiudilo
+                      } else {
+                        _expandedStepId = doc.id; // Altrimenti, aprilo
+                      }
+                    });
                   },
                 );
               },
@@ -259,6 +252,148 @@ class _StepsPageState extends State<StepsPage> {
           },
         );
       },
+    );
+  }
+
+  // --- WIDGET PER L'ELEMENTO ESPANDIBILE ---
+  Widget _buildExpandableStepItem({
+    required Map<String, dynamic> data,
+    required String docId,
+    required Map<String, String> usernames,
+    required bool isExpanded,
+    required VoidCallback onTap,
+  }) {
+    final title = (data['name'] as String?)?.isNotEmpty == true
+        ? data['name'] as String
+        : (data['stepId'] as String?) ?? 'No Title';
+    final description = (data['description'] as String?)?.isNotEmpty == true
+        ? data['description'] as String
+        : 'No Description';
+    final userId = data['user'] as String? ?? '';
+    final username = usernames[userId] ?? 'Unknown User';
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadows,
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: AnimatedSize(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // --- VISTA COMPATTA ---
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withAlpha(26),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.file_copy_rounded,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: const TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (!isExpanded) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                description,
+                                style: const TextStyle(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 14,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Icon(
+                        isExpanded
+                            ? Icons.keyboard_arrow_up_rounded
+                            : Icons.keyboard_arrow_down_rounded,
+                        color: AppColors.unselected,
+                      ),
+                    ],
+                  ),
+                  // --- VISTA ESPANSA (appare solo se isExpanded è true) ---
+                  if (isExpanded) ...[
+                    const Divider(height: 24),
+                    _buildInfoRow(
+                      Icons.description_outlined,
+                      'Description',
+                      description,
+                    ),
+                    _buildInfoRow(Icons.person_outline, 'Author', username),
+                    _buildInfoRow(Icons.vpn_key_outlined, 'Step ID', docId),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6.0),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppColors.textSecondary, size: 18),
+          const SizedBox(width: 12),
+          Text(
+            '$label:',
+            style: const TextStyle(color: AppColors.textSecondary),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

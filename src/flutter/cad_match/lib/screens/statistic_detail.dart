@@ -2,162 +2,245 @@ import 'package:flutter/material.dart';
 import 'ply_viewer_page.dart';
 import '../utils.dart';
 
-// Widget stateless per la pagina dei dettagli statistici
 class StatisticDetailPage extends StatelessWidget {
   final Map<String, dynamic> stats;
 
   const StatisticDetailPage({super.key, required this.stats});
 
-  // Funzione helper per normalizzare i valori di testo
   String _v(dynamic value) {
     return (value == null || (value is String && value.trim().isEmpty))
         ? '—'
         : value.toString();
   }
 
-  // Funzione helper per formattare i numeri con unità
   String _f(dynamic value, int decimals, String unit) {
     if (value == null || value is! num) return '—';
     return '${value.toStringAsFixed(decimals)} $unit';
   }
 
+  // Helper per determinare il colore in base all'accuratezza
+  Color _getAccuracyColor(int accuracy) {
+    if (accuracy < 50) {
+      return AppColors.error;
+    } else if (accuracy < 80) {
+      return AppColors.warning;
+    } else {
+      return AppColors.success;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    const bg = AppColors.backgroundColor;
-    const cardColor = AppColors.cardBackground;
+    final accuracy = (stats['accuracy'] as num?)?.toInt() ?? 0;
+    final accuracyColor = _getAccuracyColor(accuracy);
 
     return Scaffold(
-      backgroundColor: bg,
+      backgroundColor: AppColors.primary,
       appBar: AppBar(
-        backgroundColor: bg,
-        foregroundColor: AppColors.textPrimary,
-        centerTitle: true,
+        backgroundColor: Colors.transparent,
         elevation: 0,
-        title: const Text('Statistic Details'),
+        foregroundColor: AppColors.buttonText,
+        leadingWidth: 72, // Spazio per la freccia di back
+        titleSpacing: 0, // Annulla lo spazio di default per allineare il titolo
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment:
+              MainAxisAlignment.center, // Centra verticalmente il titolo
+          children: [
+            Text(
+              _v(stats['name']),
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              'ID: ${_v(stats['scanId'])}',
+              style: TextStyle(
+                fontSize: 12,
+                color: AppColors.buttonText.withAlpha(204),
+              ),
+            ),
+          ],
+        ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Column(
-            children: [
-              Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(0, 12, 0, 24),
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: cardColor,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AppColors.boxborder),
+        bottom: false,
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                decoration: const BoxDecoration(
+                  color: AppColors.backgroundColor,
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(30),
+                    topRight: Radius.circular(30),
+                  ),
+                ),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _buildAccuracyIndicator(accuracy, accuracyColor),
+                      const SizedBox(height: 32),
+                      buildButton(
+                        'VIEW 3D COMPARISON',
+                        onPressed: () => _navigateToPlyViewer(context),
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _v(stats['name']),
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 24,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            'ID: ${_v(stats['scanId'])}',
-                            style: const TextStyle(
-                              color: AppColors.textSecondary,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          const Divider(color: AppColors.boxborder),
-                          const SizedBox(height: 10),
-                          cardField(
-                            'Accuracy',
-                            _f(stats['accuracy'], 2, '%'),
-                            Icons.speed_rounded,
-                          ),
-                          const SizedBox(height: 10),
-                          const Divider(color: AppColors.boxborder),
-                          const SizedBox(height: 10),
-                          cardField(
-                            'Average deviation',
-                            _f(stats['avg_deviation'], 3, 'mm'),
-                            Icons.analytics_rounded,
-                          ),
-                          const SizedBox(height: 10),
-                          const Divider(color: AppColors.boxborder),
-                          const SizedBox(height: 10),
-                          cardField(
-                            'Minimum deviation',
-                            _f(stats['min_deviation'], 3, 'mm'),
-                            Icons.arrow_circle_down_rounded,
-                          ),
-                          const SizedBox(height: 10),
-                          const Divider(color: AppColors.boxborder),
-                          const SizedBox(height: 10),
-                          cardField(
-                            'Maximum deviation',
-                            _f(stats['max_deviation'], 3, 'mm'),
-                            Icons.arrow_circle_up_rounded,
-                          ),
-                          const SizedBox(height: 10),
-                          const Divider(color: AppColors.boxborder),
-                          const SizedBox(height: 10),
-                          cardField(
-                            'Standard deviation',
-                            _f(stats['std_deviation'], 3, 'mm'),
-                            Icons.stacked_line_chart_rounded,
-                          ),
-                          const SizedBox(height: 10),
-                          const Divider(color: AppColors.boxborder),
-                          const SizedBox(height: 10),
-                          cardField(
-                            'Percentage of points within tolerance',
-                            _f(stats['ppwt'], 2, '%'),
-                            Icons.check_circle_outline_rounded,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                      const SizedBox(height: 24),
+                      _buildStatsDetailsCard(),
+                    ],
+                  ),
                 ),
               ),
-              const SizedBox(height: 20),
-              buildButton(
-                'VIEW 3D COMPARISON',
-                onPressed: () {
-                  final scanId = stats['scanId'];
-                  if (scanId != null) {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PlyViewerPage(scanId: scanId),
-                      ),
-                    );
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'Scan ID not available.',
-                          style: TextStyle(color: AppColors.textPrimary),
-                        ),
-                        backgroundColor: AppColors.error,
-                        behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    );
-                  }
-                },
-              ),
-              const SizedBox(height: 24),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
+  }
+
+  Widget _buildAccuracyIndicator(int accuracy, Color color) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadows,
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Overall Accuracy',
+            style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '$accuracy %',
+            style: TextStyle(
+              color: color,
+              fontSize: 36,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: LinearProgressIndicator(
+              value: accuracy / 100.0,
+              minHeight: 12,
+              valueColor: AlwaysStoppedAnimation<Color>(color),
+              backgroundColor: color.withAlpha(50),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsDetailsCard() {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.cardBackground,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadows,
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildInfoRow(
+            Icons.analytics_rounded,
+            'Average deviation',
+            _f(stats['avg_deviation'], 3, 'mm'),
+          ),
+          const Divider(),
+          _buildInfoRow(
+            Icons.arrow_circle_down_rounded,
+            'Minimum deviation',
+            _f(stats['min_deviation'], 3, 'mm'),
+          ),
+          const Divider(),
+          _buildInfoRow(
+            Icons.arrow_circle_up_rounded,
+            'Maximum deviation',
+            _f(stats['max_deviation'], 3, 'mm'),
+          ),
+          const Divider(),
+          _buildInfoRow(
+            Icons.stacked_line_chart_rounded,
+            'Standard deviation',
+            _f(stats['std_deviation'], 3, 'mm'),
+          ),
+          const Divider(),
+          _buildInfoRow(
+            Icons.check_circle_outline_rounded,
+            'Points within tolerance',
+            _f(stats['ppwt'], 2, '%'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12.0),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.textSecondary, size: 20),
+          const SizedBox(width: 16),
+          Text(label, style: const TextStyle(color: AppColors.textSecondary)),
+          const Spacer(),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.bold,
+              ),
+              textAlign: TextAlign.end,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToPlyViewer(BuildContext context) {
+    final scanId = stats['scanId'];
+    if (scanId != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => PlyViewerPage(scanId: scanId)),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Scan ID not available.',
+            style: TextStyle(color: AppColors.buttonText),
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    }
   }
 }

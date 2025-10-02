@@ -16,12 +16,9 @@ class LidarScannerScreen extends StatefulWidget {
 class _LidarScannerScreenState extends State<LidarScannerScreen> {
   final scannedPoints = <LidarPoint>[];
   bool isScanning = false;
-  String? scanStatus = 'Ready to scan';
-  final int recommendedPoints = 15000; // recommended for large objects
-  final int minPointsToSave = 1500; // minimum to save something useful
-  double minPointDistance = 0.01; // 1 cm
-  double maxScanDistance =
-      6.0; // 6 m (LiDAR reaches up to ~5m, let's leave a margin)
+  String? scanStatusMessage = 'Ready to scan';
+  final int recommendedPoints = 15000;
+  final int minPointsToSave = 1500;
   Timer? uiTick;
   final _lidarKey = GlobalKey<LidarViewState>();
   DateTime? _lastPointsAt;
@@ -30,27 +27,28 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
   void initState() {
     super.initState();
     uiTick = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!mounted) return;
-      setState(() {
-        // update warning / progress status
-      });
+      if (mounted) {
+        setState(() {
+          // Forza un rebuild per aggiornare l'avviso _noPointsRecently
+        });
+      }
     });
   }
 
   @override
   void dispose() {
     uiTick?.cancel();
+    _lidarKey.currentState?.stop(); // Assicurati che lo scan si fermi
     super.dispose();
   }
 
+  // --- LOGICA DI CONTROLLO (INVARIATA) ---
   void _onPoints(List<LidarPoint> pts) {
-    if (!isScanning) return;
+    if (!isScanning || !mounted) return;
     _lastPointsAt = DateTime.now();
-
     scannedPoints.addAll(pts);
-
     setState(() {
-      scanStatus = 'Scanning... ${scannedPoints.length} points';
+      scanStatusMessage = 'Scanning...';
     });
   }
 
@@ -58,32 +56,42 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
     setState(() {
       isScanning = !isScanning;
       if (isScanning) {
-        scanStatus = 'Scanning... Move slowly around the part';
+        scanStatusMessage = 'Scanning... Move slowly';
         _lidarKey.currentState?.start();
       } else {
-        scanStatus = 'Scan paused - ${scannedPoints.length} points';
+        scanStatusMessage = 'Scan paused';
         _lidarKey.currentState?.stop();
       }
     });
   }
 
   void resetScan() {
-    setState(() {
-      isScanning = false;
-      scannedPoints.clear();
-      scanStatus = 'Ready to scan';
-      _lastPointsAt = null;
-    });
-    _lidarKey.currentState?.reset();
+    showConfirmationDialog(
+      context,
+      'Are you sure you want to discard all scanned points?',
+      () {
+        if (mounted) {
+          setState(() {
+            isScanning = false;
+            scannedPoints.clear();
+            scanStatusMessage = 'Ready to scan';
+            _lastPointsAt = null;
+          });
+        }
+        _lidarKey.currentState?.reset();
+        Navigator.of(context).pop(); // Chiude la dialog
+      },
+      title: 'Reset Scan',
+      confirmText: 'Reset',
+    );
   }
 
   void _onSaveScan() {
     if (scannedPoints.length < minPointsToSave) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'At least $minPointsToSave points are needed for a decent result',
-          ),
+          content: Text('At least $minPointsToSave points are needed.'),
+          backgroundColor: AppColors.error,
         ),
       );
       return;
@@ -97,28 +105,270 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
   }
 
   bool get _noPointsRecently {
-    if (!isScanning) return false;
-    if (_lastPointsAt == null) return true;
+    if (!isScanning || _lastPointsAt == null) return false;
     return DateTime.now().difference(_lastPointsAt!).inSeconds >= 2;
   }
 
+  void _cancelScan() {
+    if (scannedPoints.isNotEmpty) {
+      showConfirmationDialog(
+        context,
+        'Are you sure you want to cancel this scan and discard all points?',
+        () {
+          Navigator.of(context).pop(); // Chiude la dialog
+          Navigator.of(context).pop(); // Torna alla pagina precedente
+        },
+        title: 'Cancel Scan',
+        confirmText: 'Discard',
+      );
+    } else {
+      Navigator.of(context).pop();
+    }
+  }
+
+  // --- NUOVA INTERFACCIA GRAFICA ---
   @override
   Widget build(BuildContext context) {
     final progress = (scannedPoints.length / recommendedPoints).clamp(0.0, 1.0);
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
-      appBar: AppBar(
-        backgroundColor: AppColors.backgroundColor,
-        foregroundColor: AppColors.textPrimary,
-        centerTitle: true,
-        elevation: 0,
-        title: Text(widget.payload['name'] ?? 'New Scan'),
-      ),
+      backgroundColor: Colors.black,
       body: Stack(
         children: [
           LidarView(key: _lidarKey, onPoints: _onPoints),
-          _buildUIOverlay(progress),
           if (isScanning) _buildScanningGuide(progress),
+          _buildHeader(),
+          _buildFooter(progress),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Positioned(
+      top: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Colors.black.withAlpha(153), Colors.transparent],
+          ),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Padding(
+            padding: const EdgeInsets.only(left: 4, right: 16, top: 4),
+            child: Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Colors.white),
+                  onPressed: _cancelScan,
+                ),
+                Expanded(
+                  child: Text(
+                    widget.payload['name'] ?? 'New Scan',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                const SizedBox(width: 40), // Spazio per bilanciare l'IconButton
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFooter(double progress) {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.bottomCenter,
+            end: Alignment.topCenter,
+            colors: [Colors.black.withAlpha(204), Colors.transparent],
+          ),
+        ),
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.only(top: 24),
+            child: Column(
+              children: [
+                if (_noPointsRecently) _buildWarningBanner(),
+
+                _buildStatusInfo(progress),
+
+                _buildControls(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWarningBanner() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.only(bottom: 12, left: 24, right: 24),
+      decoration: BoxDecoration(
+        color: AppColors.warning.withAlpha(76),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.warning),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 18),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'No new points. Get closer or check for obstacles.',
+              style: TextStyle(color: AppColors.warning, fontSize: 13),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusInfo(double progress) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      child: Column(
+        children: [
+          Text(
+            scanStatusMessage ?? '',
+            style: const TextStyle(color: Colors.white, fontSize: 16),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Text(
+                '${scannedPoints.length}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              Text(
+                ' / $recommendedPoints points',
+                style: const TextStyle(color: Colors.white70, fontSize: 16),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          LinearProgressIndicator(
+            value: progress,
+            backgroundColor: Colors.white.withAlpha(76),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              progress > 0.9 ? AppColors.success : AppColors.primary,
+            ),
+            minHeight: 6,
+            borderRadius: BorderRadius.circular(3),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildControls() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _buildSideButton(
+            icon: Icons.refresh_rounded,
+            onPressed: isScanning ? null : resetScan,
+            label: 'Reset',
+          ),
+          _buildMainScanButton(),
+          _buildSideButton(
+            icon: Icons.check_rounded,
+            onPressed: isScanning || scannedPoints.length < minPointsToSave
+                ? null
+                : _onSaveScan,
+            label: 'Save',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMainScanButton() {
+    return GestureDetector(
+      onTap: toggleScanning,
+      child: Container(
+        width: 80,
+        height: 80,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadows,
+              blurRadius: 10,
+              spreadRadius: 2,
+            ),
+          ],
+        ),
+        child: Center(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: isScanning ? 32 : 70,
+            height: isScanning ? 32 : 70,
+            decoration: BoxDecoration(
+              color: AppColors.error,
+              borderRadius: BorderRadius.circular(isScanning ? 8 : 35),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSideButton({
+    required IconData icon,
+    VoidCallback? onPressed,
+    required String label,
+  }) {
+    final bool isEnabled = onPressed != null;
+    return Opacity(
+      opacity: isEnabled ? 1.0 : 0.4,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: 60,
+            height: 60,
+            child: FilledButton(
+              onPressed: onPressed,
+              style: FilledButton.styleFrom(
+                backgroundColor: Colors.white.withAlpha(76),
+                shape: const CircleBorder(),
+                padding: EdgeInsets.zero,
+              ),
+              child: Icon(icon, color: Colors.white, size: 30),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(label, style: const TextStyle(color: Colors.white)),
         ],
       ),
     );
@@ -132,198 +382,6 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
       ),
     );
   }
-
-  Widget _buildUIOverlay(double progress) {
-    return SafeArea(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Barra stato compatta
-          Container(
-            margin: const EdgeInsets.all(16),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.cardBackground.withAlpha(204),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  scanStatus ?? 'Ready to scan',
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-
-                const SizedBox(height: 8),
-
-                // Before starting: show tips
-                if (!isScanning) ...[
-                  const Text(
-                    'Tips for large parts:\n'
-                    '• Keep 0.5–2.5 m from the part.\n'
-                    '• Move slowly and cover the entire perimeter.',
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Goal: $recommendedPoints points (recommended)',
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                ],
-
-                // During scanning: show only counter + progress
-                if (isScanning) ...[
-                  Text(
-                    'Points: ${scannedPoints.length} / $recommendedPoints',
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                  ),
-                ],
-
-                const SizedBox(height: 8),
-
-                LinearProgressIndicator(
-                  value: math.max(0.02, progress),
-                  backgroundColor: Colors.white24,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
-                ),
-
-                // Warning "no points" with text wrapping (no overflow)
-                if (_noPointsRecently) ...[
-                  const SizedBox(height: 10),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Icon(
-                        Icons.warning_amber_rounded,
-                        color: AppColors.warning,
-                        size: 18,
-                      ),
-                      SizedBox(width: 6),
-                      Expanded(
-                        child: Text(
-                          'No points from LiDAR. Get closer to the part or move slowly.',
-                          style: TextStyle(
-                            color: AppColors.warning,
-                            fontSize: 13,
-                          ),
-                          textAlign: TextAlign.center,
-                          softWrap: true,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-          ),
-
-          // Additional tips: show ONLY before starting
-          if (!isScanning)
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 32),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.black54,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Text(
-                'Cover all surfaces, especially the edges.\nAvoid sudden movements.',
-                style: TextStyle(color: Colors.white, fontSize: 14),
-                textAlign: TextAlign.center,
-              ),
-            ),
-
-          // Controls
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildSideButton(
-                  icon: Icons.refresh_rounded,
-                  onPressed: resetScan,
-                  label: 'Reset',
-                ),
-                _buildMainScanButton(),
-                _buildSideButton(
-                  icon: Icons.check_rounded,
-                  onPressed: scannedPoints.length >= minPointsToSave
-                      ? _onSaveScan
-                      : null,
-                  label: 'Save',
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMainScanButton() {
-    return GestureDetector(
-      onTap: toggleScanning,
-      child: Container(
-        width: 75,
-        height: 75,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white,
-          border: Border.all(
-            color: AppColors.textPrimary.withAlpha(128),
-            width: 5,
-          ),
-        ),
-        child: Center(
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: isScanning ? 30 : 60,
-            height: isScanning ? 30 : 60,
-            decoration: BoxDecoration(
-              color: AppColors.error,
-              borderRadius: BorderRadius.circular(isScanning ? 8 : 30),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSideButton({
-    required IconData icon,
-    required VoidCallback? onPressed,
-    required String label,
-  }) {
-    return Opacity(
-      opacity: onPressed == null ? 0.5 : 1.0,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            width: 56,
-            height: 56,
-            child: FilledButton(
-              onPressed: onPressed,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.cardBackground.withAlpha(204),
-                shape: const CircleBorder(),
-                padding: EdgeInsets.zero,
-              ),
-              child: Icon(icon, color: Colors.white, size: 28),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(label, style: const TextStyle(color: AppColors.textPrimary)),
-        ],
-      ),
-    );
-  }
 }
 
 class ScanningGuidePainter extends CustomPainter {
@@ -333,7 +391,7 @@ class ScanningGuidePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.3)
+      ..color = Colors.white.withAlpha(76)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2;
 
@@ -343,10 +401,15 @@ class ScanningGuidePainter extends CustomPainter {
       paint,
     );
 
-    paint.color = AppColors.primary;
+    paint.color = progress > 0.9 ? AppColors.success : AppColors.primary;
     paint.strokeWidth = 4;
-    final rect = Rect.fromLTWH(0, 0, size.width, size.height);
-    canvas.drawArc(rect, -math.pi / 2, 2 * math.pi * progress, false, paint);
+    canvas.drawArc(
+      Rect.fromLTWH(0, 0, size.width, size.height),
+      -math.pi / 2,
+      2 * math.pi * progress,
+      false,
+      paint,
+    );
   }
 
   @override
