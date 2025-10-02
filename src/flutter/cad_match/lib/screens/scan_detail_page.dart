@@ -59,7 +59,7 @@ class ScanDetailPage extends StatelessWidget {
               'ID: ${_v(scan['scanId'])}',
               style: TextStyle(
                 fontSize: 12,
-                color: AppColors.buttonText.withAlpha(204),
+                color: AppColors.buttonTextSemiTransparent,
               ),
             ),
           ],
@@ -272,13 +272,16 @@ class ScanDetailPage extends StatelessWidget {
   Widget _buildStepNode(IconData icon, bool isActive, {bool isError = false}) {
     final color = isError
         ? AppColors.error
-        : (isActive ? AppColors.primary : AppColors.unselected.withAlpha(100));
-    final iconColor = isError || isActive ? Colors.white : AppColors.unselected;
+        : (isActive ? AppColors.primary : AppColors.unselectedSemiTransparent);
 
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(shape: BoxShape.circle, color: color),
-      child: Icon(icon, color: iconColor, size: 18), // Ridotta dimensione icona
+      child: Icon(
+        icon,
+        color: AppColors.buttonText,
+        size: 18,
+      ), // Ridotta dimensione icona
     );
   }
 
@@ -292,8 +295,7 @@ class ScanDetailPage extends StatelessWidget {
             Container(
               height: 8,
               decoration: BoxDecoration(
-                // Aumentato spessore linea
-                color: AppColors.unselected.withAlpha(50),
+                color: AppColors.unselectedSemiTransparent,
                 borderRadius: BorderRadius.circular(4),
               ),
             ),

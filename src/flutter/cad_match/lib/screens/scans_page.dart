@@ -194,7 +194,7 @@ class _ScansPageState extends State<ScansPage> {
   Widget _buildHeaderSection(bool hasActiveFilters) {
     return Padding(
       padding: const EdgeInsets.only(
-        top: 40.0,
+        top: 16.0,
         left: 24.0,
         right: 24.0,
         bottom: 16.0,
@@ -311,7 +311,7 @@ class _ScansPageState extends State<ScansPage> {
         onSelected: (_) => onSelected(),
         checkmarkColor: AppColors.primary,
         backgroundColor: AppColors.cardBackground,
-        selectedColor: AppColors.primary.withAlpha(51),
+        selectedColor: AppColors.filterChipColor,
         labelStyle: TextStyle(
           color: isSelected ? AppColors.primary : AppColors.textSecondary,
           fontWeight: FontWeight.bold,
@@ -321,7 +321,7 @@ class _ScansPageState extends State<ScansPage> {
           side: BorderSide(
             color: isSelected
                 ? AppColors.primary
-                : AppColors.unselected.withAlpha(128),
+                : AppColors.unselectedSemiTransparent,
           ),
         ),
       ),

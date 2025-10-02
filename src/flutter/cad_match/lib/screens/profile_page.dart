@@ -68,57 +68,83 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  // --- NUOVA FUNZIONE HELPER PER L'ICONA ---
+  IconData _getIconForLevel(int? level) {
+    switch (level) {
+      case 2:
+        return Icons.manage_accounts_rounded;
+      case 1:
+        return Icons.engineering_rounded;
+      default: // Livello 0 o qualsiasi altro caso
+        return Icons.person_rounded;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-      body: _isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
-            )
-          : _user == null
-          ? _buildSignedOutView()
-          : SingleChildScrollView(
-              padding: const EdgeInsets.only(top: 100.0, bottom: 24.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  _buildProfileIconWithBadge(),
-                  const SizedBox(height: 16),
-                  Text(
-                    '${_userData?['name'] ?? ''} ${_userData?['surname'] ?? ''}',
-                    style: const TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+      body: SafeArea(
+        // Aggiunto SafeArea per rispettare la status bar
+        bottom: false,
+        child: _isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              )
+            : _user == null
+            ? _buildSignedOutView()
+            : SingleChildScrollView(
+                padding: const EdgeInsets.only(
+                  top: 60.0,
+                  bottom: 24.0,
+                ), // Aggiustato padding
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _buildProfileIconWithBadge(),
+                    const SizedBox(height: 16),
+                    Text(
+                      '${_userData?['name'] ?? ''} ${_userData?['surname'] ?? ''}',
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  Text(
-                    _user?.email ?? '',
-                    style: const TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 16,
+                    Text(
+                      _user?.email ?? '',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 16,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                  _buildInfoCard(),
-                  const SizedBox(height: 16),
-                  _buildActionsMenu(),
-                ],
+                    const SizedBox(height: 32),
+                    _buildInfoCard(),
+                    const SizedBox(height: 16),
+                    _buildActionsMenu(),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 
   Widget _buildProfileIconWithBadge() {
-    String level = _userData?['level']?.toString() ?? '...';
+    final int? userLevel = _userData?['level'] as int?;
+    final String levelString = userLevel?.toString() ?? '...';
+    final IconData profileIcon = _getIconForLevel(userLevel);
+
     return Stack(
       alignment: Alignment.bottomRight,
       children: [
-        const CircleAvatar(
+        CircleAvatar(
           radius: 60,
           backgroundColor: AppColors.primary,
-          child: Icon(Icons.person_rounded, size: 60, color: Colors.white),
+          child: Icon(
+            profileIcon,
+            size: 60,
+            color: Colors.white,
+          ), // Icona dinamica
         ),
         Container(
           padding: const EdgeInsets.all(8),
@@ -128,7 +154,7 @@ class _ProfilePageState extends State<ProfilePage> {
             border: Border.all(color: AppColors.backgroundColor, width: 3),
           ),
           child: Text(
-            level,
+            levelString,
             style: const TextStyle(
               color: AppColors.buttonText,
               fontWeight: FontWeight.bold,
@@ -162,7 +188,6 @@ class _ProfilePageState extends State<ProfilePage> {
             label: 'Status',
             value: (_userData?['enabled'] ?? false) ? 'Enabled' : 'Not Enabled',
           ),
-          // Aggiungi qui altre info se necessario
         ],
       ),
     );

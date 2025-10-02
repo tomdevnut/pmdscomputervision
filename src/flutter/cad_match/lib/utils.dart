@@ -24,6 +24,11 @@ class AppColors {
   static const Color unselected = Color(
     0xFFBDBDBD,
   ); // Grigio per elementi non selezionati
+  static Color filterChipColor = primary.withAlpha(51);
+  static Color rowBoxColor = primary.withAlpha(26);
+  static const Color unselectedSemiTransparent = Color(
+    0x99BDBDBD,
+  ); // Grigio semi-trasparente per elementi non selezionati
   static const Color boxborder = Color(
     0x1A000000,
   ); // Bordo nero con bassa opacità
@@ -31,6 +36,7 @@ class AppColors {
     0x99FFFFFF,
   ); // Bianco semi-trasparente
   static const Color shadows = Colors.black12;
+  static const Color blackOverlay = Color(0x80000000);
 
   // Colori semantici
   static const Color error = Color(0xFFD94451);
@@ -196,6 +202,8 @@ Widget buildScanListItem({
     child: Material(
       color: Colors.transparent,
       child: InkWell(
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
@@ -206,7 +214,7 @@ Widget buildScanListItem({
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withAlpha(26),
+                  color: AppColors.rowBoxColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-import 'dart:math' as math;
 import 'lidar_view.dart';
 import 'send_scan_page.dart';
 import '../utils.dart';
@@ -17,8 +16,8 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
   final scannedPoints = <LidarPoint>[];
   bool isScanning = false;
   String? scanStatusMessage = 'Ready to scan';
-  final int recommendedPoints = 15000;
-  final int minPointsToSave = 1500;
+  final int recommendedPoints = 50000;
+  final int minPointsToSave = 10000;
   Timer? uiTick;
   final _lidarKey = GlobalKey<LidarViewState>();
   DateTime? _lastPointsAt;
@@ -42,7 +41,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
     super.dispose();
   }
 
-  // --- LOGICA DI CONTROLLO (INVARIATA) ---
+  // --- LOGICA DI CONTROLLO ---
   void _onPoints(List<LidarPoint> pts) {
     if (!isScanning || !mounted) return;
     _lastPointsAt = DateTime.now();
@@ -126,7 +125,6 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
     }
   }
 
-  // --- NUOVA INTERFACCIA GRAFICA ---
   @override
   Widget build(BuildContext context) {
     final progress = (scannedPoints.length / recommendedPoints).clamp(0.0, 1.0);
@@ -135,7 +133,6 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
       body: Stack(
         children: [
           LidarView(key: _lidarKey, onPoints: _onPoints),
-          if (isScanning) _buildScanningGuide(progress),
           _buildHeader(),
           _buildFooter(progress),
         ],
@@ -153,7 +150,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.black.withAlpha(153), Colors.transparent],
+            colors: [AppColors.blackOverlay, Colors.transparent],
           ),
         ),
         child: SafeArea(
@@ -197,7 +194,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
           gradient: LinearGradient(
             begin: Alignment.bottomCenter,
             end: Alignment.topCenter,
-            colors: [Colors.black.withAlpha(204), Colors.transparent],
+            colors: [AppColors.blackOverlay, Colors.transparent],
           ),
         ),
         child: SafeArea(
@@ -224,7 +221,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       margin: const EdgeInsets.only(bottom: 12, left: 24, right: 24),
       decoration: BoxDecoration(
-        color: AppColors.warning.withAlpha(76),
+        color: AppColors.warning,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.warning),
       ),
@@ -266,7 +263,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
                 ),
               ),
               Text(
-                ' / $recommendedPoints points',
+                ' / $recommendedPoints recommended points',
                 style: const TextStyle(color: Colors.white70, fontSize: 16),
               ),
             ],
@@ -274,7 +271,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
           const SizedBox(height: 8),
           LinearProgressIndicator(
             value: progress,
-            backgroundColor: Colors.white.withAlpha(76),
+            backgroundColor: AppColors.buttonTextSemiTransparent,
             valueColor: AlwaysStoppedAnimation<Color>(
               progress > 0.9 ? AppColors.success : AppColors.primary,
             ),
@@ -360,7 +357,7 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
             child: FilledButton(
               onPressed: onPressed,
               style: FilledButton.styleFrom(
-                backgroundColor: Colors.white.withAlpha(76),
+                backgroundColor: AppColors.buttonTextSemiTransparent,
                 shape: const CircleBorder(),
                 padding: EdgeInsets.zero,
               ),
@@ -373,46 +370,4 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
       ),
     );
   }
-
-  Widget _buildScanningGuide(double progress) {
-    return Center(
-      child: CustomPaint(
-        size: const Size(200, 200),
-        painter: ScanningGuidePainter(progress: progress),
-      ),
-    );
-  }
-}
-
-class ScanningGuidePainter extends CustomPainter {
-  final double progress;
-  ScanningGuidePainter({required this.progress});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withAlpha(76)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-
-    canvas.drawCircle(
-      Offset(size.width / 2, size.height / 2),
-      size.width / 2,
-      paint,
-    );
-
-    paint.color = progress > 0.9 ? AppColors.success : AppColors.primary;
-    paint.strokeWidth = 4;
-    canvas.drawArc(
-      Rect.fromLTWH(0, 0, size.width, size.height),
-      -math.pi / 2,
-      2 * math.pi * progress,
-      false,
-      paint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant ScanningGuidePainter oldDelegate) =>
-      oldDelegate.progress != progress;
 }

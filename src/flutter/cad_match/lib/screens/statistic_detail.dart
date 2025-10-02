@@ -55,7 +55,7 @@ class StatisticDetailPage extends StatelessWidget {
               'ID: ${_v(stats['scanId'])}',
               style: TextStyle(
                 fontSize: 12,
-                color: AppColors.buttonText.withAlpha(204),
+                color: AppColors.buttonTextSemiTransparent,
               ),
             ),
           ],

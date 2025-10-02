@@ -112,7 +112,7 @@ class _StepsPageState extends State<StepsPage> {
   Widget _buildHeaderSection() {
     return Padding(
       padding: const EdgeInsets.only(
-        top: 40.0,
+        top: 16.0,
         left: 24.0,
         right: 24.0,
         bottom: 16.0,
@@ -290,6 +290,8 @@ class _StepsPageState extends State<StepsPage> {
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(16),
+          splashColor: Colors.transparent,
+          highlightColor: Colors.transparent,
           child: Padding(
             padding: const EdgeInsets.all(16.0),
             child: AnimatedSize(
@@ -304,7 +306,7 @@ class _StepsPageState extends State<StepsPage> {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withAlpha(26),
+                          color: AppColors.rowBoxColor,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(
