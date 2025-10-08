@@ -12,5 +12,5 @@ VOXEL_SIZE_FEATURES = 0.05
 ICP_THRESHOLD = 0.02
 
 # --- Analysis Parameters ---
-# Tolleranza in metri usata per calcolare la percentuale di punti conformi.
-ANALYSIS_TOLERANCE_METERS = 0.01 # Esempio: 1 cm
+# Tolerance for percentage of points within this distance to be considered "good"
+ANALYSIS_TOLERANCE_METERS = 0.01 # Units in meters

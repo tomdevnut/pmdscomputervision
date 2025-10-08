@@ -4,7 +4,6 @@ def run_global_registration(source, target, voxel_size):
     """
     Executes global registration using RANSAC based on FPFH features.
     """
-    print("3. Executing global registration...")
     
     source.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 2, max_nn=30))
     target.estimate_normals(o3d.geometry.KDTreeSearchParamHybrid(radius=voxel_size * 2, max_nn=30))
@@ -29,7 +28,6 @@ def refine_with_icp(source, target, initial_transformation, threshold):
     """
     Refines the alignment using ICP (Iterative Closest Point)
     """
-    print("4. Refining the alignment with ICP...")
     result = o3d.pipelines.registration.registration_icp(
         source, target, threshold, initial_transformation,
         o3d.pipelines.registration.TransformationEstimationPointToPoint(),

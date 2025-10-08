@@ -2,6 +2,7 @@ import threading
 from queue import Queue
 from app.worker import pipeline_worker
 from firebase_admin import firestore
+from flask import current_app as app
 
 class ScanQueueManager:
     def __init__(self):
@@ -13,7 +14,7 @@ class ScanQueueManager:
     def add_scan(self, scan_data):
         """Add a scan to the queue"""
         self.scan_queue.put(scan_data)
-        print(f"Added scan {scan_data.get('scan_id')} to queue. Queue size: {self.scan_queue.qsize()}")
+        app.logger.info(f"Added scan {scan_data.get('scan_id')} to queue. Queue size: {self.scan_queue.qsize()}")
         self._process_next()
     
     def _process_next(self):
@@ -24,9 +25,9 @@ class ScanQueueManager:
             
             self.processing = True
             self.current_scan = self.scan_queue.get()
-        
-        print(f"Starting processing of scan {self.current_scan.get('scan_id')}")
-        
+
+        app.logger.info(f"Starting processing of scan {self.current_scan.get('scan_id')}")
+
         # Start worker in a new thread
         worker_thread = threading.Thread(
             target=self._worker_wrapper,
@@ -38,10 +39,10 @@ class ScanQueueManager:
         """Wrapper around pipeline_worker to handle completion and failures"""
         try:
             pipeline_worker(scan_url, step_url, scan_id)
-            print(f"Successfully completed scan {scan_id}")
+            app.logger.info(f"Successfully completed scan {scan_id}")
             self._on_scan_complete(success=True)
         except Exception as e:
-            print(f"Failed to process scan {scan_id}: {e}")
+            app.logger.error(f"Failed to process scan {scan_id}: {e}")
             self._on_scan_complete(success=False)
     
     def _on_scan_complete(self, success):

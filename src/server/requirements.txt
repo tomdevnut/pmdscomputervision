@@ -6,3 +6,4 @@ google-cloud-secret-manager
 cadquery
 numpy
 open3d
+logging

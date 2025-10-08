@@ -1,22 +1,23 @@
 import os
 import json
+from flask import current_app as app
 
 _secret_manager_client = None
 
 def _get_secret_manager_client():
-    """Restituisce il Secret Manager"""
+    """Returns the Secret Manager client, initializing it if necessary."""
     global _secret_manager_client
     if _secret_manager_client is None:
         try:
             from google.cloud import secretmanager
             _secret_manager_client = secretmanager.SecretManagerServiceClient()
         except Exception as e:
-            print(f"Impossibile inizializzare il client di Secret Manager: {e}")
+            app.logger.error(f"Unable to initialize Secret Manager client: {e}")
             return None
     return _secret_manager_client
 
 def _read_secret(secret_id: str) -> str | None:
-    """Legge un secret da Secret Manager."""
+    """Reads a secret from Secret Manager."""
     use_sm = os.getenv("USE_SECRET_MANAGER", "false").lower() in ("true", "1", "yes")
     if not use_sm:
         return None
@@ -31,12 +32,11 @@ def _read_secret(secret_id: str) -> str | None:
         response = client.access_secret_version(name=name)
         return response.payload.data.decode("UTF-8")
     except Exception as e:
-        print(f"Errore nel leggere il segreto '{secret_id}': {e}")
+        app.logger.error(f"Error reading secret '{secret_id}': {e}")
         return None
 
 class Config:
-    """Configurazione dell'applicazione"""
-    # TODO: controllo
+    """Application configuration"""
     SECRET_KEY = (
         os.getenv("SECRET_KEY")
         or _read_secret("flask-secret-key")
@@ -45,7 +45,7 @@ class Config:
     API_KEY_BACKEND = (
         os.getenv("API_KEY_BACKEND")
         or _read_secret("api-key-backend")
-        or "" # In sviluppo ci potrebbe interessare avere la chiave vuota per fase di testig
+        or ""
     )
     FIREBASE_SERVICE_ACCOUNT_KEY = (
         os.getenv("FIREBASE_SERVICE_ACCOUNT_KEY")

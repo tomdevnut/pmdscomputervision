@@ -3,9 +3,35 @@ import firebase_admin
 from firebase_admin import credentials
 import json
 from app.config import Config
+import logging
+import os
+from logging.handlers import RotatingFileHandler
 
 app = Flask(__name__)
 app.config.from_object(Config)
+
+# --- LOGGER CONFIGURATION ---
+if not app.debug:
+    # Ensure the log directory exists
+    if not os.path.exists('logs'):
+        os.mkdir('logs')
+    
+    # Using RotatingFileHandler to manage log file size
+    file_handler = RotatingFileHandler('logs/app.log', maxBytes=1024000, backupCount=10)
+
+    # Setting the log format to include useful information
+    file_handler.setFormatter(logging.Formatter(
+        '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    ))
+
+    # Set the logger level
+    file_handler.setLevel(logging.INFO)
+    app.logger.addHandler(file_handler)
+    
+    app.logger.setLevel(logging.INFO)
+    app.logger.info('App startup')
+# --- LOGGER CONFIGURATION END ---
+
 
 try:
     service_account_str = app.config.get("FIREBASE_SERVICE_ACCOUNT_KEY")

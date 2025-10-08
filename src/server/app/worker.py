@@ -9,10 +9,12 @@ import pipeline.config as config
 import pipeline.preprocess as preprocess
 import pipeline.registration as registration
 import pipeline.analysis as analysis
+from flask import current_app as app
 
 def pipeline_worker(scan_url, step_url, scan_id):
     """
-    Funzione che esegue la pipeline di elaborazione in un thread separato.
+    Main pipeline worker function.
+    Downloads files, processes them, uploads results, and updates Firestore.
     """
     scan_filename = None
     step_filename = None
@@ -25,17 +27,17 @@ def pipeline_worker(scan_url, step_url, scan_id):
 
         # Create a temporary directory for this scan
         temp_dir = tempfile.mkdtemp(prefix=f"scan_{scan_id}_")
-        print(f"Directory temporanea creata: {temp_dir}")
+        app.logger.info(f"Temporary directory created: {temp_dir}")
         
         # Download scan file
         scan_filename = os.path.join(temp_dir, "scan.ply")
-        print(f"Downloading scan from {scan_url}")
+        app.logger.info(f"Downloading scan from {scan_url}")
         _download_file(scan_url, scan_filename)
-        print(f"Scan downloaded to {scan_filename}")
-        
+        app.logger.info(f"Scan downloaded to {scan_filename}")
+
         # Download step file
         step_filename = os.path.join(temp_dir, "step.step")
-        print(f"Downloading step from {step_url}")
+        app.logger.info(f"Downloading step from {step_url}")
         _download_file(step_url, step_filename)
         
         scan_ref.update({'progress': 10})
@@ -47,14 +49,15 @@ def pipeline_worker(scan_url, step_url, scan_id):
         scan_ref.update({'progress': 20})
         
         # --------------------------------------------------------------------
-        # --- INIZIO LOGICA PRINCIPALE (MAIN) DI ELABORAZIONE ---
+        # --- BEGINNING OF MAIN PROCESSING LOGIC ---
         # --------------------------------------------------------------------
 
-        print("Caricamento nuvole di punti con Open3D...")
+        app.logger.info("Loading point clouds with Open3D...")
         target_pcd = o3d.io.read_point_cloud(step_ply_filename)
         source_pcd = o3d.io.read_point_cloud(scan_filename)
         
         # 1. Preprocessing
+        app.logger.info("Starting preprocessing...")
         source_cleaned = preprocess.segment_and_clean(
             source_pcd,
             config.PLANE_DISTANCE_THRESHOLD,
@@ -63,15 +66,17 @@ def pipeline_worker(scan_url, step_url, scan_id):
         )
         scan_ref.update({'progress': 40})
 
-        # 2. Registrazione Globale
+        # 2. Global Registration
+        app.logger.info("Starting global registration...")
         initial_transform = registration.run_global_registration(
             source_cleaned, 
             target_pcd, 
             config.VOXEL_SIZE_FEATURES
         )
         scan_ref.update({'progress': 60})
-        
-        # 3. Registrazione Locale (ICP)
+
+        # 3. Local Registration (ICP)
+        app.logger.info("Refining with ICP...")
         final_transform = registration.refine_with_icp(
             source_cleaned,
             target_pcd,
@@ -80,28 +85,29 @@ def pipeline_worker(scan_url, step_url, scan_id):
         )
         scan_ref.update({'progress': 80})
 
-        # 4. Analisi e calcolo delle metriche
+        # 4. Analysis and metrics calculation
+        app.logger.info("Calculating metrics...")
         heatmap_pcd, metrics = analysis.calculate_metrics(
             source_cleaned,
             target_pcd,
             final_transform,
-            config.ANALYSIS_TOLERANCE_METERS # Passa la tolleranza dal file config
+            config.ANALYSIS_TOLERANCE_METERS # Pass the tolerance from the config file
         )
-        print(f"Metriche calcolate: {metrics}")
-        
-        # 5. Salvataggio del risultato e preparazione per l'upload
-        print("Salvataggio del file heatmap...")
+        app.logger.info(f"Calculated metrics: {metrics}")
+
+        # 5. Save the result and prepare for upload
+        app.logger.info("Saving heatmap file...")
         heatmap_ply_path = os.path.join(temp_dir, "heatmap_scan.ply")
         o3d.io.write_point_cloud(heatmap_ply_path, heatmap_pcd)
         
         scan_ref.update({'progress': 90})
 
-        # Upload del file heatmap su Firebase Storage
+        # Upload heatmap file to Firebase Storage
         bucket = storage.bucket()
         heatmap_blob = bucket.blob(f"comparisons/{scan_id}.ply")
         heatmap_blob.upload_from_filename(heatmap_ply_path)
 
-        # Aggiornamento del documento 'stats' su Firestore con le nuove metriche
+        # Update the 'stats' document in Firestore with the new metrics
         stats_doc_ref = db.collection('stats').document(scan_id)
         stats_doc_ref.set({
             'std_deviation': metrics['std_deviation'],
@@ -113,28 +119,28 @@ def pipeline_worker(scan_url, step_url, scan_id):
         })
         
         # --------------------------------------------------------------------
-        # --- FINE LOGICA PRINCIPALE ---
+        # --- END OF MAIN PROCESSING LOGIC ---
         # --------------------------------------------------------------------
-        
-        print(f"Pipeline completata per scan_id: {scan_id}")
+
+        app.logger.info(f"Pipeline completed for scan_id: {scan_id}")
 
         scan_ref.update({'status': 2, 'progress': 100})
         
     except Exception as e:
-        print(f"Errore nella pipeline per scan_id {scan_id}: {e}")
+        app.logger.error(f"Error in pipeline for scan_id {scan_id}: {e}")
         try:
             db = firestore.client()
             scan_ref = db.collection('scans').document(scan_id)
             scan_ref.update({'status': -1})
         except Exception as db_error:
-            print(f"Impossibile aggiornare Firestore con lo stato di errore: {db_error}")
+            app.logger.error(f"Failed to update Firestore with error status: {db_error}")
         
         # Re-raise the exception so queue_manager can handle retry
         raise
         
     finally:
-        # Elimino i file temporanei
-        print(f"Pulizia file temporanei per scan_id: {scan_id}")
+        # Clean up temporary files
+        app.logger.info(f"Cleaning up temporary files for scan_id: {scan_id}")
         if temp_dir and os.path.exists(temp_dir):
             import shutil
             shutil.rmtree(temp_dir)
@@ -190,8 +196,8 @@ def _convert_step_to_ply(step_path, ply_output_path, tolerance=0.01):
             # Write faces
             for face in faces:
                 f.write(f"3 {face[0]} {face[1]} {face[2]}\n")
-        
-        print(f"STEP convertito in PLY con {len(vertices)} vertici e {len(faces)} facce")
-        
+
+        app.logger.info(f"STEP successfully converted to PLY with {len(vertices)} vertices and {len(faces)} faces")
+
     except Exception as e:
-        raise Exception(f"Errore conversione STEP->PLY: {e}")
+        raise Exception(f"Error converting STEP to PLY: {e}")
