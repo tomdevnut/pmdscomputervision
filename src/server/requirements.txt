@@ -5,5 +5,4 @@ gunicorn
 google-cloud-secret-manager
 cadquery
 numpy
-nerfstudio
 open3d
