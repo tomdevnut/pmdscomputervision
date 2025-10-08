@@ -14,6 +14,15 @@ def pipeline_worker(scan_url, step_url, scan_id):
     temp_dir = None
     
     try:
+
+        # Update status to processing
+        db = firestore.client()
+        scan_ref = db.collection('scans').document(scan_id)
+        scan_ref.update({
+            'status': 1,  # Processing
+            'progress': 0
+        })
+
         # Create a temporary directory for this scan
         temp_dir = tempfile.mkdtemp(prefix=f"scan_{scan_id}_")
         print(f"Created temporary directory: {temp_dir}")
@@ -34,7 +43,6 @@ def pipeline_worker(scan_url, step_url, scan_id):
         db = firestore.client()
         scan_ref = db.collection('scans').document(scan_id)
         scan_ref.update({
-            'status': 1,  # Processing
             'progress': 10
         })
         
@@ -44,7 +52,7 @@ def pipeline_worker(scan_url, step_url, scan_id):
         _convert_step_to_ply(step_filename, step_ply_filename)
         print(f"STEP converted to PLY: {step_ply_filename}")
         
-        scan_ref.update({'progress': 30})
+        scan_ref.update({'progress': 20})
         
         # Call functions in pipeline module to process the scan
         # TODO: Implement pipeline processing

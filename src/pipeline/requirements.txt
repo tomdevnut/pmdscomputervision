@@ -1,4 +1,0 @@
-nerfstudio
-open3d
-numpy
-matplotlib
