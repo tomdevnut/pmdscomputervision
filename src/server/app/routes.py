@@ -1,8 +1,7 @@
 from flask import request, jsonify, current_app
 from app import app
 from functools import wraps
-import threading
-from app.worker import pipeline_worker
+from app.queue_manager import queue_manager
 
 def require_api_key(f):
     @wraps(f)
@@ -40,11 +39,15 @@ def start_pipeline():
     step_url = data.get('step_url')
     scan_id = data.get('scan_id')
 
-    # Avvia il worker in un thread separato per non bloccare la richiesta
-    worker_thread = threading.Thread(
-        target=pipeline_worker,
-        args=(scan_id, scan_url, step_url)
-    )
-    worker_thread.start()
+    # Aggiungi la scansione alla coda invece di avviarla immediatamente
+    queue_manager.add_scan({
+        'scan_id': scan_id,
+        'scan_url': scan_url,
+        'step_url': step_url
+    })
 
-    return jsonify({"message": "Pipeline avviata", "scan_id": scan_id}), 202
+    return jsonify({
+        "message": "Pipeline aggiunta alla coda", 
+        "scan_id": scan_id,
+        "queue_size": queue_manager.get_queue_size()
+    }), 202

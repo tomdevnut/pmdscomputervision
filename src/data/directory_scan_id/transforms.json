@@ -1,0 +1,46 @@
+/** ESEMPIO DI FILE TRANSFORM, NECESSARIO A NERFSTUDIO **/
+{
+    "fl_x": 1169.6,
+    "fl_y": 1169.6,
+    "cx": 963.7,
+    "cy": 541.3,
+    "w": 1920,
+    "h": 1080,
+    "frames": [
+        {
+            "file_path": "images/frame_0001.jpg",
+            "depth_file_path": "depth/frame_0001.png",
+            "transform_matrix": [
+                [
+                    0.999,
+                    -0.015,
+                    0.004,
+                    0.011
+                ],
+                [
+                    0.015,
+                    0.999,
+                    0.001,
+                    -0.023
+                ],
+                [
+                    -0.004,
+                    -0.001,
+                    0.999,
+                    0.154
+                ],
+                [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ]
+            ]
+        },
+        {
+            "file_path": "images/frame_0002.jpg",
+            "depth_file_path": "depth/frame_0002.png",
+            "transform_matrix": []
+        }
+    ]
+}
