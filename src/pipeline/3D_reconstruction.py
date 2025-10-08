@@ -35,7 +35,8 @@ def main_library(project_path_str: str):
     except StopIteration:
         print("Non è stato trovato il file di configurazione dopo il training")
         sys.exit(1)
-
+    # Preparo il percorso di esportazione
+    scan_id = 
     export_file = project_path / "exports" / "scan_id.ply" # TODO: sostituire con scan_id
     export_file.parent.mkdir(exist_ok=True)
     
