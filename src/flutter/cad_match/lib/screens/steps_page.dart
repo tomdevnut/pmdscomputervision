@@ -98,12 +98,14 @@ class _StepsPageState extends State<StepsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeaderSection(),
-          Expanded(child: _buildStepsList()),
-        ],
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeaderSection(),
+            Expanded(child: _buildStepsList()),
+          ],
+        ),
       ),
     );
   }

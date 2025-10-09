@@ -150,13 +150,15 @@ class _ScansPageState extends State<ScansPage> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeaderSection(hasActiveFilters),
-          if (_showFilters) _buildFilterChips(),
-          _buildScansList(),
-        ],
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildHeaderSection(hasActiveFilters),
+            if (_showFilters) _buildFilterChips(),
+            _buildScansList(),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
