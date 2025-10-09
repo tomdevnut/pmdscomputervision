@@ -62,7 +62,7 @@ class PlyView: NSObject, FlutterPlatformView {
         let scene = SCNScene()
         _view.scene = scene
         _view.allowsCameraControl = true
-        _view.backgroundColor = UIColor.black
+        _view.backgroundColor = UIColor.white
         _view.autoenablesDefaultLighting = true
     }
 
