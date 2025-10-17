@@ -158,11 +158,6 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
             cbcrHeight: CVPixelBufferGetHeightOfPlane(pixelBuffer, 1)
         )
 
-        let orientation = currentOrientation()
-        let resolution = frame.camera.imageResolution
-        let viewportSize = CGSize(
-            width: CGFloat(resolution.width), height: CGFloat(resolution.height))
-
         var out = [Float32]()
         out.reserveCapacity(vertexCount * 6)
 
@@ -174,8 +169,6 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
             let colorPixel = projectToColorPixel(
                 position: worldPosition,
                 frame: frame,
-                orientation: orientation,
-                viewportSize: viewportSize,
                 buffers: buffers
             )
             let color =
@@ -251,11 +244,6 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
             cbcrHeight: CVPixelBufferGetHeightOfPlane(pixelBuffer, 1)
         )
 
-        let orientation = currentOrientation()
-        let resolution = frame.camera.imageResolution
-        let viewportSize = CGSize(
-            width: CGFloat(resolution.width), height: CGFloat(resolution.height))
-
         var out = [Float32]()
         out.reserveCapacity(width * height * 6)
 
@@ -272,8 +260,6 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
                 let colorPixel = projectToColorPixel(
                     position: world,
                     frame: frame,
-                    orientation: orientation,
-                    viewportSize: viewportSize,
                     buffers: buffers
                 )
                 let color =
@@ -308,21 +294,17 @@ class LidarPlatformView: NSObject, FlutterPlatformView, FlutterStreamHandler {
         let cbcrHeight: Int
     }
 
-    private func currentOrientation() -> UIInterfaceOrientation {
-        if #available(iOS 13.0, *) {
-            return sceneView.window?.windowScene?.interfaceOrientation ?? .portrait
-        } else {
-            return UIApplication.shared.statusBarOrientation
-        }
-    }
-
     private func projectToColorPixel(
         position: simd_float4,
         frame: ARFrame,
-        orientation: UIInterfaceOrientation,
-        viewportSize: CGSize,
         buffers: ColorBuffers
     ) -> (Int, Int)? {
+        // Il buffer della camera è sempre in orientazione landscapeRight
+        let orientation: UIInterfaceOrientation = .landscapeRight
+        let viewportSize = CGSize(
+            width: CGFloat(buffers.yWidth),
+            height: CGFloat(buffers.yHeight)
+        )
         let projected = frame.camera.projectPoint(
             simd_float3(position.x, position.y, position.z),
             orientation: orientation,

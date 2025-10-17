@@ -24,6 +24,9 @@ class PlyViewFactory: NSObject, FlutterPlatformViewFactory {
 class PlyView: NSObject, FlutterPlatformView {
     private var _view: SCNView
     private var methodChannel: FlutterMethodChannel
+    private let processingQueue = DispatchQueue(
+        label: "plyview.scene.processing", qos: .userInitiated)
+    private let confidenceDiscardThreshold: Float = 0.0  // Drop only points explicitly flagged as invalid
 
     init(
         frame: CGRect, viewIdentifier viewId: Int64, arguments args: Any?,
@@ -64,6 +67,8 @@ class PlyView: NSObject, FlutterPlatformView {
         _view.allowsCameraControl = true
         _view.backgroundColor = UIColor.white
         _view.autoenablesDefaultLighting = true
+        _view.showsStatistics = false
+        _view.debugOptions = []
     }
 
     private func loadModel(from remoteUrl: URL, scanId: String, completion: @escaping FlutterResult)
@@ -106,32 +111,164 @@ class PlyView: NSObject, FlutterPlatformView {
 
     // Funzione helper per caricare la scena da un URL locale
     private func loadScene(from localUrl: URL, completion: @escaping FlutterResult) {
-        do {
+        processingQueue.async { [weak self] in
+            guard let self else { return }
+
             let asset = MDLAsset(url: localUrl)
-            guard asset.count > 0 else {
-                completion(
-                    FlutterError(code: "ASSET_EMPTY", message: "MDLAsset is empty.", details: nil))
+            let meshes = (asset.childObjects(of: MDLMesh.self) as? [MDLMesh]) ?? []
+
+            guard !meshes.isEmpty else {
+                DispatchQueue.main.async {
+                    completion(
+                        FlutterError(
+                            code: "ASSET_EMPTY", message: "MDLAsset contains no mesh.",
+                            details: nil))
+                }
                 return
             }
 
-            let mdlObject = asset.object(at: 0)
-            let node = SCNNode(mdlObject: mdlObject)
+            let rootNode = SCNNode()
 
-            let (center, radius) = node.boundingSphere
-            if let cameraNode = self._view.pointOfView {
-                cameraNode.position = SCNVector3(center.x, center.y, center.z + Float(radius) * 2.5)
-                cameraNode.look(at: center)
+            for mesh in meshes {
+                guard let geometry = self.buildPointGeometry(from: mesh) else { continue }
+                let meshNode = SCNNode(geometry: geometry)
+                rootNode.addChildNode(meshNode)
             }
+
+            guard !rootNode.childNodes.isEmpty else {
+                DispatchQueue.main.async {
+                    completion(
+                        FlutterError(
+                            code: "NO_POINTS",
+                            message: "No valid points found after filtering.", details: nil))
+                }
+                return
+            }
+
+            let (center, radius) = rootNode.boundingSphere
 
             DispatchQueue.main.async {
-                self._view.scene?.rootNode.addChildNode(node)
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    completion(nil)
+                self._view.scene?.rootNode.enumerateChildNodes { child, _ in
+                    child.removeFromParentNode()
                 }
+                self._view.scene?.rootNode.addChildNode(rootNode)
+
+                rootNode.enumerateChildNodes { child, _ in
+                    guard let geometry = child.geometry else { return }
+                    for element in geometry.elements {
+                        element.pointSize = 4.0
+                        element.minimumPointScreenSpaceRadius = 1.0
+                        element.maximumPointScreenSpaceRadius = 20.0
+                    }
+                }
+
+                if let cameraNode = self._view.pointOfView {
+                    cameraNode.position = SCNVector3(
+                        center.x, center.y, center.z + Float(radius) * 2.5)
+                    cameraNode.look(at: center)
+                }
+
+                completion(nil)
             }
-        } catch {
-            let errorMessage = "Failed to load model from local URL: \(error)"
-            completion(FlutterError(code: "LOAD_FAILED", message: errorMessage, details: nil))
         }
+    }
+
+    private func buildPointGeometry(from mesh: MDLMesh) -> SCNGeometry? {
+        guard
+            let positionAttribute = mesh.vertexAttributeData(
+                forAttributeNamed: MDLVertexAttributePosition, as: .float3)
+        else { return nil }
+
+        let colorAttribute = mesh.vertexAttributeData(
+            forAttributeNamed: MDLVertexAttributeColor, as: .float3)
+        let confidenceAttributeName = confidenceAttributeName(in: mesh)
+        let confidenceAttribute = confidenceAttributeName.flatMap {
+            mesh.vertexAttributeData(forAttributeNamed: $0, as: .float)
+        }
+
+        var positions: [SIMD3<Float>] = []
+        positions.reserveCapacity(mesh.vertexCount)
+        var colors: [SIMD3<Float>] = []
+        if colorAttribute != nil { colors.reserveCapacity(mesh.vertexCount) }
+
+        for index in 0..<mesh.vertexCount {
+            if let confidenceAttribute {
+                let confidence = readFloat(from: confidenceAttribute, index: index)
+                if confidence <= confidenceDiscardThreshold { continue }
+            }
+
+            let position = readFloat3(from: positionAttribute, index: index)
+            if !position.x.isFinite || !position.y.isFinite || !position.z.isFinite {
+                continue
+            }
+            positions.append(position)
+
+            if let colorAttribute {
+                let color = readFloat3(from: colorAttribute, index: index)
+                colors.append(color)
+            }
+        }
+
+        guard !positions.isEmpty else { return nil }
+
+        let positionData = positions.withUnsafeBufferPointer { Data(buffer: $0) }
+        let positionSource = SCNGeometrySource(
+            data: positionData, semantic: .vertex, vectorCount: positions.count,
+            usesFloatComponents: true, componentsPerVector: 3,
+            bytesPerComponent: MemoryLayout<Float>.size,
+            dataOffset: 0, dataStride: MemoryLayout<SIMD3<Float>>.size)
+
+        var sources: [SCNGeometrySource] = [positionSource]
+
+        if !colors.isEmpty {
+            let colorData = colors.withUnsafeBufferPointer { Data(buffer: $0) }
+            let colorSource = SCNGeometrySource(
+                data: colorData, semantic: .color, vectorCount: colors.count,
+                usesFloatComponents: true, componentsPerVector: 3,
+                bytesPerComponent: MemoryLayout<Float>.size,
+                dataOffset: 0, dataStride: MemoryLayout<SIMD3<Float>>.size)
+            sources.append(colorSource)
+        }
+
+        var indices = Array(0..<positions.count).map { UInt32($0) }
+        let indicesData = indices.withUnsafeBufferPointer { Data(buffer: $0) }
+        let element = SCNGeometryElement(
+            data: indicesData, primitiveType: .point,
+            primitiveCount: positions.count, bytesPerIndex: MemoryLayout<UInt32>.size)
+
+        let geometry = SCNGeometry(sources: sources, elements: [element])
+        let material = SCNMaterial()
+        material.lightingModel = .constant
+        material.diffuse.contents = UIColor.white
+        material.isDoubleSided = true
+        geometry.materials = [material]
+
+        return geometry
+    }
+
+    private func readFloat3(from attribute: MDLVertexAttributeData, index: Int) -> SIMD3<Float> {
+        let basePointer = attribute.dataStart.advanced(by: index * attribute.stride)
+        let floatPointer = basePointer.assumingMemoryBound(to: Float.self)
+        return SIMD3(floatPointer[0], floatPointer[1], floatPointer[2])
+    }
+
+    private func readFloat(from attribute: MDLVertexAttributeData, index: Int) -> Float {
+        let basePointer = attribute.dataStart.advanced(by: index * attribute.stride)
+        return basePointer.assumingMemoryBound(to: Float.self).pointee
+    }
+
+    private func confidenceAttributeName(in mesh: MDLMesh) -> String? {
+        guard let attributes = mesh.vertexDescriptor.attributes as? [MDLVertexAttribute] else {
+            return nil
+        }
+
+        for attribute in attributes {
+            let lowered = attribute.name.lowercased()
+            if lowered.contains("confidence") {
+                return attribute.name
+            }
+        }
+
+        return nil
     }
 }
