@@ -16,8 +16,8 @@ class _LidarScannerScreenState extends State<LidarScannerScreen> {
   final scannedPoints = <LidarPoint>[];
   bool isScanning = false;
   String? scanStatusMessage = 'Ready to scan';
-  final int recommendedPoints = 50000;
-  final int minPointsToSave = 10000;
+  final int recommendedPoints = 500000;
+  final int minPointsToSave = 300000;
   Timer? uiTick;
   final _lidarKey = GlobalKey<LidarViewState>();
   DateTime? _lastPointsAt;

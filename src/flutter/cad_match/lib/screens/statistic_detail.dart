@@ -124,7 +124,7 @@ class StatisticDetailPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '$accuracy %',
+            '$accuracy%',
             style: TextStyle(
               color: color,
               fontSize: 36,
