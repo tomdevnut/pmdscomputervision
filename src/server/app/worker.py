@@ -5,10 +5,10 @@ from firebase_admin import firestore, storage
 import cadquery as cq
 import numpy as np
 import open3d as o3d
-import pipeline.config as config
-import pipeline.preprocess as preprocess
-import pipeline.registration as registration
-import pipeline.analysis as analysis
+from app.pipeline import config
+from app.pipeline import preprocess
+from app.pipeline import registration
+from app.pipeline import analysis
 from flask import current_app as app
 
 def pipeline_worker(scan_url, step_url, scan_id):
