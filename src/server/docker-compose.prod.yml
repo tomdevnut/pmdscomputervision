@@ -9,7 +9,7 @@ services:
     image: pmds-backend-prod:latest
     restart: always
     ports:
-      - "8080:5000"
+      - "9999:9999"
     environment:
       # TODO: Env file per le variabili globali
       - GCP_PROJECT_ID=pmds-project
@@ -23,7 +23,7 @@ services:
       # TODO: GPU?
     # TODO: healthcheck
     healthcheck:
-      test: curl --fail http://localhost:5000/ || exit 1
+      test: curl --fail http://localhost:9999/ || exit 1
       interval: 40s
       timeout: 30s
       retries: 3
