@@ -9,11 +9,9 @@ BACKEND_API_KEY_SECRET_NAME = "api-key-backend"
 # SERVICE ACCOUNT
 SERVICE_ACCOUNT = "backend-service-account-key"
 
-# TODO: Definire l'URL del server di backend
-BACKEND_SERVER_URL = "https://server.com/api/scans"
+BACKEND_SERVER_URL = "93.66.235.232:9999"
 
 # Ruoli / Autorizzazioni
-# TODO: Definire il ruolo minimo richiesto per eseguire la pulizia (0 è l'utente normale, 1 è l'ingegnere, 2 è l'amministratore)
 SUPERUSER_ROLE_LEVEL: int = 1
 MANAGE_USERS_MIN_LEVEL: int = 2 
 
