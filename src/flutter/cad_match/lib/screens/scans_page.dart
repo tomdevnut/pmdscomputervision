@@ -7,32 +7,6 @@ import '../utils.dart';
 import 'add_scan_page.dart';
 import 'scan_detail_page.dart';
 
-Future<Map<String, String>> fetchStepNames(List<String> stepIds) async {
-  final validStepIds = stepIds.where((id) => id.isNotEmpty).toList();
-  if (validStepIds.isEmpty) return {};
-  final stepDocs = await FirebaseFirestore.instance
-      .collection('steps')
-      .where(FieldPath.documentId, whereIn: validStepIds)
-      .get();
-  return {
-    for (var doc in stepDocs.docs) doc.id: doc.data()['name'] ?? 'Unknown Step',
-  };
-}
-
-Future<Map<String, String>> fetchUsernames(List<String> userIds) async {
-  final validUserIds = userIds.where((id) => id.isNotEmpty).toList();
-  if (validUserIds.isEmpty) return {};
-  final userDocs = await FirebaseFirestore.instance
-      .collection('users')
-      .where(FieldPath.documentId, whereIn: validUserIds)
-      .get();
-  return {
-    for (var doc in userDocs.docs)
-      doc.id:
-          '${doc.data()['name'] ?? 'Unknown User'} ${doc.data()['surname'] ?? ''}',
-  };
-}
-
 class ScansPage extends StatefulWidget {
   const ScansPage({super.key});
 
@@ -361,92 +335,49 @@ class _ScansPageState extends State<ScansPage> {
           if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
             return const Center(
               child: Text(
-                'No scans found for the current filters. Please mind that scan names are case-sensitive.',
+                'No scans found for the current filters.',
                 style: TextStyle(color: AppColors.textPrimary, fontSize: 16),
                 textAlign: TextAlign.center,
               ),
             );
           }
+
           final scans = snapshot.data!.docs;
-          final userIds = scans
-              .map(
-                (doc) =>
-                    (doc.data() as Map<String, dynamic>)['user'] as String? ??
-                    '',
-              )
-              .toList();
-          final stepIds = scans
-              .map(
-                (doc) =>
-                    (doc.data() as Map<String, dynamic>)['step'] as String? ??
-                    '',
-              )
-              .toList();
 
-          return FutureBuilder<Map<String, Map<String, String>>>(
-            future: Future.wait([
-              fetchUsernames(userIds),
-              fetchStepNames(stepIds),
-            ]).then((results) => {'users': results[0], 'steps': results[1]}),
-            builder: (context, futureSnapshot) {
-              if (futureSnapshot.connectionState == ConnectionState.waiting &&
-                  futureSnapshot.data == null) {
-                return const Center(
-                  child: CircularProgressIndicator(color: AppColors.primary),
-                );
-              }
-              if (futureSnapshot.hasError) {
-                return Center(
-                  child: Text(
-                    'Error loading data: ${futureSnapshot.error}',
-                    style: const TextStyle(color: AppColors.error),
-                  ),
-                );
-              }
+          return ListView.builder(
+            padding: const EdgeInsets.only(bottom: 80),
+            itemCount: scans.length,
+            itemBuilder: (context, index) {
+              final scanDoc = scans[index];
+              final data = scanDoc.data() as Map<String, dynamic>;
+              final date = (data['timestamp'] as Timestamp?)?.toDate();
+              final status = data['status'] as int? ?? 0;
+              final statusIconData = _getStatusIconForScan(status);
 
-              final usernames = futureSnapshot.data?['users'] ?? {};
-              final stepNames = futureSnapshot.data?['steps'] ?? {};
+              final Map<String, dynamic> scanData = {
+                'scanId': data['scanId'] ?? scanDoc.id,
+                'name': data['name'] ?? '',
+                'progress': data['progress'] ?? 0,
+                'timestamp': data['timestamp'],
+                'user': data['user'] ?? '',
+                'step': data['step'] ?? '',
+                'status': data['status'] ?? -1,
+                'createdAt': data['createdAt'] ?? '',
+                'description': data['description'] ?? '',
+              };
 
-              return ListView.builder(
-                padding: const EdgeInsets.only(bottom: 80),
-                itemCount: scans.length,
-                itemBuilder: (context, index) {
-                  final scan = scans[index];
-                  final data = scan.data() as Map<String, dynamic>;
-                  final date = (data['timestamp'] as Timestamp?)?.toDate();
-                  final status = data['status'] as int? ?? 0;
-                  final statusIconData = _getStatusIconForScan(status);
-
-                  final scanData = {
-                    'scanId': data['scanId'] ?? scan.id,
-                    'step':
-                        stepNames[data['step'] as String? ?? ''] ??
-                        'Unknown Step',
-                    'name': data['name'] ?? '',
-                    'progress': data['progress'] ?? 0,
-                    'timestamp': data['timestamp'] ?? '',
-                    'user':
-                        usernames[data['user'] as String? ?? ''] ??
-                        'Unknown User',
-                    'status': data['status'] ?? -1,
-                    'createdAt': data['createdAt'] ?? '',
-                    'description': data['description'] ?? '',
-                  };
-
-                  return buildScanListItem(
-                    title: data['name'] as String? ?? 'No Title',
-                    subtitle: date != null
-                        ? DateFormat.yMMMd().add_jm().format(date)
-                        : 'No date',
-                    statusIcon: statusIconData['icon'],
-                    statusIconColor: statusIconData['color'],
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => ScanDetailPage(scan: scanData),
-                        ),
-                      );
-                    },
+              return buildScanListItem(
+                title: data['name'] as String? ?? 'No Title',
+                subtitle: date != null
+                    ? DateFormat.yMMMd().add_jm().format(date)
+                    : 'No date',
+                statusIcon: statusIconData['icon'],
+                statusIconColor: statusIconData['color'],
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ScanDetailPage(scan: scanData),
+                    ),
                   );
                 },
               );

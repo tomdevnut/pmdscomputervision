@@ -18,7 +18,6 @@ class StatisticDetailPage extends StatelessWidget {
     return '${value.toStringAsFixed(decimals)} $unit';
   }
 
-  // Helper per determinare il colore in base all'accuratezza
   Color _getAccuracyColor(int accuracy) {
     if (accuracy < 50) {
       return AppColors.error;
@@ -40,12 +39,11 @@ class StatisticDetailPage extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: AppColors.buttonText,
-        leadingWidth: 72, // Spazio per la freccia di back
-        titleSpacing: 0, // Annulla lo spazio di default per allineare il titolo
+        leadingWidth: 72,
+        titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment:
-              MainAxisAlignment.center, // Centra verticalmente il titolo
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               _v(stats['name']),

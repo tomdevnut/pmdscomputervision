@@ -5,10 +5,69 @@ import 'package:flutter/material.dart';
 import '../utils.dart';
 import 'statistic_detail.dart';
 
-class ScanDetailPage extends StatelessWidget {
+class ScanDetailPage extends StatefulWidget {
   final Map<String, dynamic> scan;
 
   const ScanDetailPage({super.key, required this.scan});
+
+  @override
+  State<ScanDetailPage> createState() => _ScanDetailPageState();
+}
+
+class _ScanDetailPageState extends State<ScanDetailPage> {
+  String _userName = 'Loading...';
+  String _stepName = 'Loading...';
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchExtraData();
+  }
+
+  Future<void> _fetchExtraData() async {
+    final userId = widget.scan['user'] as String? ?? '';
+    final stepId = widget.scan['step'] as String? ?? '';
+
+    String userRes = 'Unknown User';
+    String stepRes = 'Unknown Step';
+
+    if (userId.isNotEmpty) {
+      try {
+        final doc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .get();
+        if (doc.exists) {
+          final d = doc.data();
+          userRes = '${d?['name'] ?? ''} ${d?['surname'] ?? ''}'.trim();
+          if (userRes.isEmpty) userRes = 'Unknown User';
+        }
+      } catch (e) {
+        debugPrint('Error fetching user: $e');
+      }
+    }
+
+    if (stepId.isNotEmpty) {
+      try {
+        final doc = await FirebaseFirestore.instance
+            .collection('steps')
+            .doc(stepId)
+            .get();
+        if (doc.exists) {
+          stepRes = doc.data()?['name'] ?? 'Unknown Step';
+        }
+      } catch (e) {
+        debugPrint('Error fetching step: $e');
+      }
+    }
+
+    if (mounted) {
+      setState(() {
+        _userName = userRes;
+        _stepName = stepRes;
+      });
+    }
+  }
 
   String _v(dynamic value) {
     return (value == null || (value is String && value.trim().isEmpty))
@@ -33,8 +92,8 @@ class ScanDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final int status = scan['status'] as int? ?? -1;
-    final int progress = scan['progress'] as int? ?? 0;
+    final int status = widget.scan['status'] as int? ?? -1;
+    final int progress = widget.scan['progress'] as int? ?? 0;
     final bool canDelete = status == 2 || status == -1;
     final bool canViewStats = status == 2;
 
@@ -44,19 +103,18 @@ class ScanDetailPage extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: AppColors.buttonText,
-        leadingWidth: 72, // Spazio per la freccia di back
-        titleSpacing: 0, // Annulla lo spazio di default per allineare il titolo
+        leadingWidth: 72,
+        titleSpacing: 0,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment:
-              MainAxisAlignment.center, // Centra verticalmente il titolo
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
-              _v(scan['name']),
+              _v(widget.scan['name']),
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             Text(
-              'ID: ${_v(scan['scanId'])}',
+              'ID: ${_v(widget.scan['scanId'])}',
               style: TextStyle(
                 fontSize: 12,
                 color: AppColors.buttonTextSemiTransparent,
@@ -67,9 +125,7 @@ class ScanDetailPage extends StatelessWidget {
         actions: [
           if (canDelete)
             Padding(
-              padding: const EdgeInsets.only(
-                right: 16.0,
-              ), // Padding per il cestino
+              padding: const EdgeInsets.only(right: 16.0),
               child: IconButton(
                 icon: const Icon(Icons.delete_outline_rounded),
                 onPressed: () => _handleDelete(context),
@@ -85,9 +141,7 @@ class ScanDetailPage extends StatelessWidget {
             Expanded(
               child: Container(
                 width: double.infinity,
-                padding: const EdgeInsets.only(
-                  top: 40.0,
-                ), // Spazio maggiore sopra la timeline
+                padding: const EdgeInsets.only(top: 40.0),
                 decoration: const BoxDecoration(
                   color: AppColors.backgroundColor,
                   borderRadius: BorderRadius.only(
@@ -104,9 +158,7 @@ class ScanDetailPage extends StatelessWidget {
                           children: [
                             const SizedBox(height: 35),
                             _buildProgressTimeline(context, status, progress),
-                            const SizedBox(
-                              height: 70,
-                            ), // Spazio maggiore sotto la timeline
+                            const SizedBox(height: 70),
                             _buildInfoDetails(),
                           ],
                         ),
@@ -161,9 +213,7 @@ class ScanDetailPage extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 24.0,
-      ), // Maggiore padding laterale
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Column(
         children: [
           Row(
@@ -183,13 +233,12 @@ class ScanDetailPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Row(
-            mainAxisAlignment:
-                MainAxisAlignment.spaceBetween, // Distribuisce uniformemente
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(steps.length, (index) {
               bool isActive = activeStep >= index;
               return Text(
                 steps[index],
-                textAlign: TextAlign.center, // Centra il testo
+                textAlign: TextAlign.center,
                 style: TextStyle(
                   color: isActive ? AppColors.primary : AppColors.unselected,
                   fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
@@ -204,7 +253,7 @@ class ScanDetailPage extends StatelessWidget {
   }
 
   Widget _buildInfoDetails() {
-    final timestamp = scan['timestamp'];
+    final timestamp = widget.scan['timestamp'];
     final formattedTime = (timestamp is Timestamp)
         ? DateFormat('HH:mm:ss').format(timestamp.toDate())
         : '—';
@@ -227,9 +276,9 @@ class ScanDetailPage extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _buildInfoRow(Icons.file_copy_rounded, 'Step', _v(scan['step'])),
+          _buildInfoRow(Icons.file_copy_rounded, 'Step', _stepName),
           const Divider(),
-          _buildInfoRow(Icons.person_rounded, 'User', _v(scan['user'])),
+          _buildInfoRow(Icons.person_rounded, 'User', _userName),
           const Divider(),
           _buildInfoRow(
             Icons.calendar_today_rounded,
@@ -246,7 +295,7 @@ class ScanDetailPage extends StatelessWidget {
           _buildInfoRow(
             Icons.percent_rounded,
             'Progress',
-            '${_v(scan['progress'])}%',
+            '${_v(widget.scan['progress'])}%',
           ),
         ],
       ),
@@ -254,7 +303,6 @@ class ScanDetailPage extends StatelessWidget {
   }
 
   Widget _buildActionButtons(BuildContext context) {
-    // canViewStats è già controllato in build()
     return Padding(
       padding: const EdgeInsets.fromLTRB(24.0, 16.0, 24.0, 24.0),
       child: Column(
@@ -345,7 +393,7 @@ class ScanDetailPage extends StatelessWidget {
       () async {
         try {
           await FirebaseStorage.instance
-              .ref('scans/${scan['scanId']}.ply')
+              .ref('scans/${widget.scan['scanId']}.ply')
               .delete();
           if (context.mounted) {
             _showSnackBarMessage(
@@ -353,7 +401,7 @@ class ScanDetailPage extends StatelessWidget {
               'Scan successfully deleted',
               isError: false,
             );
-            Navigator.of(context).pop(); // Torna indietro dopo l'eliminazione
+            Navigator.of(context).pop();
           }
         } catch (e) {
           debugPrint('Error deleting scan: $e');
@@ -367,7 +415,7 @@ class ScanDetailPage extends StatelessWidget {
 
   Future<void> _handleViewStats(BuildContext context) async {
     try {
-      final docId = _v(scan['scanId']);
+      final docId = _v(widget.scan['scanId']);
       final docSnapshot = await FirebaseFirestore.instance
           .collection('stats')
           .doc(docId)
@@ -376,8 +424,8 @@ class ScanDetailPage extends StatelessWidget {
       if (docSnapshot.exists && docSnapshot.data() != null) {
         final statsData = docSnapshot.data()!;
         final statsMap = {
-          'name': scan['name'] as String? ?? 'Unknown',
-          'scanId': scan['scanId'] as String? ?? 'Unknown',
+          'name': widget.scan['name'] as String? ?? 'Unknown',
+          'scanId': widget.scan['scanId'] as String? ?? 'Unknown',
           'accuracy': (statsData['accuracy'] as num?)?.toDouble() ?? 0.0,
           'min_deviation':
               (statsData['min_deviation'] as num?)?.toDouble() ?? 0.0,
