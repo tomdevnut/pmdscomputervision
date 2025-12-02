@@ -1,0 +1,9 @@
+flask
+requests
+firebase_admin
+gunicorn
+google-cloud-secret-manager
+cadquery
+numpy
+open3d
+logging

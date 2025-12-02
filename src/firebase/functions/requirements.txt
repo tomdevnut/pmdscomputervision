@@ -1,0 +1,7 @@
+# Dipendenze per Firebase Functions
+firebase-functions
+firebase-admin
+
+# Dipendenze usate nelle funzioni
+requests
+google-cloud-secret-manager

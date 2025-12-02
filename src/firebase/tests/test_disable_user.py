@@ -1,0 +1,25 @@
+import requests
+
+def test_disable_user_success(create_user_in_emulator, get_firebase_id_token, get_base_url):
+    """Tests that an admin can successfully disable a user."""
+    admin_email = "admin@test.com"
+    admin_pass = "password"
+    target_email = "target@test.com"
+    target_pass = "password"
+    
+    admin_user = create_user_in_emulator(uid="admin002", email=admin_email, password=admin_pass, level=2)
+    target_user = create_user_in_emulator(uid="target002", email=target_email, password=target_pass, level=1, disabled=False)
+
+    admin_token = get_firebase_id_token(admin_email, admin_pass)
+    headers = {"Authorization": f"Bearer {admin_token}"}
+
+    url = f"{get_base_url}/disable_user"
+    response = requests.post(url, json={"uid": target_user.uid}, headers=headers)
+
+    assert response.status_code == 200
+
+def test_disable_user_unauthorized(get_base_url):
+    """Tests that the function requires authentication."""
+    url = f"{get_base_url}/disable_user"
+    response = requests.post(url, json={"uid": "some-uid"})
+    assert response.status_code == 401

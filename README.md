@@ -30,13 +30,3 @@ source venv/bin/activate
 ```bash
 pip install -r requirements.txt
 ```
-
-## Project Dependencies
-
-- numpy: Numerical computing
-- pandas: Data manipulation and analysis
-- jupyter: Notebook interface
-- opencv-python: Computer vision library
-- Pillow: Image processing
-- matplotlib: Data visualization
-- scikit-learn: Machine learning utilities

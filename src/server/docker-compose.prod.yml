@@ -1,0 +1,30 @@
+version: '3.8'
+
+# File di configurazione per l'ambiente di produzione
+# Per buildare: docker compose -f docker-compose.prod.yml up -d
+
+services:
+  backend:
+    build: .
+    image: pmds-backend-prod:latest
+    restart: always
+    ports:
+      - "9999:9999"
+    environment:
+      # TODO: Env file per le variabili globali
+      - GCP_PROJECT_ID=pmds-project
+      - USE_SECRET_MANAGER=true
+      - GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcp_credentials.json
+    volumes:
+      # TODO: Cambiare con il path corretto del file delle credenziali di GCP in produzione
+      - /etc/pmds/secrets/gcp_credentials.json:/secrets/gcp_credentials.json:ro
+      - /var/log/pmds/backend:/app/logs:rw
+      # TODO: inserire path corretto
+      # TODO: GPU?
+    # TODO: healthcheck
+    healthcheck:
+      test: curl --fail http://localhost:9999/ || exit 1
+      interval: 40s
+      timeout: 30s
+      retries: 3
+      start_period: 60s

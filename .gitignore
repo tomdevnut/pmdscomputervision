@@ -25,3 +25,10 @@ data/raw/*
 data/processed/*
 !data/raw/.gitkeep
 !data/processed/.gitkeep
+
+# Certificates
+certificate/
+
+# IntelliJ IDEA
+.idea/
+appunti cloud functions.txt
