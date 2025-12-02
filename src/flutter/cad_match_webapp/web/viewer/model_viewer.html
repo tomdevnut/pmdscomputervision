@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>3D PLY Viewer</title>
+
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.module.js",
+        "three/examples/jsm/": "https://cdn.jsdelivr.net/npm/three@0.159.0/examples/jsm/"
+      }
+    }
+  </script>
+
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            background-color: #eff9fb;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ffffffcc;
+            padding: 20px 30px;
+            border-radius: 10px;
+            color: #0073a8;
+            font-size: 1.4em;
+            font-weight: 500;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            z-index: 999;
+            text-align: center;
+            user-select: none;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="loading">Loading viewer...</div>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+        import { PLYLoader } from 'three/examples/jsm/loaders/PLYLoader.js';
+
+        // --- NUOVA FUNZIONE PER CREARE UNA TEXTURE CIRCOLARE ---
+        function createCircleTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64;
+            canvas.height = 64;
+            const context = canvas.getContext('2d');
+            context.beginPath();
+            context.arc(32, 32, 30, 0, 2 * Math.PI);
+            context.fillStyle = 'white';
+            context.fill();
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color('#eff9fb');
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 100);
+        camera.position.set(0, 0, 2);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+
+        scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(1, 1, 1);
+        scene.add(dirLight);
+
+        let points = null;
+        const circleTexture = createCircleTexture(); // Crea la texture una sola volta
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        function loadModel(fileUrl) {
+            const loadingDiv = document.getElementById('loading');
+            loadingDiv.style.display = 'block';
+            loadingDiv.innerText = 'Loading model...';
+
+            const loader = new PLYLoader();
+            loader.load(
+                fileUrl,
+                (geometry) => {
+                    geometry.computeVertexNormals();
+                    const hasColors = geometry.hasAttribute('color');
+
+                    const material = new THREE.PointsMaterial({
+                        size: 0.003,
+                        map: circleTexture,   // Applica la texture circolare
+                        transparent: true,      // Necessario per la trasparenza della texture
+                        alphaTest: 0.5,         // Migliora i bordi dei cerchi
+                        vertexColors: hasColors,
+                        color: hasColors ? undefined : 0x0073a8
+                    });
+
+                    if (points) {
+                        scene.remove(points);
+                        points.geometry.dispose();
+                        points.material.dispose();
+                    }
+
+                    points = new THREE.Points(geometry, material);
+
+                    geometry.computeBoundingBox();
+                    const center = new THREE.Vector3();
+                    geometry.boundingBox.getCenter(center);
+
+                    const size = new THREE.Vector3();
+                    geometry.boundingBox.getSize(size);
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scale = 2.0 / maxDim;
+
+                    points.scale.setScalar(scale);
+                    points.position.sub(center.multiplyScalar(scale));
+
+                    scene.add(points);
+                    loadingDiv.style.display = 'none';
+                },
+                (xhr) => {
+                    if (xhr.lengthComputable) {
+                        const percent = ((xhr.loaded / xhr.total) * 100).toFixed(1);
+                        loadingDiv.innerText = `Loading model... ${percent}%`;
+                    }
+                },
+                (error) => {
+                    loadingDiv.innerText = 'Failed to load model.';
+                }
+            );
+        }
+
+        window.addEventListener('message', (event) => {
+            const fileUrl = event.data?.fileUrl;
+            if (fileUrl) {
+                loadModel(fileUrl);
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            parent.postMessage({ status: 'ready' }, '*');
+        });
+
+    </script>
+</body>
+
+</html>
